@@ -1,0 +1,460 @@
+package controller
+
+import (
+	"database/sql"
+	"log/slog"
+	"net/http"
+	"time"
+
+	dumper "github.com/goforj/godump"
+
+	"github.com/gin-gonic/gin"
+	cache "github.com/ishowsagar/go-blog-web-application/Cache"
+	"github.com/ishowsagar/go-blog-web-application/models"
+	"github.com/ishowsagar/go-blog-web-application/services"
+	"github.com/ishowsagar/go-blog-web-application/utils"
+)
+
+// @ types
+type UserController struct {
+	// todo - add interfaces implementation later
+	UserDbModel *services.UserDBModel
+	TokenDbModel *services.TokenDBModel
+	RedisClient *cache.RedisCacheClient // just in - client holds all the operations for caching
+}
+
+//  func that returns instance of type UserController - which stores userDbModel -> stores all user related meths
+func NewUserController(userDbModel *services.UserDBModel,tokenDbModel *services.TokenDBModel,redisClient *cache.RedisCacheClient) *UserController {
+	return &UserController{
+		UserDbModel:userDbModel,
+		TokenDbModel: tokenDbModel,
+		RedisClient: redisClient,
+	}
+}
+
+// method that belongs to the UserController type - registers user
+func(u *UserController) RegisterUser(c *gin.Context) {
+
+	var registerReq RegisterRequest
+	err := c.ShouldBindJSON(&registerReq)
+
+	if err != nil {
+		c.AbortWithError(http.StatusBadRequest,gin.Error{
+			Err: err,
+		})
+		return
+	}
+	
+	
+	//  todo - need to store hashed pass in User that we are registering
+	// fixed - added hashed pass 
+	
+	// todo - add method check for checking if user already registered Using email
+	// fixed - added check
+	existingUser,err := u.UserDbModel.GetUserByEmail(registerReq.Email)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			existingUser = nil // set it to nil as there was no user but query ran successfully
+			} else {
+				c.AbortWithStatusJSON(http.StatusInternalServerError,gin.H{
+					"error" : "lookup failed",
+				})
+				return
+			}
+		}
+		if existingUser != nil {
+			c.AbortWithStatusJSON(http.StatusConflict,gin.H{
+				"error" : "user already exists",
+			})
+			return
+		}
+		
+		// todo - need to store hashed password
+		// & generating hash for storing hashed pass in the db, not just plain string
+		hash := utils.SetHashedPassword(registerReq.Password)
+
+		// creating instance of user that has to be created into the db from requested payload
+		user := models.User{
+			Name: registerReq.Name,
+			Email: registerReq.Email,
+			Password: string(hash), // bug --> might bug cause we storing as string
+			// fixed --> no problems so far
+
+			// bug - while creating user since nothing were taking care of *_count fields, so we did insert method to add default 0
+			Bio: registerReq.Bio,
+			Username: registerReq.Username,
+			Nickname: registerReq.Nickname,
+		}
+
+	//  if req binds correct data ✅
+	createdUser,err := u.UserDbModel.CreateUser(&user)
+	if err!= nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError,utils.ErrResponse{
+			Status: "server error,failed to register user!.",
+		})
+		return
+	}
+
+	// struct that stores cahedUser data 
+	cachedUser := models.User{
+		Email: createdUser.Email,
+		Password: registerReq.Password, //* storing plain password for now
+	}
+	// todo - cache user data into redis db for faster logins
+	err = u.RedisClient.SetCachedUser(c.Request.Context(),cachedUser.Email,cachedUser.Password)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusServiceUnavailable,utils.ErrResponse{
+			Ok: false,
+			Status: "failed to cache user data",
+		})
+		return
+	}
+
+	// if successfully cached it, return this response✅✅
+	
+	//  sending response to client
+	dumper.DumpJSON("postgres entry :",createdUser)
+	dumper.DumpJSON("cachedUser :",cachedUser)
+	c.JSON(http.StatusOK,gin.H{
+		"Ok" : true,
+		"Code":http.StatusCreated,
+		"Status": "Successfully resgistered User.",
+	})
+}
+
+
+// login user
+func(u *UserController) LoginUser(c *gin.Context) {
+
+	// req should bind loginReq type payload
+	var loginRequest LoginRequest
+
+	err := c.ShouldBindJSON(&loginRequest)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest,utils.ErrResponse{Status: "Invalid request payload."})
+		return 
+	}
+	// check if user exists through email method
+	userFound,err := u.UserDbModel.GetUserByEmail(loginRequest.Email)
+	if err != nil {
+		// todo - less verbose err responses
+		c.AbortWithStatusJSON(http.StatusInternalServerError,utils.ErrResponse{Status: "lookup failed"})
+		return 
+	}
+	// if no user data retrieved from query 
+	if userFound == nil {
+		c.AbortWithStatusJSON(http.StatusNotFound,utils.ErrResponse{Status: "user not found."})
+		return
+	}
+
+	// // ** CACHE REDIS DB CHECKS **//
+	// // todo - fetch stored cached user from redis db before postgres does its job
+	// // if found - login
+
+	// _,_, cachingUserErr := u.RedisClient.GetCachedUser(c.Request.Context(),userFound.Email)
+	// if cachingUserErr != nil {
+	// 	c.AbortWithStatusJSON(http.StatusServiceUnavailable,utils.ErrResponse{
+	// 		Ok: false,
+	// 		Status: "failed to fetch cached user data",
+	// 	})
+	// 	return
+	// }
+
+	// // if data is found -> login with token✅
+
+
+	// // .... end .... //
+	
+	
+
+	//  if yes found ✅, create token
+	// todo - check for hashedPass not just plain pass - cause now we are storing hash,not just plain text
+	authorized,err := utils.CheckHashedPass(loginRequest.Password,[]byte(userFound.Password))
+	if err != nil {
+		c.AbortWithError(http.StatusUnauthorized,gin.Error{
+			Err: err,
+		})
+		return
+	}
+
+
+	
+
+
+	//  if passes dont match
+	if !authorized  {
+		c.AbortWithStatusJSON(http.StatusUnauthorized,utils.ErrResponse{
+			//todo less verbose err response to the client
+			Status: "wrong password", // inentionally setting for verbose debugging
+		})
+		return
+	}
+
+	newExpiry := time.Now().UTC().Add(24 * time.Hour)
+	
+	plainTokenString,err := utils.GenerateToken(userFound.ID) // passing found user id to generate stateless token
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError,utils.ErrResponse{Status: err.Error()})
+		return 
+	}
+
+	// todo - hash tokenString too,store hashed token
+	// fix - hashed byte
+	// todo - add seperate function for creating hashed token using seperate secret signing key 
+	hashedTokenByte,err := utils.HashToken(*plainTokenString)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError,utils.ErrResponse{Status: err.Error()})
+		return 
+	}
+	
+	// slog.Info("token created successfully","userID",userFound.ID)
+	
+	token := models.Token{
+		Hash: string(hashedTokenByte),//* storing hashed Token
+		UserID: userFound.ID,
+		Expiry: newExpiry, //* 24hour expiry time for the token
+	}
+	// first check if it is not already stored -> cause that would overide expiry time
+	existingToken,err := u.TokenDbModel.GetTokenByUserID(userFound.ID)
+	if err!= nil {
+		//! don't do statusInternalErr -> it will stop furthur execution cause err could be no rows
+		if err == sql.ErrNoRows {
+			// if query successfull --> but returned no token
+			existingToken = nil
+			//  no return -> must continue to insert
+			} else {
+				slog.Error("failed to lookup","error",err)
+				c.AbortWithStatusJSON(http.StatusInternalServerError,utils.ErrResponse{
+					Status : "lookup failed",
+				})
+				return
+			}
+		}
+		
+		// todo - after token is generated, cache token into redis db
+		// todo - now after setting in cache, on every authMiddleware, fetch hashes for client from cache first
+		// normally adding token into the cache db -. layer the flow logic just lil after it
+		cachingTokenErr := u.RedisClient.SetCachedToken(token.UserID,token.Expiry,token.Hash)
+		if cachingTokenErr!= nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError,utils.CacheErrResponse{
+				Ok: false,
+				Code: http.StatusInternalServerError,
+				Status: "failed to cache user login data",
+			})
+			return
+		}
+
+		// atp redis would have stored token data into cache -> yeah in form of var struct,not concrete vars val✅
+
+
+	// if token already exists and not nil -> update it, otherwise insert a new one
+	if existingToken != nil {
+		// if already exists - update it
+		err = u.TokenDbModel.UpdateTokenIfExists(newExpiry,userFound.ID,string(hashedTokenByte))
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError,utils.ErrResponse{Status: err.Error()})
+			return
+		}
+	} else {
+		// if not existed , create new and insert into the db
+		err = u.TokenDbModel.InsertToken(token)
+		if err!= nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError,utils.ErrResponse{Status: err.Error()})
+			return 
+		}
+	}
+
+	//  send token response
+	c.JSON(http.StatusOK,gin.H{
+		"Ok" : true,
+		"user" : userFound.Name,
+		"token" : plainTokenString,
+		"status" : "login successfull",
+	})
+
+}
+
+// for blazing fast logins with cache only
+func(u *UserController) SuperfastLogin(c *gin.Context) {
+
+	// get payload
+	var fastloginReq LoginRequest
+		err := c.ShouldBindJSON(&fastloginReq)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest,utils.ErrResponse{
+				Ok: false,
+				Status: "Invalid request payload",
+			})
+			return  
+		}
+
+
+	// check stored cache from redis db
+		cachedEmail,cachedPassword,err := u.RedisClient.GetCachedUser(c.Request.Context(),fastloginReq.Email)
+		if err!= nil {
+			c.AbortWithStatusJSON(http.StatusServiceUnavailable,utils.ErrResponse{
+				Ok: false,
+				Status: "Blazing fast login attempt failed!.",
+			})
+			return
+		}
+
+	// pass validation
+		if cachedPassword != fastloginReq.Password {
+			c.AbortWithStatusJSON(http.StatusUnauthorized,utils.ErrResponse{
+					Ok: false,
+					Status: "Invalid credentials",
+				})
+				return
+		}
+	
+	// if successfully got them -> login user (non-token based) first,add token later
+		c.JSON(http.StatusOK,gin.H{
+			"Ok": true,
+			"email" : cachedEmail,
+			"Status": "blazing fast login is successfull⚡",
+		})
+	
+}
+
+// controller method that updates user password
+func(u *UserController) UpdateUserPassword(c *gin.Context) {
+
+
+	// fetch userId for
+	var updateRequest struct {
+		Email string `json:"email" binding:"required"`
+		Password string `json:"password" binding:"required"`
+	}
+
+	err := c.ShouldBindJSON(&updateRequest) 
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest,utils.ErrResponse{
+			Status: "invalid payload request",
+			Ok: false,
+		})
+		return 
+	}
+
+	
+
+	//  if client correct format of request payload
+
+	//  first check if user exists for that mail
+	foundUser,err := u.UserDbModel.GetUserByEmail(updateRequest.Email)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusServiceUnavailable,utils.ErrResponse{
+				Status: "failed to check if user exists or not",
+				Ok: false,
+	})
+	return	
+	}
+
+	if foundUser == nil {
+		c.AbortWithStatusJSON(http.StatusServiceUnavailable,utils.ErrResponse{
+				Status: "user not found",
+				Ok: false,
+	})
+	return	
+	}
+
+	//  if user is found and exists, not nil
+	//  if userFound, update pass with new hash generated with password recieved
+	// hash password and generate new one for it 
+	updatedPasswordHash := utils.SetHashedPassword(updateRequest.Password)
+	// and store in db to update pass
+	updated,err := u.UserDbModel.ResetUserPassword(string(updatedPasswordHash),updateRequest.Email)
+	if err != nil || !updated {
+		c.AbortWithStatusJSON(http.StatusInternalServerError,utils.ErrResponse{
+		Status: "failed to reset password",
+		Ok: false,
+	})
+	return
+	}
+	// if resetted delete old data stored in cache related to the token of that user
+	err = u.RedisClient.DeleteCachedToken(foundUser.ID)
+	if err != nil  {
+		c.AbortWithStatusJSON(http.StatusInternalServerError,utils.ErrResponse{
+		Status: "failed to wipe cached token",
+		Ok: false,
+	})
+return
+	}
+	// if successfully updated password
+	c.JSON(http.StatusOK,utils.CommentSuccessResponse{
+		Status: "successfully resetted the password",
+		Ok: true,
+	})
+	}
+
+
+func(u *UserController) FetchProfileData(c *gin.Context) {
+
+	// fetching client userID from req -> as set by auth middleware on every req by proccessing header token
+	userID := c.GetUint("user_id")
+	if userID == 0 {
+		errMsg := "userID not found,failed to get profile data"
+		code := http.StatusUnauthorized
+		slog.Error(errMsg,"error",errMsg)
+		c.AbortWithStatusJSON(code,utils.ErrResponse{
+			Status: errMsg,
+			Ok: false,
+		})
+		return
+	}
+
+	// client userID fetched successfully
+	// bug - it was throwing empty strings on bio,user~nickname when route invoked,cause this was not returning user with those fields
+	// fixed -now corresponding repo method has taken care of these fields and returning them in user struct it is returning now.
+	foundUser,err := u.UserDbModel.GetUserByUserID(userID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			c.AbortWithStatusJSON(http.StatusServiceUnavailable,utils.ErrResponse{
+				Status: "user not found",
+				Ok: false,
+		})
+		return
+		}
+		c.AbortWithStatusJSON(http.StatusServiceUnavailable,utils.ErrResponse{
+				Status: "failed to check if user exists or not",
+				Ok: false,
+		})
+		return	
+	}
+
+
+	//  if userFound query was successfull and resulting struct also not nil
+	c.JSON(http.StatusFound,utils.UserSuccessResponse{
+		Ok: true,
+		Status: "user data fetched successfully",
+		Code: http.StatusFound,
+		User: *foundUser,
+	})
+}
+
+// method that belongs to the userController type -> which clears the cached token from redis db -> must be invoked with Auth header
+func(u *UserController) WipeCachedToken(c *gin.Context) {
+
+	
+	//  fetch from active client's userID set by auth middleware on every req
+	userID:= c.GetUint("user_id")
+	
+	// todo - add proper err return later
+	if userID == 0 {
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+	
+	// invoke method to clear db -> need userID
+	err := u.RedisClient.DeleteCachedToken(userID)
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	c.JSON(http.StatusOK,utils.CommentSuccessResponse{
+		Ok: true,
+		Status: "successfully deleted cached token",
+	})
+
+}

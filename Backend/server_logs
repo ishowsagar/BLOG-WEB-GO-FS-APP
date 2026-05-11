@@ -1,0 +1,34 @@
+[GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] GET    /health/                  --> github.com/ishowsagar/go-blog-web-application/router.ServeRoutes.func1 (3 handlers)
+[GIN-debug] POST   /form/register            --> github.com/ishowsagar/go-blog-web-application/controller.(*UserController).RegisterUser-fm (4 handlers)
+[GIN-debug] POST   /form/login               --> github.com/ishowsagar/go-blog-web-application/controller.(*UserController).LoginUser-fm (4 handlers)
+[GIN-debug] POST   /form/password/reset      --> github.com/ishowsagar/go-blog-web-application/controller.(*UserController).UpdateUserPassword-fm (4 handlers)
+[GIN-debug] POST   /cached/register          --> github.com/ishowsagar/go-blog-web-application/controller.(*UserController).RegisterUser-fm (5 handlers)
+[GIN-debug] POST   /cached/login             --> github.com/ishowsagar/go-blog-web-application/controller.(*UserController).SuperfastLogin-fm (5 handlers)
+[GIN-debug] GET    /api/users/profile        --> github.com/ishowsagar/go-blog-web-application/controller.(*UserController).FetchProfileData-fm (7 handlers)
+[GIN-debug] GET    /api/feed/comments/:postid --> github.com/ishowsagar/go-blog-web-application/controller.(*CommentController).LoadPostComments-fm (7 handlers)
+[GIN-debug] GET    /api/feed/comment         --> github.com/ishowsagar/go-blog-web-application/controller.(*CommentController).LoadAllCommentsAssociatedWithPostAndUsers-fm (7 handlers)
+[GIN-debug] POST   /api/post/comment/:postid --> github.com/ishowsagar/go-blog-web-application/controller.(*CommentController).PostComment-fm (7 handlers)
+[GIN-debug] DELETE /api/comment/delete       --> github.com/ishowsagar/go-blog-web-application/controller.(*CommentController).DeleteCommentByUser-fm (7 handlers)
+[GIN-debug] GET    /api/feed                 --> github.com/ishowsagar/go-blog-web-application/controller.(*PostController).LoadFeed-fm (7 handlers)
+[GIN-debug] GET    /api/post/count           --> github.com/ishowsagar/go-blog-web-application/controller.(*PostController).GetPostCountByUserID-fm (7 handlers)
+[GIN-debug] POST   /api/post/create          --> github.com/ishowsagar/go-blog-web-application/controller.(*PostController).CreatePost-fm (7 handlers)
+[GIN-debug] GET    /api/feed/post/:id        --> github.com/ishowsagar/go-blog-web-application/controller.(*PostController).GetPostByID-fm (7 handlers)
+[GIN-debug] DELETE /api/post/:id             --> github.com/ishowsagar/go-blog-web-application/controller.(*PostController).DeletePost-fm (7 handlers)
+[GIN-debug] POST   /api/like                 --> github.com/ishowsagar/go-blog-web-application/controller.(*LikeController).UpdateLike-fm (7 handlers)
+[GIN-debug] POST   /api/users/follow/:followeeID --> github.com/ishowsagar/go-blog-web-application/controller.(*FollowController).FollowUser-fm (7 handlers)
+[GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
+Please check https://github.com/gin-gonic/gin/blob/master/docs/doc.md#dont-trust-all-proxies for details.
+[GIN-debug] Listening and serving HTTP on :8080
+[GIN] 2026/05/11 - 18:26:31 |[97;42m 200 [0m|[97;41m     3.3s [0m|             ::1 |[97;46m POST    [0m "/cached/register"
+[GIN] 2026/05/11 - 18:26:43 |[97;42m 200 [0m|[90;47m  697.6µs [0m|             ::1 |[97;46m POST    [0m "/cached/login"
+[GIN] 2026/05/11 - 18:26:59 |[97;42m 200 [0m|[90;47m   2.18ms [0m|             ::1 |[97;46m POST    [0m "/cached/login"
+[GIN] 2026/05/11 - 18:27:16 |[97;42m 200 [0m|[97;41m    3.12s [0m|             ::1 |[97;46m POST    [0m "/form/login"
+[GIN] 2026/05/11 - 18:27:36 |[97;42m 200 [0m|[97;41m    3.04s [0m|             ::1 |[97;46m POST    [0m "/form/login"
+[GIN] 2026/05/11 - 18:27:54 |[97;42m 200 [0m|[90;47m  511.5µs [0m|             ::1 |[97;46m POST    [0m "/cached/login"
+[GIN] 2026/05/11 - 18:28:00 |[97;42m 200 [0m|[90;47m   1.33ms [0m|             ::1 |[97;46m POST    [0m "/cached/login"
