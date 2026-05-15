@@ -236,3 +236,62 @@ func(p *PostDBModel) GetPostCountForAUser(userId uint) (int,error) {
 	return noOfPost,nil
 	
 }
+
+// retrieves posts by limit asked for 
+func(p *PostDBModel) GetFeedByBatches(limit int,nextCursor string) (posts []*models.Post,err error) {
+	ctx,timeout := context.WithTimeout(context.Background(),utils.DbTimeoutDuration)
+	defer timeout()
+
+	// if nextCursor qparam is not provided -> set to largest, so it won't block feed fetch <- visual representation to learn better
+	if nextCursor == "" {
+		nextCursor = "999999"
+	}
+	query := `
+		Select 
+			p.id,p.user_id,p.title,p.content,p.coalesce(like_count,0),p.created_at,p.updated_at
+		from
+			posts p
+		left join (
+			select
+				post_id,sum(like_count) as like_count
+			from
+				likes l
+			group by post_id
+		) l
+		On
+			l.post_id = p.id
+				where p.id < $1
+				order by p.id desc
+		limit $2
+	`
+
+	// since data will be fetched as desc order, so like if nextCursor is 20, we load posts less than 20,
+	resRows,err := p.db.QueryContext(ctx,query,nextCursor,limit)
+	if err != nil {
+		// has more little confusion
+		return nil,err
+	}
+
+	defer resRows.Close()
+
+	var postsBatch []*models.Post
+	for resRows.Next() {
+		var post models.Post
+		err := resRows.Scan(
+		&post.ID,
+		&post.UserID,
+		&post.Title,
+		&post.Content,
+		&post.LikeCount,
+		&post.CreatedAt,
+		&post.UpdatedAt,
+	) 
+
+	if err!= nil {
+		return nil,err
+	}
+	postsBatch = append(postsBatch,&post)
+	}
+
+	return postsBatch,nil
+}

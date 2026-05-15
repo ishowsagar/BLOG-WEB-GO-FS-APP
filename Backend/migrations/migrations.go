@@ -11,7 +11,7 @@ import (
 // tables creations and auto migrations of the tables
 func AutoMigrate(db *gorm.DB) error {
 
-	err := db.AutoMigrate(&models.Comment{},&models.Post{},&models.User{},&models.Token{},&models.Like{},&models.Follow{},) // takes in concrete parent type not fields injected
+	err := db.AutoMigrate(&models.Comment{},&models.Post{},&models.User{},&models.Token{},&models.Like{},&models.Follow{},&models.Message{}) // takes in concrete parent type not fields injected
 	if err != nil {
 		return err
 	}
@@ -21,7 +21,7 @@ func AutoMigrate(db *gorm.DB) error {
 	// 	return err
 	// }
 
-	dumper.Dump(models.Comment{},models.Post{},models.User{},models.Token{},models.Like{},models.Follow{})
+	dumper.Dump(models.Comment{},models.Post{},models.User{},models.Token{},models.Like{},models.Follow{},models.Message{})
 	slog.Info("successfully migrated models🚀.")
 	return nil
 }

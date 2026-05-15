@@ -171,3 +171,102 @@ func(u *UserDBModel) GetUserByUserID(userID uint)(*models.User,error) {
 
 	return &user,nil
 }
+
+
+// func that belongs to the UserDBModel type -> fetches user by provided name 
+func(u *UserDBModel) FindUsersByName(name string) ([]*models.User,error) {
+
+	ctx,timeout := context.WithTimeout(context.Background(),utils.DbTimeoutDuration)
+	defer timeout()
+
+	// u can also use transaction tx single atomic when needed
+	// bug - it was not fetching matching results due to a common sql syntax mistake of like 
+	// fixed - do it correct by using operators which finds entries with these input in it '%X%'
+	
+	// bug again - putting wildcard pattern recognition ('%X%') operations failed on query
+	// fixed - operation must be done in replacers placeholders arguements in the query call
+	query := `
+		Select
+			 id,name,email,password,created_at,
+			 COALESCE(followers_count, 0),COALESCE(following_count, 0),username,nickname,bio
+		from
+			users
+		where
+			name like $1
+	`
+
+	// fixed - finally it is working now ✅,note :- You should do operation in args not in raw query itself
+	resRow,err:= u.db.QueryContext(ctx,query,"%"+name+"%") // providing user id to fetch data of that entry
+	
+	if err!= nil {
+		return nil,err
+	}
+
+	// go through each resulted row
+	var usersFound []*models.User
+	for resRow.Next() {
+		// scan each field and populate data if not error 
+		var user models.User
+		err := resRow.Scan(
+			&user.ID,
+			&user.Name,
+			&user.Email,
+			&user.Password,
+			&user.CreatedAt,
+			&user.FollowersCount,
+			&user.FollowingCount,
+			&user.Username,
+			&user.Nickname,
+			&user.Bio,
+		)
+		if err != nil {
+			return nil,err
+		}
+		// after each iteration, append successfull hit into the []
+		usersFound = append(usersFound, &user)
+	}
+
+// return it
+	return usersFound,nil
+}
+
+
+func(u *UserDBModel) FetchUserDetailsFromPosts(limit int) (*string,error) {
+	ctx,timeout := context.WithTimeout(context.Background(),utils.DbTimeoutDuration)
+	defer timeout()
+
+
+	// * select (whatever u want from joined tables) -> when joined on common entries both tqbles join and we select (selective row) from one big joined table
+	query := `
+		Select
+			u.name
+		from
+			posts p
+		inner join 
+			users
+		On
+			u.id = p.user_id
+		limit $1
+	`
+
+	res := u.db.QueryRowContext(ctx,query,limit)
+
+	//* we would get specific result we store into specfic variable that store that type of data
+	var resultStorer struct {
+		name string
+	}
+	err := res.Scan(
+		&resultStorer.name,
+	)
+
+	if err!= nil {
+		// if scan gave no result -> nil result
+		if err == sql.ErrNoRows {
+			return nil,sql.ErrNoRows
+		}	
+		return nil,err
+	}
+
+	return &resultStorer.name,nil
+	
+}

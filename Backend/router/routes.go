@@ -11,7 +11,7 @@ import (
 	"github.com/ishowsagar/go-blog-web-application/utils"
 )
 
-func ServeRoutes(router *gin.Engine,masterController *controller.MasterController,config *utils.ENVConfig)  {
+func ServeRoutes(router *gin.Engine,masterController *controller.MasterController,config *utils.ENVConfig,wsController *controller.WSController)  {
 
 	// auth instances
 	authMiddleware := middleware.NewAuthMiddlewareInventory(masterController.UserController.TokenDbModel,masterController.UserController.RedisClient)
@@ -53,6 +53,13 @@ func ServeRoutes(router *gin.Engine,masterController *controller.MasterControlle
 		cached.POST("/register",masterController.UserController.RegisterUser)
 		cached.POST("/login",masterController.UserController.SuperfastLogin)
 	}
+
+	// WebSocket route (no auth middleware - token passed as query param)
+	ws := router.Group("/api/ws")
+	{
+		ws.GET("", wsController.ServeRealtimeNotification)
+		ws.GET("/dm", wsController.HandleDMs)
+	}
 	
 	api := router.Group("/api") 
 	api.Use(authMiddleware.AuthMiddlewareFunction(config.JwtSecret))
@@ -62,17 +69,21 @@ func ServeRoutes(router *gin.Engine,masterController *controller.MasterControlle
 	{
 		// user
 		api.GET("/users/profile",masterController.UserController.FetchProfileData)
+		api.GET("/users/search",masterController.UserController.FindUsersByNAME)
+		api.GET("/user/profile/:userid",masterController.UserController.FetchProfileDataByURlParamID) // client would have to request on this url passing last endPoint as the userID for query the res and returning it
 		
 		// comment
 		api.GET("/feed/comments/:postid",masterController.CommentController.LoadPostComments)
 		api.GET("/feed/comment",masterController.CommentController.LoadAllCommentsAssociatedWithPostAndUsers)
+		api.GET("/feed/post/comments/:postid",masterController.CommentController.GetCommentsCountByPostID)
 		
 		// * changing to post comment on post - by postID in url path, instead of sending json embedded postID
 		api.POST("/post/comment/:postid",masterController.CommentController.PostComment)
 		api.DELETE("/comment/delete",masterController.CommentController.DeleteCommentByUser)
 
 		// feed
-		api.GET("/feed",masterController.PostController.LoadFeed)
+		api.GET("/feed/full",masterController.PostController.LoadFeed)
+		api.GET("/feed/batch",masterController.PostController.FeedBatchRequest)
 		api.GET("/post/count",masterController.PostController.GetPostCountByUserID)
 		api.POST("/post/create",masterController.PostController.CreatePost)
 		api.GET("/feed/post/:id",masterController.PostController.GetPostByID)
@@ -83,5 +94,5 @@ func ServeRoutes(router *gin.Engine,masterController *controller.MasterControlle
 		
 		// follow
 		api.POST("/users/follow/:followeeID",masterController.FollowController.FollowUser)
-	} 
+	}
 }

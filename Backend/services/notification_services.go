@@ -16,9 +16,12 @@ type PushNotificationService struct {
 	//! central hub for all type of notification chan we needed throughout the application
 	PostNotification chan models.Post //  chan for recieving and sending post related data struct notifications
 	LikeNotification chan models.Like
-	CommentNotification chan models.Comment  
+	CommentNotification chan models.Comment
+	Hub *Hub // WebSocket hub for broadcasting to connected clients
 
 }
+
+
 // ! workflow - add reader select's case for reading redirected corresponding ouput by method attached on *pns => which redirects corres ouput to corres chan 
 
 // returns instance of type pns -> which stores chans
@@ -34,9 +37,29 @@ func NewPNService() *PushNotificationService {
 
 	// starting go routine to keep reading notification
 	slog.Info("notification service has started🚀","waiting for any notification to come⏳","...")
+	
+	// instead of just loggin to the term and reading,we can store it somewhere or cache it, so we can fetch in frontend to show them
+	// todo - Store notification to render them to the client 
+
+	// idea #1 - store
+	//#1 -> store noti in db/or cache
+	//#2 -> call the handler to retrieve them correspondingly
+	
+
+	// idea #2 - websockets✅ trying this
+	//#1 -> use Websockects or SSE
+	//#2 -> keep connection alive, keep hitting throgh w.s to push json to the browser in realtime
+
+
+	// noti logger
 	go pns.StartService() //* whenever post is redirected it reads to the logger
 
 	return pns
+}
+
+// SetHub connects the notification service to the WebSocket hub for broadcasting
+func(pns *PushNotificationService) SetHub(hub *Hub) {
+	pns.Hub = hub
 }
 
 //  logs the redirect notifcations posts data to pns notifation Chan
@@ -55,15 +78,49 @@ func(pns *PushNotificationService) StartService() {
 		case post := <- pns.PostNotification :
 			slog.Info("proccessing notification for post","postID :",post.ID,"userID",post.UserID)
 			slog.Info("notification recieved ✅","post created-by",post.UserID)
+			// Broadcast to connected WebSocket clients
+			if pns.Hub != nil {
+				pns.Hub.Broadcast <- &ClientNotifyPayload{
+					SenderID: post.UserID,
+					RecieverID: 0, // Broadcast to all
+					Type: "post_created",
+					Content: post.Content,
+					PostID: post.ID,
+					CreatedAt: time.Now(),
+				}
+			}
 		// todo - add a redirection method to redirect Like output so this chan can read
 		// fixed - added method which invokes this method through the corresponding handler
 		case like := <- pns.LikeNotification :
 			slog.Info("someone liked your post","postID",like.PostID,"userID",like.UserID)
 			slog.Info("notification recieved ✅","liked By UserID",like.UserID, "On PostID",like.PostID,"Post like-Count",like.LikeCount)
+			// Broadcast to connected WebSocket clients
+			if pns.Hub != nil {
+				pns.Hub.Broadcast <- &ClientNotifyPayload{
+					SenderID: like.UserID,
+					RecieverID: 0, // Broadcast to all
+					Type: "like_posted",
+					Content: "Someone liked your post",
+					PostID: like.PostID,
+					CreatedAt: time.Now(),
+				}
+			}
 		// test - adding a reader select's case to read incoming comment chan val
 		case comment := <- pns.CommentNotification :
 			slog.Info("someone posted comment on your post","postID",comment.PostID,"userID",comment.UserID)
 			slog.Info("notification recieved ✅","comment",comment.Content)
+			// Broadcast to connected WebSocket clients
+			if pns.Hub != nil {
+				// redirecting it to broadcast
+				pns.Hub.Broadcast <- &ClientNotifyPayload{
+					SenderID: comment.UserID,
+					RecieverID: 0, // Broadcast to all
+					Type: "comment_posted",
+					Content: comment.Content,
+					PostID: comment.PostID,
+					CreatedAt: time.Now(),
+				}
+			}
 		}
 	}
 

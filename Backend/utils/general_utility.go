@@ -11,8 +11,10 @@ const DbTimeoutDuration = 5 * time.Second
 
 //  type struct for General success responses
 type SuccessResponse struct {
-	Code uint
+	// json tag with omit empty makes it optional
+	Code uint `json:"code,omitempty"`
 	Status string
+	Data interface{}
 	Ok bool
 }
 
@@ -63,4 +65,11 @@ type CacheErrResponse struct {
 	Status string
 }
 
-
+// type struct for batch related response
+type BatchResponse struct {
+	Ok bool
+	Status string
+	HasMore bool
+	NextCursor string
+	Batch interface{}
+}

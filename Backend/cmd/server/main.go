@@ -136,10 +136,20 @@ func main() {
 	likeController := controller.NewLikeController(likeDbModel,pushNotificationService)
 	followController := controller.NewFollowController(followDbModel)
 
+	// ws controller
+	hub := services.IntializeNewHubInstance()
+	wsController := controller.NewWsController(baseDbModel.DB,hub,config.JwtSecret)
+	
+	// connect notification service to hub for broadcasting
+	pushNotificationService.SetHub(hub)
+
+	// start hub service to handle broadcasts and client management
+	go hub.RunService()
+
 	// master controller -> stores all corresponding controllers
 	masterController := controller.NewMasterController(userController,postController,commentController,likeController,followController)
 
 	router := gin.Default()
-	routes.ServeRoutes(router,masterController,config) // serving controller to router to route methods on them routes
+	routes.ServeRoutes(router,masterController,config,wsController) // serving controller to router to route methods on them routes
 	router.Run(fmt.Sprintf(":%s",config.ServerPort))
 }

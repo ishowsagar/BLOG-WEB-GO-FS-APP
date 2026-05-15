@@ -15,13 +15,14 @@ export default function Sidebar() {
     <aside>
       <nav className="sidebar_nav">
         <ul className="sidebar_list_items">
+          
           <li>
             <img className="sidebar_icon" src={HomeIcon} />
             <Link to="/">Home</Link>
           </li>
           <li>
             <img className="sidebar_icon" src={SearchIcon} />
-            <a href="#">Search</a>
+            <Link to="/search">Search</Link>
           </li>
           <li>
             <img className="sidebar_icon" src={ExploreIcon} />

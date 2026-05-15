@@ -20,7 +20,8 @@ export default function Footer() {
             </ul>
           </nav>
           <div className="footer_text_content">
-            <p className="footer_text">© 2025 Instagram Clone</p>
+            <a className="footer_text" href="mailto:ishowdenver@gmail.com">ishowdenver@gmail.com</a>
+            <span className="footer_text">• Built by Denver &amp; Co</span>
           </div>
         </div>
       </div>

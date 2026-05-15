@@ -1,0 +1,60 @@
+/* SearchBar Styles */
+.searchbar_wrapper {
+  width: 100%;
+  padding: 1rem 0;
+  display: flex;
+  justify-content: center;
+}
+
+.searchbar_container {
+  display: flex;
+  align-items: center;
+  width: 90%;
+  max-width: 300px;
+  background-color: #f0f0f0;
+  border: 2px solid #e0e0e0;
+  border-radius: 25px;
+  padding: 0.5rem 1rem;
+  transition: all 0.3s ease;
+}
+
+.searchbar_container.focused {
+  background-color: #fff;
+  border-color: royalblue;
+  box-shadow: 0 0 10px rgba(65, 105, 225, 0.2);
+}
+
+.searchbar_icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 0.75rem;
+  opacity: 0.6;
+}
+
+.searchbar_input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 0.95rem;
+  color: #333;
+}
+
+.searchbar_input::placeholder {
+  color: #999;
+}
+
+.searchbar_clear {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: #999;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 0.5rem;
+  transition: color 0.2s ease;
+}
+
+.searchbar_clear:hover {
+  color: #333;
+}

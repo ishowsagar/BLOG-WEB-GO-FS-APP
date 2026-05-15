@@ -51,3 +51,52 @@ token => {
         "updated_at": "2026-04-30T18:49:37.681846+05:30"
     }
 }
+
+
+..
+
+Select 
+	    id,user_id,title,content,coalesce(like_count,0),created_at,updated_at
+	from
+		posts p
+	left join (
+		select
+			post_id,sum(like_count) as like_count
+		from
+			likes l
+		group by   
+             post_id
+		) l
+		On
+			l.post_id = p.id
+        left join (
+            select
+                count(post_id)
+            from
+                comments c
+            group by 
+                post_id
+        ) c 
+        on
+            c.post_id = l.post_id
+				where 
+                    p.id < 9999
+				order by 
+                    p.id desc
+limit 4 ;
+
+
+
+
+> comment count
+- it means to fetch comment count, it need to call function passing post_id to get count
+select count(*) as comments_count from comments c
+    where post_id=17  
+    group by post_id;
+
+> fetch name from posts's user id 
+select u.name from posts p  
+    inner join users u on  
+    p.user_id = u.id
+    limit 7; 
+    👍worked -> get all entries where ids matching, then whatever u want select from that table with dot notation

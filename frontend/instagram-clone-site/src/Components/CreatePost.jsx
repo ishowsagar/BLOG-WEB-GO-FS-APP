@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { nanoid } from "nanoid";
 import { useNavigate } from "react-router-dom";
 import { usePostContext } from "../Layout/MainLayout";
@@ -9,6 +9,7 @@ import { usePostContext } from "../Layout/MainLayout";
 //   image: "",
 //   id: null,
 // };
+
 const INITIAL_FEED_POST_FORM = {
   title: "",
   body: "",
@@ -18,28 +19,95 @@ const INITIAL_FEED_POST_FORM = {
 export default function CreatePost() {
   const [form, setForm] = useState(INITIAL_FEED_POST_FORM);
   //  ! fetching data from all postData containing Arr
-  const { postData, setPostData } = usePostContext();
+  // const { postBatch, setPostBatch } = usePostContext();
+  const [postCreationErr, setPostCreationErr] = useState(""); // state that holds err seamlessly
+  const [hasSubmitted, setHasSubmitted] = useState(false); // state that holds if post created successfully
+  const [isFormValid, setIsFormValid] = useState(false);
   const naviagteBackToFeed = useNavigate();
   //   console.log(postData);
+  const token = localStorage.getItem("token");
 
-  function handleFormChange(e) {
-    const { name, value, type, files } = e.target;    
-      setForm((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
+  // create post
+  async function CreatePost() {
+    // false state on startup
+    const payload = {
+      // url depends on cursor -> if it has last batch post ID -> if yes with cursor&limit otherwise just with limit
+      // "GET" - /api/feed?limit=X{limitOffset}&cursor=Y{lastCursor} - return feed[],cursor,hasMore
+      url: `http://localhost:8080/api/post/create`,
+      header: {
+        Authorization: token,
+      },
+      method: "POST",
+      body: {
+        title: form.title,
+        content: form.body,
+      },
+    };
+    try {
+      const postReq = await fetch(payload.url, {
+        method: payload.method,
+        headers: payload.header,
+        body: JSON.stringify(payload.body),
+      });
 
+      console.log("uploading post...");
+      const postCreationResponse = await postReq.json();
+      console.log("response :", postCreationResponse);
+      //err check
+      if (!postCreationResponse.Ok || !postReq.ok) {
+        throw new Error(res.Status || "failed to upload post...");
+      }
+
+      //if it was a success call ✅✅
+      setHasSubmitted(true);
+      setPostCreationErr("");
+    } catch (err) {
+      // all errors throws are caught here and set from here
+      setPostCreationErr(err.message | "failed to create post");
+      console.log(err);
+    }
   }
 
-  function handleFeedPostSubmit(e) {
-    e.preventDefault();
-    // * resetting form back to default
-    setPostData((prev) => [form, ...prev]);
-    setForm(INITIAL_FEED_POST_FORM);
-    naviagteBackToFeed("/");
-    // console.log("submitting form...");
+  function handleFormChange(e) {
+    const { name, value, type, files } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
 
-    // ! usenaviate or navigate user back to home once submitted
+    // Real-time validation
+    validateForm({ ...form, [name]: value });
+  }
+
+  function validateForm(formData) {
+    const isTitleValid = formData.title.trim().length > 0;
+    const isBodyValid = formData.body.trim().length >= 10;
+    setIsFormValid(isTitleValid && isBodyValid);
+  }
+
+  // add some delay in between - keep other things in await too for full effect nurishment
+  async function addDelay(ms) {
+    return new Promise((res) => setTimeout(res, ms));
+  }
+
+  async function handleFeedPostSubmit(e) {
+    e.preventDefault();
+
+    // Validate before submitting
+    if (!isFormValid) {
+      setPostCreationErr(
+        "Please fill in all fields (Title and at least 10 characters for body)",
+      );
+      return;
+    }
+
+    console.log("submitting post");
+    setHasSubmitted(true);
+   
+    await CreatePost();
+    // add some delay before navigating in seconds to the home feed
+    await addDelay(1000)
+    naviagteBackToFeed("/"); // send client to home feed
   }
 
   return (
@@ -71,7 +139,7 @@ export default function CreatePost() {
           name="title"
           id="title"
           placeholder="i.e felt cute to post!"
-          maxLength={20}
+          maxLength={200}
           value={form.title || ""}
           onChange={handleFormChange}
           min={1}
@@ -102,7 +170,7 @@ export default function CreatePost() {
         )} */}
 
         <label className="createpost_label" htmlFor="body">
-          Blog Body
+          Post Body
         </label>
         <textarea
           className="createpost_input createpost_textarea"
@@ -117,9 +185,26 @@ export default function CreatePost() {
           required
         />
 
-        <button className="createpost_button" type="submit">
-          Create Blog
+        <button
+          className="createpost_button"
+          type="submit"
+          disabled={!isFormValid || hasSubmitted}
+        >
+          {hasSubmitted ? "uploading...." : `Create Post`}
         </button>
+        {/* conditionally render this div if hit any err during post creation */}
+        {postCreationErr && (
+          <div
+            style={{
+              color: "red",
+              padding: "0.5rem",
+              textAlign: "center",
+              fontSize: "0.9rem",
+            }}
+          >
+            ❌ {postCreationErr}
+          </div>
+        )}
       </form>
     </div>
   );

@@ -2,6 +2,7 @@ package controller
 
 import (
 	"database/sql"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -20,7 +21,7 @@ type PostController struct {
 	PushNotificationService *services.PushNotificationService
 }
 
-//  func that creates intance of type PostController which -> stores handler method belong to post related 
+//  func that create  instance of type PostController which -> stores handler method belong to post related 
 func NewPostController(postDbModel *services.PostDBModel,pushNotificationService *services.PushNotificationService) *PostController {
 	return &PostController{
 		PostDbModel: postDbModel,
@@ -261,7 +262,7 @@ func(p *PostController) GetPostCountByUserID(c *gin.Context) {
 			return
 		}
 		
-		slog.String("info :","req successfull")
+	slog.String("info :","req successfull")
 	c.JSON(http.StatusOK,utils.CommentSuccessResponse{
 		Ok: true,
 		Status: "successfully post count",
@@ -269,5 +270,144 @@ func(p *PostController) GetPostCountByUserID(c *gin.Context) {
 		
 	})
 
+}
 
+
+// handles batch get request
+func(p *PostController) FeedBatchRequest(c *gin.Context) {
+
+	// must validate req's token first with fetched userID by auth middleware
+	userID := c.GetUint("user_id") 
+	if userID == 0 {
+		errMsg := "userID not found,failed to create Post"
+		code := http.StatusUnauthorized
+		slog.Error(errMsg,"error",errMsg)
+		c.AbortWithStatusJSON(code,utils.ErrResponse{
+			Status: errMsg,
+			Ok: false,
+		})
+		return
+	}
+
+	// fetch qpramas like limit,nextCursor from the request
+	limitStr := c.Query("limit")
+	nextCursorStr := c.Query("nextCursor")
+
+	limit,err := strconv.Atoi(limitStr)
+	if err!= nil {
+		errMsg := "failed to parse limit,failed to fetch batch of Posts"
+		code := http.StatusBadRequest
+		slog.Error(errMsg,"error",errMsg)
+		c.AbortWithStatusJSON(code,utils.ErrResponse{
+			Status: errMsg,
+			Ok: false,
+		})
+		return
+	}
+	if limit == 0 {
+		errMsg := "limit not found or invalid,failed to fetch batch of Posts"
+		code := http.StatusBadRequest
+		slog.Error(errMsg,"error",errMsg)
+		c.AbortWithStatusJSON(code,utils.ErrResponse{
+			Status: errMsg,
+			Ok: false,
+		})
+		return
+	}
+
+	// invoke method that belongs to the PostDBModel to fetch a batch request providing these
+	batch,err := p.PostDbModel.GetFeedByBatches(limit,nextCursorStr)
+	if err!= nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError,utils.BatchResponse{
+			Ok: false,
+			Status: "Internal server error",
+			HasMore: false,
+			Batch: nil,
+			NextCursor: "",
+		})
+		return 
+	}
+	
+	// for nextCursor --> need to extract last postID which was fetched
+	var nextCursor string
+	var hasMore bool
+
+	// posts are more than 0 , batch exists
+	if len(batch) > 0  {
+		//* extracting from batch[EL], El => lastEL <- -1 for index match,'s ID
+		nextCursor = fmt.Sprint(batch[len(batch)-1].ID)
+		hasMore = len(batch) == limit // when no of current batch elements equals to 
+	}
+
+	
+
+	c.JSON(http.StatusOK,utils.BatchResponse{
+		Ok: true,
+		Status:"successfully loaded batch",
+		HasMore: hasMore,
+		Batch:batch,
+		NextCursor: nextCursor,
+	})
+
+
+
+}
+
+
+
+// postID fetched from url throgh the client - must be called on url - /api/feed/post/comments/:postid
+func(cC*CommentController) GetCommentsCountByPostID(c *gin.Context) {
+
+	userID := c.GetUint("user_id") 
+	if userID == 0 {
+		errMsg := "userID not found,failed to create Post"
+		code := http.StatusUnauthorized
+		slog.Error(errMsg,"error",errMsg)
+		c.AbortWithStatusJSON(code,utils.ErrResponse{
+			Status: errMsg,
+			Ok: false,
+		})
+		return
+	}
+
+	
+	// fetching postID from url for which ->post we are looking into to fetch comment count of that post
+	idstr := c.Param("postid")
+	postID,err:= strconv.Atoi(idstr)
+	if err!= nil{
+		// verbose err handeling needed here
+		return
+	}
+
+	// single func for testing
+	var commentCount struct {
+		Count uint
+	}
+	res := cC.CommentDbModel.DB.QueryRow(`select count(*) as comments_count from comments c
+    where post_id=$1  
+    group by post_id`,uint(postID))
+	
+	err = res.Scan(
+		&commentCount.Count,
+	)
+
+	if err!= nil {
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusOK,gin.H{
+				"CommentCount" : 0,
+				"Ok" : true,
+			})
+			return
+		}
+		c.AbortWithStatusJSON(http.StatusInternalServerError,gin.H{
+			"CommentCount" : nil,
+			"Ok" : false,
+		})
+		return 
+	}
+
+	c.JSON(http.StatusFound,gin.H{
+		"CommentCount" : commentCount.Count,
+		"Ok" : true,
+	})
 }

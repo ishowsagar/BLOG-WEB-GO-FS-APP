@@ -1,11 +1,12 @@
 import FeedPost from "./FeedPost";
 import { usePostContext } from "../Layout/MainLayout";
+import "./Feed.css";
 export default function Feed() {
   // todo - rendering each Post
 
-  const { postData } = usePostContext();
+  const { postBatch, bottomRef } = usePostContext();
 
-  const storiesElements = postData.map((post) => {
+  const storiesElements = postBatch.map((post) => {
     // const displayUsername = post.username
     //   ? post.username
     //   : `user${post.userId}`;
@@ -24,6 +25,19 @@ export default function Feed() {
       {/* rednering each post */}
       <div className="Site_stories_wrapper">{storiesElements}</div>
       <FeedPost />
+      {/* observer observes on ref, and observing where ref is being attached, means this div */}
+      <div
+        style={{
+          marginLeft: "40px",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          padding: "2rem",
+        }}
+        ref={bottomRef}
+      >
+        <div className="fidget-spinner"></div>
+      </div>
     </>
   );
 }

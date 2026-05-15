@@ -10,6 +10,7 @@ export default function EachPost() {
   const [postComments, setPostComments] = useState([]); // for storing all comments in [:]
   const [postCommentsErr, setPostCommentsErr] = useState("");
   const [postedComment, setPostedComment] = useState({});
+  const [postCommentsCount, setPostCommentsCount] = useState(0);
   //   fetch id from url
   const { id } = useParams(); //* for fetching urlParams from /feed/:id
   const token = localStorage.getItem("token");
@@ -18,11 +19,42 @@ export default function EachPost() {
 
   //  make api call to that url to fetch that post exactly
   //   ! never call async on wrapper func but func inside it
+  useEffect(
+    (eachPost) => {
+      //* server controller method will send response{struct has ok bool to check if it was a sucess} from this url having id in its url param
+      if (!id || !token) return; // early return
+      const url = `http://localhost:8080/api/feed/post/${id}`; // if id and token exists✅
+      async function fetchEachPostData() {
+        try {
+          const req = await fetch(url, {
+            method: "GET",
+            //need to send token header on every req - all handlers validate it + auth middleware
+            headers: { Authorization: token },
+          });
+          const response = await req.json();
+          // console.log("feed status:", response.status, response);
+          // console.log(token);
+          // server sends response with data struct, check Ok boolean on it
+          if (!response.Ok) {
+            throw new Error("failed to load post");
+          }
+          //  if response was Ok
+          console.log("each post response loaded :", response.Post);
+          setEachPost(response.Post);
+          setPostLikesCount(response.Post?.like_count ?? 0);
+        } catch (err) {
+          console.log(err);
+        }
+      }
+      fetchEachPostData();
+    },
+    [id, token],
+  );
+
   useEffect(() => {
-    //* server controller method will send response{struct has ok bool to check if it was a sucess} from this url having id in its url param
     if (!id || !token) return; // early return
-    const url = `http://localhost:8080/api/feed/post/${id}`; // if id and token exists✅
-    async function fetchEachPostData() {
+    const url = `http://localhost:8080/api/feed/post/comments/${id}`; // if id and token exists✅
+    async function fetchPostCommentsCount() {
       try {
         const req = await fetch(url, {
           method: "GET",
@@ -30,22 +62,19 @@ export default function EachPost() {
           headers: { Authorization: token },
         });
         const response = await req.json();
-        // console.log("feed status:", response.status, response);
-        // console.log(token);
-        // server sends response with data struct, check Ok boolean on it
+        console.log("comments count response before OK :", response);
         if (!response.Ok) {
-          throw new Error("failed to load post");
+          throw new Error("failed to get post comments count");
         }
         //  if response was Ok
-        console.log("each post response loaded :", response.Post);
-        setEachPost(response.Post);
-        setPostLikesCount(response.Post?.like_count ?? 0);
+        console.log("comments count response after OK :", response.CommentCount);
+        setPostCommentsCount(response.CommentCount);
       } catch (err) {
         console.log(err);
       }
     }
-    fetchEachPostData();
-  }, [token, id]);
+    fetchPostCommentsCount();
+  }, [id, token]);
 
   // & toggle comment box -> conditionally render comment box
   function handleCommentBox() {
@@ -104,24 +133,21 @@ export default function EachPost() {
 
   // load all comments from - "/api/feed/comments/:postid"
   useEffect(() => {
-    async function loadAllComments(eachPost) {
+    // Only load comments when we have a post id and a token
+    if (!eachPost || !eachPost.id || !token) return;
+
+    async function loadAllComments() {
       console.log("comments loaded");
-      // providing id from fetched post from current url in the eachPost
       const commentsUrl = `http://localhost:8080/api/feed/comments/${eachPost.id}`;
       try {
         const req = await fetch(commentsUrl, {
           method: "GET",
-          //need to send token header on every req - all handlers validate it + auth middleware
           headers: { Authorization: token },
         });
         const response = await req.json();
-        // console.log("feed status:", response.status, response);
-        // console.log(token);
-        // server sends response with data struct, check Ok boolean on it
         if (!response.Ok) {
           throw new Error("failed to load post comments");
         }
-        //  if response was Ok
         console.log(
           `all comments are loaded of this post ${eachPost.id}`,
           response,
@@ -132,11 +158,10 @@ export default function EachPost() {
         console.log(err);
       }
     }
-    // invoke it
-    // bug - it was returning undefined when fetching data from eachPost.id cause -> can't access directly its inside useEffect block - can't access variables inside useEffect inside func
-    // fixed - passed generic parameter and while invoking with agruemented 'eachPost' state data - at this level var is accessible and passed down with ease
-    loadAllComments(eachPost);
-  }, [postComment]);
+
+    loadAllComments();
+    // Re-run when the post id changes or after posting a new comment
+  }, [eachPost.id, postedComment, token]);
 
   if (!eachPost || eachPost.length === 0) {
     return <div style={{ fontSize: "20px", padding: "2rem" }}>loading...</div>;
@@ -220,7 +245,9 @@ export default function EachPost() {
       <div className="feedpost_footer">
         <span className="feedpost_likes">{postLikesCount} likes</span>
         <span onClick={handleShowAllComments} className="feedpost_comments">
-          View all comments
+          {postCommentsCount < 2
+            ? `View ${postCommentsCount} Comment`
+            : `View All ${postCommentsCount} Comments`}
         </span>
       </div>
       {/* this is how we toggle comment box on off using state flipping */}

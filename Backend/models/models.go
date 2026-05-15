@@ -119,3 +119,24 @@ type Follow struct {
 // 	Posts uint `json:"posts" gorm:"constraint:onUpdate:CASCADE,onDelete:CASCADE;"`
 // }
 
+
+// message type data struct
+type Message struct {
+	ID uint `gorm:"primarykey" json:"id"`
+	SenderID uint `json:"sender_id"`
+	RecieverID uint `json:"reciever_id"`
+	Content string `json:"content"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+
+
+
+type ClientNotifyPayload struct {
+	SenderID uint `json:"sender_id"`
+	RecieverID uint `json:"reciever_id"`
+	Type string `json:"type"`
+	Content string `json:"content"`
+	PostID uint `json:"post_id"`
+	CreatedAt time.Time `json:"created_at"`
+}

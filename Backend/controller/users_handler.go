@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"time"
 
 	dumper "github.com/goforj/godump"
@@ -432,6 +433,62 @@ func(u *UserController) FetchProfileData(c *gin.Context) {
 	})
 }
 
+
+
+// for fetching data from Url param ID
+func(u *UserController) FetchProfileDataByURlParamID(c *gin.Context) {
+
+	// fetching client userID from req -> as set by auth middleware on every req by proccessing header token
+	userID := c.GetUint("user_id")
+	if userID == 0 {
+		errMsg := "userID not found,failed to get profile data"
+		code := http.StatusUnauthorized
+		slog.Error(errMsg,"error",errMsg)
+		c.AbortWithStatusJSON(code,utils.ErrResponse{
+			Status: errMsg,
+			Ok: false,
+		})
+		return
+	}
+
+	// fetching userID from url param
+	profileeIDStr := c.Param("userid") // client would request on url passing userid in url params
+	profileeID,err := strconv.Atoi(profileeIDStr)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest,utils.ErrResponse{
+				Status: "invalid user id",
+				Ok: false,
+		})
+		return	
+	}
+
+	// client userID fetched successfully
+	foundUser,err := u.UserDbModel.GetUserByUserID(uint(profileeID))
+	if err != nil {
+		if err == sql.ErrNoRows {
+			c.AbortWithStatusJSON(http.StatusNotFound,utils.ErrResponse{
+				Status: "user not found",
+				Ok: false,
+		})
+		return
+		}
+		c.AbortWithStatusJSON(http.StatusServiceUnavailable,utils.ErrResponse{
+				Status: "failed to check if user exists or not",
+				Ok: false,
+		})
+		return	
+	}
+
+
+	//  if userFound query was successfull and resulting struct also not nil
+	c.JSON(http.StatusFound,utils.UserSuccessResponse{
+		Ok: true,
+		Status: "user data fetched successfully",
+		Code: http.StatusFound,
+		User: *foundUser,
+	})
+}
+
 // method that belongs to the userController type -> which clears the cached token from redis db -> must be invoked with Auth header
 func(u *UserController) WipeCachedToken(c *gin.Context) {
 
@@ -458,3 +515,63 @@ func(u *UserController) WipeCachedToken(c *gin.Context) {
 	})
 
 }
+
+
+// since it will be a search -> 'name' would be in qparamy
+func(u *UserController) FindUsersByNAME(c *gin.Context) {
+
+	// active client validation with auth middleware which -> checks for token in req's header
+	userID := c.GetUint("user_id")
+	if userID == 0 {
+		errMsg := "userID not found,failed to search users"
+		code := http.StatusUnauthorized
+		slog.Error(errMsg,"error",errMsg)
+		c.AbortWithStatusJSON(code,utils.ErrResponse{
+			Status: errMsg,
+			Ok: false,
+		})
+		return
+	}
+
+	// search query -> ?name=X
+	name := c.Query("name")
+
+	// fetch users
+	usersFound,err := u.UserDbModel.FindUsersByName(name)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusServiceUnavailable,utils.ErrResponse{
+			Ok: false,
+			Status: "failed to search user",
+		})
+		return 
+	}
+
+	if usersFound == nil{
+		c.AbortWithStatusJSON(http.StatusNotFound,utils.ErrResponse{
+			// todo - had to check to send ok as true if not found but search was a success operation
+			Ok: false,
+			Status: "no user found",
+		})
+		return
+	}
+
+	// if successfully fetched all users
+	c.JSON(http.StatusOK,utils.SuccessResponse{
+		Ok: true,
+		Status: "User found",
+		Data: usersFound,
+	})
+}
+
+
+// @ next Implementation
+// - add tx atomic method to fetch user to follow -> render everything related to him,
+//  - when a comment is posted -> fetch user_id and from there user data 
+//  - post like count on feed post, not each post 
+
+
+// @ Advance routing
+// - seperate sign up flow pages
+// - search and display users in trays in search.jsx - need api corresponding models methods to fetch user profiles - D
+// - follow unfollow -> by adding a seperate nested injected page - when searched - clicked - load page of his info and follow unfollow there - Done ✅
+// - for upper thing need single atomic transaction if needed  - done with multi staged events✅
