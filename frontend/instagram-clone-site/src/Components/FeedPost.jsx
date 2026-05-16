@@ -19,7 +19,7 @@ export default function FeedPost() {
                 src={`https://i.pravatar.cc/150?img=${post.user_id}`}
                 alt="avatar"
               />
-              <span className="feedpost_username">user-{post.user_id}</span>
+              <span className="feedpost_username">{post.name}</span>
               <span className="feedpost_time">{post.created_at}</span>
             </div>
             <h2 className="feedpost_title">Title - {post.title}</h2>

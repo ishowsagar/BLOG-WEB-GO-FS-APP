@@ -56,33 +56,25 @@ token => {
 ..
 
 Select 
-	    id,user_id,title,content,coalesce(like_count,0),created_at,updated_at
+	 p.id,p.user_id,p.title,p.content,p.created_at,p.updated_at,coalesce(l.like_count,0) as like_count,u.name
 	from
 		posts p
-	left join (
-		select
-			post_id,sum(like_count) as like_count
-		from
-			likes l
-		group by   
-             post_id
-		) l
-		On
-			l.post_id = p.id
-        left join (
-            select
-                count(post_id)
-            from
-                comments c
-            group by 
-                post_id
-        ) c 
-        on
-            c.post_id = l.post_id
-				where 
-                    p.id < 9999
-				order by 
-                    p.id desc
+	left join
+    Users u
+     on
+    u.id = p.user_id
+    left join (
+        select 
+            post_id,sum(like_count) as like_count
+            from 
+                likes l
+            group by post_id
+    ) l
+    on l.post_id = p.id
+    where 
+        p.id < 9999
+    order by 
+        p.id desc
 limit 4 ;
 
 

@@ -16,6 +16,20 @@ type CommentDBModel struct {
 	DB *sql.DB
 }
 
+// type which stores comments data with name 
+type CommentsData struct {
+	ID uint `json:"id" gorm:"primaryKey"`
+	 // for gorm refrence purpose
+	User models.User `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:UserID;references:ID"`
+	Post models.Post `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:PostID;references:ID"` //bug - if we delete post, we had to delete data associated with that ids
+	UserID uint `json:"user_id" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:UserID;references:ID"`
+	PostID	uint `json:"post_id"  gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:PostID;references:ID"`
+	Content string `json:"content" binding:"required"`
+	CreatedAt time.Time `json:"created_at" time_format="2006-01-02"`
+	UpdatedAt time.Time `json:"updated_at" time_format="2006-01-02"`
+	Name string `json:"name"` // need json fields only cause we sending data and it should be mapped with json tags for ease
+}
+
 //  returns the instance of type CommentDBModel
 func NewCommentDbModel(db *sql.DB) *CommentDBModel {
 	return &CommentDBModel{
@@ -155,16 +169,20 @@ func(c *CommentDBModel) DeleteCommentByUserID(userID uint,postID uint) error {
 
 
 // loads all comments of passed postID
-func(c *CommentDBModel) LoadAllCommentsOfPost(postID uint) ([]*models.Comment,error) {
+func(c *CommentDBModel) LoadAllCommentsOfPost(postID uint) ([]*CommentsData,error) {
 
 	ctx,timeout := context.WithTimeout(context.Background(),utils.DbTimeoutDuration)
 	defer timeout()
 
 	query := `
 		Select
-			id,user_id,post_id,content,created_at,updated_at
+			c.id,c.user_id,c.post_id,c.content,c.created_at,c.updated_at,u.name
 		from
-			comments
+			comments c
+		Left join
+			users u
+		on
+			u.id = c.user_id
 		where 
 			post_id=$1
 	`
@@ -176,18 +194,20 @@ func(c *CommentDBModel) LoadAllCommentsOfPost(postID uint) ([]*models.Comment,er
 
 	defer resRows.Close() // must close
 
-	var comments []*models.Comment
+	var comments []*CommentsData
 	for resRows.Next() {
-		var comment models.Comment
+		var comment CommentsData
 		// going through each entry got from res
 		err = resRows.Scan(
 			// unloading each res entry into comment var struct that holds same type struct data
+			// id,user_id,post_id,content,created_at,updated_at,u.name
 			&comment.ID,
 			&comment.UserID,
 			&comment.PostID,
 			&comment.Content,
 			&comment.CreatedAt,
 			&comment.UpdatedAt,
+			&comment.Name,
 		)
 		// * this could return empty comment struct 
 		if err != nil {

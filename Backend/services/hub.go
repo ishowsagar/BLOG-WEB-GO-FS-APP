@@ -71,16 +71,19 @@ func(h *Hub) RunService() {
 				}
 			
 		// if payload is redirected to chan <- which has client data
-			case notification := <- h.Broadcast : // if something is redirected to this chan
+			case msg := <- h.Broadcast : // if something is redirected to this chan
 				// then we check who send and where to and got -> redirect there to its send chan
 
 				// by looping over each ranged client to check which matches -> redirects to its send chan which accepts same type of data struct 
 				for client := range h.Clients {
-					// Broadcast to all if RecieverID is 0, otherwise send to specific client
-					if notification.RecieverID == 0 || notification.SenderID == client.ID || notification.RecieverID == client.ID  {
-						// if any matches, means it is in clients 
-						client.Send <- notification
-					} 
+					// sender sends and reader sends to broadcast chan 
+					//& checking -> if there exists a client in the active clients whose id matches to whom msg is redirected for
+					if client.ID == msg.RecieverID {
+						// * redirecting msg to his send chan which recieves the msg in writer functio & writes to it by writeJson response
+						client.Send<- msg // since both clients have both readers/writer activated, they keep checking and if something expected comes,write response
+					
+						// todo - now next step would be to diplay user name, not just id
+					}
 				}
 			
 		

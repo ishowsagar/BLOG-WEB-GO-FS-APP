@@ -274,9 +274,10 @@ func(cC *CommentController) LoadPostComments(c *gin.Context) {
 		return
 	}
 	
+	// fix - changed to send name too not just user.id of person who is commenting
 	// might need err handeling for nil res - if query was a success operation but nothing returned so only nil data struct returned from db query call
 	if comments == nil {
-		comments = []*models.Comment{} //empty on that post, not err
+		comments = []*services.CommentsData{} //empty on that post, not err
 	}
 
 	c.JSON(http.StatusOK,utils.CommentSuccessResponse{

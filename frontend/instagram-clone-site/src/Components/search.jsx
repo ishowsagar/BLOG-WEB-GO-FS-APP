@@ -447,9 +447,9 @@ export default function Search() {
 
           <article className="search_card search_card_full">
             <p className="search_card_label">Search results</p>
-            <h2 className="search_card_title">Results will appear here</h2>
+            <h2 className="search_card_title">Powered BY Postgres DB</h2>
             <p className="search_empty_state">
-              Connect this panel to your backend search endpoint, then render
+              Handlers call those search endpoint, then render
               posts, accounts, or reels depending on the selected tab:{" "}
               <strong>{activeFilter}</strong>.
             </p>

@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// bug -> header overiding problem
+// bug -> header overiding problems
 func SlogLoggerMiddlewareFunction() gin.HandlerFunc {
 
 	return func(c *gin.Context) {

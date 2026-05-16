@@ -16,6 +16,23 @@ type PostDBModel struct {
 	db *sql.DB
 }
 
+// type for joined post data with user and likes details
+type BatchPost struct {
+	ID uint `json:"id" gorm:"primaryKey"`
+	// foregein key refs for corelation
+	User models.User `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:UserID;references:ID"`// gorm ref
+	UserID uint `json:"user_id" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:UserID;references:ID"`
+	Title string `json:"title" binding:"required"`
+	Content string `json:"content" binding:"required"`
+	LikeCount uint `json:"like_count" gorm:"-"`
+	CreatedAt time.Time `json:"created_at" time_format="2006-01-02"`
+	UpdatedAt time.Time `json:"updated_at" time_format="2006-01-02"`
+	Name string `json:"name"`	
+}
+
+
+
+
 // func that returns instance of type PostDbModel -> that stores methods of post related methods 
 func NewPostDbModel(db *sql.DB) *PostDBModel {
 	return &PostDBModel{
@@ -238,7 +255,7 @@ func(p *PostDBModel) GetPostCountForAUser(userId uint) (int,error) {
 }
 
 // retrieves posts by limit asked for 
-func(p *PostDBModel) GetFeedByBatches(limit int,nextCursor string) (posts []*models.Post,err error) {
+func(p *PostDBModel) GetFeedByBatches(limit int,nextCursor string) (posts []*BatchPost,err error) {
 	ctx,timeout := context.WithTimeout(context.Background(),utils.DbTimeoutDuration)
 	defer timeout()
 
@@ -247,22 +264,27 @@ func(p *PostDBModel) GetFeedByBatches(limit int,nextCursor string) (posts []*mod
 		nextCursor = "999999"
 	}
 	query := `
-		Select 
-			p.id,p.user_id,p.title,p.content,p.coalesce(like_count,0),p.created_at,p.updated_at
-		from
-			posts p
-		left join (
-			select
-				post_id,sum(like_count) as like_count
-			from
-				likes l
-			group by post_id
-		) l
-		On
-			l.post_id = p.id
-				where p.id < $1
-				order by p.id desc
-		limit $2
+	Select 
+	 	p.id,p.user_id,p.title,p.content,p.created_at,p.updated_at,coalesce(l.like_count,0) as like_count,coalesce(u.name,'instaPowerUser')
+	from
+		posts p
+	left join
+    Users u
+    On
+    u.id = p.user_id
+    Left join (
+        select 
+            post_id,sum(like_count) as like_count
+            from 
+                likes l
+            group by post_id
+    ) l
+    on l.post_id = p.id
+    where 
+        p.id < $1
+    order by 
+        p.id desc
+	limit $2 
 	`
 
 	// since data will be fetched as desc order, so like if nextCursor is 20, we load posts less than 20,
@@ -274,17 +296,19 @@ func(p *PostDBModel) GetFeedByBatches(limit int,nextCursor string) (posts []*mod
 
 	defer resRows.Close()
 
-	var postsBatch []*models.Post
+	var postsBatch []*BatchPost
 	for resRows.Next() {
-		var post models.Post
+		var post BatchPost
 		err := resRows.Scan(
+			// p.id,p.user_id,p.title,p.content,p.created_at,p.updated_at,coalesce(l.like_count,0) as like_count,u.name
 		&post.ID,
 		&post.UserID,
 		&post.Title,
 		&post.Content,
-		&post.LikeCount,
 		&post.CreatedAt,
 		&post.UpdatedAt,
+		&post.LikeCount,
+		&post.Name,
 	) 
 
 	if err!= nil {
@@ -294,4 +318,69 @@ func(p *PostDBModel) GetFeedByBatches(limit int,nextCursor string) (posts []*mod
 	}
 
 	return postsBatch,nil
+}
+
+
+
+//  method that belongs to the PostDbModel which -> fetch all posts associted with user
+func(p *PostDBModel) GetPostsOfAnyUserByUserID(userID uint) ([]*BatchPost,error) {
+
+	ctx,timeout := context.WithTimeout(context.Background(),utils.DbTimeoutDuration)
+	defer timeout()
+
+
+	query := `
+		SELECT
+			p.id,p.user_id,p.title,p.content,p.created_at,p.updated_at,
+			u.name,
+			coalesce(l.like_count, 0) as like_count
+		FROM
+			posts p
+		left join
+			users u
+		on
+			u.id = p.user_id
+		left join
+		(
+			select
+				 post_id,count(like_count) as like_count
+			from
+				likes
+			group by
+				post_id
+		)
+			l
+		on 
+			l.post_id = p.id
+		where
+			p.user_id = $1;
+
+	`
+
+	resRows,err := p.db.QueryContext(ctx,query,userID)
+	if err != nil {
+		return nil,err
+	}
+
+	var associatedPosts []*BatchPost
+	for resRows.Next() {
+		var post BatchPost
+		err = resRows.Scan(
+			&post.ID,
+			&post.UserID,
+			&post.Title,
+			&post.Content,
+			&post.CreatedAt,
+			&post.UpdatedAt,
+			&post.Name,
+			&post.LikeCount,
+		)
+		if err != nil {
+			return nil,err
+		}
+
+		associatedPosts = append(associatedPosts, &post)
+	}
+
+	return associatedPosts,nil
 }

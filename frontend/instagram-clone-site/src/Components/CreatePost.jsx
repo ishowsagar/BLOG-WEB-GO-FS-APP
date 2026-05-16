@@ -103,10 +103,10 @@ export default function CreatePost() {
 
     console.log("submitting post");
     setHasSubmitted(true);
-   
+
     await CreatePost();
     // add some delay before navigating in seconds to the home feed
-    await addDelay(1000)
+    await addDelay(1000);
     naviagteBackToFeed("/"); // send client to home feed
   }
 

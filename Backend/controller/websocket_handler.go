@@ -128,6 +128,8 @@ func(ws *WSController) ServeRealtimeNotification(c *gin.Context) {
 		return
 	}
 
+	slog.Info("websockets connection started for the active client✅")
+
 	// * active client is created
 
 	// make client
@@ -137,6 +139,8 @@ func(ws *WSController) ServeRealtimeNotification(c *gin.Context) {
 		Hub: ws.hub,
 		Send: make(chan *services.ClientNotifyPayload),
 	}
+
+	slog.Info("Client stored in active clients successfully⚡","clientID -",client.ID)
 	
 
 	// register it as active client -> redirect client there
@@ -146,6 +150,8 @@ func(ws *WSController) ServeRealtimeNotification(c *gin.Context) {
 
 	// fire both writer & reader go routines
 	// reader uses decoder and writer uses encoder in underlying technology
+
+	// frontend sends data -> read by reader -> sends to broadcast chan -> which checks target from active clients -> sends to that client and done by writing to it
 	go client.MessageReader(ws.db) // sends the recieved payload of type notifyPostNoti to broadcast chan -> braodcast chan shares to client send where it is wriiten to ws conn client
 	go client.MessageWriter() // sends response to the client -> back to the browser
 	// return

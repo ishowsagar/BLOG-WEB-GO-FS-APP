@@ -411,3 +411,44 @@ func(cC*CommentController) GetCommentsCountByPostID(c *gin.Context) {
 		"Ok" : true,
 	})
 }
+
+// get all posts of active client
+func(p *PostController) GetAllPostsOfClient(c *gin.Context) {
+
+	activeClientUserID := c.GetUint("user_id")
+	if activeClientUserID  == 0 {
+		c.AbortWithStatusJSON(http.StatusUnauthorized,utils.ErrResponse{
+			Ok: false,
+			Status: "Login expired",
+		})
+		return
+	}
+
+	posts,err := p.PostDbModel.GetPostsOfAnyUserByUserID(activeClientUserID)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusServiceUnavailable,utils.ErrResponse{
+			Ok: false,
+			Status: "failed to fetch user posts",
+		})
+		return 
+	}
+
+	//  if query was successfull , but no posts were retrieved
+	if posts == nil {
+		c.AbortWithStatusJSON(http.StatusNotFound,utils.ErrResponse{
+			Ok: false,
+			Status: "no post found",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK,utils.SuccessResponse{
+		Ok: true,
+		Status: "post fetched successfully for the active client",
+		Data: posts,
+	})
+
+}
+
+
+

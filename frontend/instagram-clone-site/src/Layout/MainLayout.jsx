@@ -1,13 +1,16 @@
 import Header from "../Components/Header";
 import Footer from "../Components/Footer";
 import Sidebar from "../Components/Sidebar";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState, createContext, useContext, useRef } from "react";
 import { useWebSocket } from "../hooks/useWebSocket";
 const postDataContext = createContext();
 
 export default function MainLayout() {
   // window.location.reload();
+  const location = useLocation();
+  const isAboutRoute = location.pathname === "/about";
+
   const [postData, setPostData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [notification, setNotification] = useState(null);
@@ -65,7 +68,7 @@ export default function MainLayout() {
     let hideTimer = null;
 
     const unsubscribe = subscribeNotifications((notification) => {
-      console.log("🔔 New notification:", notification);
+      console.log("ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ¢â‚¬Â New notification:", notification);
       setNotification(notification);
 
       if (hideTimer) {
@@ -80,18 +83,18 @@ export default function MainLayout() {
       switch (notification.type) {
         case "post_created":
           console.log(
-            `📝 New post from user ${notification.sender_id}:`,
+            `ÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã‚Â New post from user ${notification.sender_id}:`,
             notification.content,
           );
           break;
         case "like_posted":
           console.log(
-            `❤️ User ${notification.sender_id} liked post ${notification.post_id}`,
+            `ÃƒÂ¢Ã‚ÂÃ‚Â¤ÃƒÂ¯Ã‚Â¸Ã‚Â User ${notification.sender_id} liked post ${notification.post_id}`,
           );
           break;
         case "comment_posted":
           console.log(
-            `💬 User ${notification.sender_id} commented on post ${notification.post_id}:`,
+            `ÃƒÂ°Ã…Â¸Ã¢â‚¬â„¢Ã‚Â¬ User ${notification.sender_id} commented on post ${notification.post_id}:`,
             notification.content,
           );
           break;
@@ -264,13 +267,18 @@ export default function MainLayout() {
       return;
     }
 
+    if (isAboutRoute) {
+      setLoading(false);
+      return;
+    }
+
     LoadBatchesFeed();
-  }, [token]);
+  }, [token, isAboutRoute]);
 
   // observer
   // observer for client's scroll - useEffect mounts on site loads
   useEffect(() => {
-    if (!bottomRef.current) return;
+    if (!bottomRef.current || isAboutRoute) return;
     // Browser API which tells -> if client has left the described viewport
     const observer = new IntersectionObserver((entries) => {
       // if entries arr's first el is in interaction
@@ -340,7 +348,7 @@ export default function MainLayout() {
   //   fetchData();
   // }, [token]);
 
-  if (loading) {
+  if (loading && !isAboutRoute) {
     return (
       <div
         style={{ textAlign: "center", marginTop: "4rem", fontSize: "1.5rem" }}
@@ -631,7 +639,7 @@ export default function MainLayout() {
                   marginBottom: "0.35rem",
                 }}
               >
-                New notification recieved📩
+                New notification recievedÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã‚Â©
               </div>
               <div style={{ fontWeight: 200, marginBottom: "0.25rem" }}>
                 {/* //* might need to fetch user by that userID to display its name and all */}
@@ -679,7 +687,10 @@ export default function MainLayout() {
 
 // export default function MainLayout() {
 //   // window.location.reload();
-//   const [postData, setPostData] = useState([]);
+//   const location = useLocation();
+  // const isAboutRoute = location.pathname === "/about";
+
+  // const [postData, setPostData] = useState([]);
 //   const [loading, setLoading] = useState(true);
 
 //   // const redirectToLoginPageIfTokenNotFound = useNavigate()
@@ -732,7 +743,7 @@ export default function MainLayout() {
 //     fetchData();
 //   }, [token]);
 
-//   if (loading) {
+//   if (loading && !isAboutRoute) {
 //     return (
 //       <div
 //         style={{ textAlign: "center", marginTop: "4rem", fontSize: "1.5rem" }}

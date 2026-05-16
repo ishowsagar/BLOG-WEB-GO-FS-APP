@@ -28,7 +28,7 @@ export default function Profile() {
       // fixed - added controller and repo's corresponding methods to fetch data sequentially
       //  need to pass userID to fetch data for that profile - user struct data type
       // frotend does not need to pass id, it will be fetched by backend to req data
-      const url = `http://localhost:8080/api/users/profile`;
+      const url = `http://localhost:8080/api/profile`;
       const reqMethod = "GET";
       try {
         const req = await fetch(url, {
@@ -46,7 +46,7 @@ export default function Profile() {
           setError(response.Status);
         }
 
-        setProfileData(response.User); //* if response was a success - storing resp in a state
+        setProfileData(response.Data); //* if response was a success - storing resp in a state
         console.log("user profile data :", response.User);
       } catch (err) {
         console.log(err);
@@ -72,6 +72,7 @@ export default function Profile() {
   //  fixed - now controller method on this route is returning those fields too
   const Username = `${profileData?.username}`;
   const Nickname = `${profileData?.nickname}`;
+  const postsCount = `${profileData?.post_count}`;
   const Bio = `${profileData?.bio}`;
 
   return (
@@ -87,7 +88,7 @@ export default function Profile() {
             <span>♪</span>
           </div>
           <div className="profile_stats profile_stats_row">
-            <span>2 posts</span>
+            <span>{postsCount} posts</span>
             <span>{followers}</span>
             <span>{followings}</span>
           </div>

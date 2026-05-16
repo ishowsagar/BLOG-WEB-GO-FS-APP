@@ -6,7 +6,7 @@ export default function Footer() {
           <nav className="footer_nav">
             <ul className="footer_nav_items">
               <li>
-                <a href="#">About</a>
+                <a href="about">About</a>
               </li>
               <li>
                 <a href="#">Help</a>

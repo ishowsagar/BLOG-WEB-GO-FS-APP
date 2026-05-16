@@ -15,42 +15,59 @@ export default function Sidebar() {
     <aside>
       <nav className="sidebar_nav">
         <ul className="sidebar_list_items">
-          
           <li>
             <img className="sidebar_icon" src={HomeIcon} />
-            <Link to="/">Home</Link>
+            <Link className="sidebar_link" to="/">
+              Home
+            </Link>
           </li>
           <li>
             <img className="sidebar_icon" src={SearchIcon} />
-            <Link to="/search">Search</Link>
+            <Link className="sidebar_link" to="/search">
+              Search
+            </Link>
           </li>
           <li>
             <img className="sidebar_icon" src={ExploreIcon} />
-            <Link to="/explore">Explore</Link>
+            <Link className="sidebar_link" to="/explore">
+              Explore
+            </Link>
           </li>
           <li>
             <img className="sidebar_icon" src={CreateIcon} />
-            <Link to="/create">Create</Link>
+            <Link className="sidebar_link" to="/create">
+              Create
+            </Link>
           </li>
           <li>
             <img className="sidebar_icon" src={ReelsIcon} />
-            <Link to="/reels">Reels</Link>
+            <Link className="sidebar_link" to="/reels">
+              Reels
+            </Link>
           </li>
           <li>
             <img className="sidebar_icon" src={MessagesIcon} />
-            <a href="#">Messages</a>
+            <a className="sidebar_link" href="#">
+              Messages
+            </a>
           </li>
           <li>
             <img className="sidebar_icon" src={NotificationsIcon} />
-            <a href="#">Notifications</a>
+            <a className="sidebar_link" href="#">
+              Notifications
+            </a>
           </li>
           <li>
             <img className="sidebar_icon" src={UserIcon} />
-            <Link to="/profile">Profile</Link>
+            <Link className="sidebar_link" to="/profile">
+              Profile
+            </Link>
           </li>
           <li>
             <img className="sidebar_icon" src={AiIcon} />
-            <a href="#">Denver AI</a>
+            <Link className="sidebar_link" to="denai">
+              Denver AI
+            </Link>
           </li>
         </ul>
       </nav>

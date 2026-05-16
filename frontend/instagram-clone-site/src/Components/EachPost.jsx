@@ -1,5 +1,27 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+  
+function formatRelativeTime(timestamp) {
+  if (!timestamp) return "just now";
+
+  const timeValue = new Date(timestamp).getTime();
+  if (Number.isNaN(timeValue)) return "just now";
+
+  const elapsedSeconds = Math.max(
+    0,
+    Math.floor((Date.now() - timeValue) / 1000),
+  );
+  if (elapsedSeconds < 60) return "just now";
+
+  const elapsedMinutes = Math.floor(elapsedSeconds / 60);
+  if (elapsedMinutes < 60) return `${elapsedMinutes}m`;
+
+  const elapsedHours = Math.floor(elapsedMinutes / 60);
+  if (elapsedHours < 24) return `${elapsedHours}h`;
+
+  const elapsedDays = Math.floor(elapsedHours / 24);
+  return `${elapsedDays}d`;
+}
 
 export default function EachPost() {
   const [eachPost, setEachPost] = useState([]);
@@ -48,7 +70,7 @@ export default function EachPost() {
       }
       fetchEachPostData();
     },
-    [id, token],
+    [id, token,postLikesCount],
   );
 
   useEffect(() => {
@@ -67,7 +89,10 @@ export default function EachPost() {
           throw new Error("failed to get post comments count");
         }
         //  if response was Ok
-        console.log("comments count response after OK :", response.CommentCount);
+        console.log(
+          "comments count response after OK :",
+          response.CommentCount,
+        );
         setPostCommentsCount(response.CommentCount);
       } catch (err) {
         console.log(err);
@@ -213,89 +238,141 @@ export default function EachPost() {
   const avatarImg = eachPost.user_id
     ? `https://i.pravatar.cc/150?img=${eachPost.user_id}`
     : `https://i.pravatar.cc/150?u=${eachPost.id}`;
+  const commentComposerAvatar = avatarImg;
 
   return (
-    <>
-      <div className="feedpost_header">
-        <img className="feedpost_avatar" src={avatarImg} alt="avatar" />
-        <span className="feedpost_username">{displayUsername}</span>
-        <span className="feedpost_time">{eachPost.created_at}</span>
-      </div>
-      <img className="feedpost_image" src={displayImage} alt="post" />
-      <div className="feedpost_caption">
-        <h2 className="feedpost_title">{eachPost.title}</h2>
-        <p className="feedpost_body">{eachPost.content}</p>
-      </div>
-      <div className="feedpost_actions">
-        <span className="like-btn" onClick={handleLike} aria-label="like">
-          ❤️
-        </span>
-        <span
-          className="like-btn"
-          role="img"
-          aria-label="comment"
-          onClick={handleCommentBox}
-        >
-          💬
-        </span>
-        <span className="like-btn" role="img" aria-label="share">
-          ➡️
-        </span>
-      </div>
-      <div className="feedpost_footer">
-        <span className="feedpost_likes">{postLikesCount} likes</span>
-        <span onClick={handleShowAllComments} className="feedpost_comments">
-          {postCommentsCount < 2
-            ? `View ${postCommentsCount} Comment`
-            : `View All ${postCommentsCount} Comments`}
-        </span>
-      </div>
-      {/* this is how we toggle comment box on off using state flipping */}
-      {showCommentBox && (
-        <form
-          className="comment-form"
-          onSubmit={(e) => {
-            e.preventDefault();
-            console.log("new comment:", commentText);
-            // placeholder: wire API here later
-            setCommentText("");
-            setShowCommentBox(false);
-          }}
-        >
-          <textarea
-            placeholder="Write a comment..."
-            value={commentText}
-            onChange={(e) => setCommentText(e.target.value)}
-            rows={3}
-          />
-          <div className="comment-form__actions">
-            <button
-              onClick={handlePostComment}
-              type="submit"
-              disabled={!commentText.trim()}
-            >
-              Post
-            </button>
-          </div>
-        </form>
-      )}
-
-      {/* show all comments -> if this bool is true <-=> then render feed*/}
-      {showPostComments && (
-        <div className="post-comments-feed">
-          <p className="post-comments-feed__title">Comments</p>
-          <div className="post-comments-feed__list">
-            {postComments.map((comment) => (
-              <div className="post-comments-feed__item" key={comment.id}>
-                <span className="post-comments-feed__user">
-                  UserID : {comment.user_id}
-                </span>
-                <p>{comment.content}</p>
-              </div>
-            ))}
-          </div>
+    <div className="single-post feedpost_container-layout">
+      <div className="feedpost">
+        <div className="feedpost_header">
+          <img className="feedpost_avatar" src={avatarImg} alt="avatar" />
+          <span className="feedpost_username">{displayUsername}</span>
+          <span className="feedpost_time">{eachPost.created_at}</span>
         </div>
-      )}
-    </>
+        <img className="feedpost_image" src={displayImage} alt="post" />
+        <div className="feedpost_caption">
+          <h2 className="feedpost_title">{eachPost.title}</h2>
+          <p className="feedpost_body">{eachPost.content}</p>
+        </div>
+        <div className="feedpost_actions">
+          <span className="like-btn" onClick={handleLike} aria-label="like">
+            ❤️
+          </span>
+          <span
+            className="like-btn"
+            role="img"
+            aria-label="comment"
+            onClick={handleCommentBox}
+          >
+            💬
+          </span>
+          <span className="like-btn" role="img" aria-label="share">
+            ➡️
+          </span>
+        </div>
+        <div className="feedpost_footer">
+          <span className="feedpost_likes">{postLikesCount} likes</span>
+          <span onClick={handleShowAllComments} className="feedpost_comments">
+            {postCommentsCount < 2
+              ? `View ${postCommentsCount} Comment`
+              : `View All ${postCommentsCount} Comments`}
+          </span>
+        </div>
+
+        {showCommentBox && (
+          <form
+            className="comment-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              console.log("new comment:", commentText);
+              postComment(eachPost);
+              setCommentText("");
+              setShowCommentBox(false);
+            }}
+          >
+            <div className="comment-form__header">
+              <img
+                className="comment-form__avatar"
+                src={commentComposerAvatar}
+                alt="Your avatar"
+              />
+              <div>
+                <p className="comment-form__label">Write a comment</p>
+                <p className="comment-form__subtle">Keep it short and sharp.</p>
+              </div>
+            </div>
+            <textarea
+              className="comment-form__textarea"
+              placeholder="Write a comment..."
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              rows={3}
+            />
+            <div className="comment-form__actions">
+              <button type="submit" disabled={!commentText.trim()}>
+                Post comment
+              </button>
+            </div>
+          </form>
+        )}
+
+        {showPostComments && (
+          <div className="post-comments-feed">
+            <div className="post-comments-feed__header">
+              <p className="post-comments-feed__title">Comments</p>
+              <span className="post-comments-feed__count">
+                {postComments.length}
+              </span>
+            </div>
+            <div className="post-comments-feed__list">
+              {postComments.length === 0 ? (
+                <p className="post-comments-feed__empty">
+                  No comments yet. Be the first to leave one.
+                </p>
+              ) : (
+                postComments.map((comment) => {
+                  const commentAuthor =
+                    comment.name || `insta-user-${comment.user_id}`;
+                  const commentAvatarSeed =
+                    (comment.user_id || comment.id || 1) % 70;
+                  const commentAvatar = `https://i.pravatar.cc/150?img=${commentAvatarSeed || 1}`;
+
+                  return (
+                    <article
+                      className="post-comments-feed__item"
+                      key={comment.id}
+                    >
+                      <img
+                        className="post-comments-feed__avatar"
+                        src={commentAvatar}
+                        alt={`${commentAuthor} avatar`}
+                      />
+                      <div className="post-comments-feed__body">
+                        <div className="post-comments-feed__topline">
+                          <span className="post-comments-feed__user">
+                            {commentAuthor}
+                          </span>
+                          <span className="post-comments-feed__time">
+                            {formatRelativeTime(comment.created_at)}
+                          </span>
+                        </div>
+                        <p className="post-comments-feed__text">
+                          {comment.content}
+                        </p>
+                        <button
+                          type="button"
+                          className="post-comments-feed__reply"
+                        >
+                          Reply
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

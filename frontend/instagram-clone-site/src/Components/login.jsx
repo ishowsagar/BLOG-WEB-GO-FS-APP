@@ -96,6 +96,10 @@ export function Login() {
       // since client is redirected from auth with location set -> we can fetch that object data where client redierected
       //  since loc object have shared state and that store from - the asked location before auth had called
       // & we set that location to navigate back client & setting 'true' for replace so -> this is where route will be replaced finally
+      if (!whereClientComingFrom) {
+        navigateClient("/about", { replace: true });
+        return;
+      }
       navigateClient(whereClientComingFrom, {
         replace: true, // replacing current with asked,not this login, only if client had already asked url path that has to relaced otherwise ormaly replace with feed as that is default
       });

@@ -564,14 +564,53 @@ func(u *UserController) FindUsersByNAME(c *gin.Context) {
 }
 
 
+// get full fledged profile data  of active client
+func(u *UserController) FetchFullProfileData(c *gin.Context) {
+
+	activeClientUserID := c.GetUint("user_id")
+	if activeClientUserID  == 0 {
+		c.AbortWithStatusJSON(http.StatusUnauthorized,utils.ErrResponse{
+			Ok: false,
+			Status: "Login expired",
+		})
+		return
+	}
+
+	profileData,err := u.UserDbModel.FetchFullProfileData(activeClientUserID)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusServiceUnavailable,utils.ErrResponse{
+			Ok: false,
+			Status: "failed to fetch user profileData",
+		})
+		return 
+	}
+
+	//  if query was successfull , but no profileData were retrieved
+	if profileData == nil {
+		c.AbortWithStatusJSON(http.StatusNotFound,utils.ErrResponse{
+			Ok: false,
+			Status: "no profile data has found",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK,utils.SuccessResponse{
+		Ok: true,
+		Status: "successfully retrieved profile data for the active client",
+		Data: profileData,
+	})
+
+}
+
 // @ next Implementation
-// - add tx atomic method to fetch user to follow -> render everything related to him,
-//  - when a comment is posted -> fetch user_id and from there user data 
-//  - post like count on feed post, not each post 
+// - add tx atomic method to fetch user to follow -> render everything related to him, => done with fetching data of that user from users from its id ✅
+//  - when a comment is posted -> fetch user_id and from there user data  -> display commentor name => done by learning and implementing joining c with user as same id so from one big joined table -> fetch name ✅
+//  - post like count on feed post, not each post => done with joint tables✅
 
 
 // @ Advance routing
 // - seperate sign up flow pages
-// - search and display users in trays in search.jsx - need api corresponding models methods to fetch user profiles - D
+// - search and display users in trays in search.jsx - need api corresponding models methods to fetch user profiles - done ✅
 // - follow unfollow -> by adding a seperate nested injected page - when searched - clicked - load page of his info and follow unfollow there - Done ✅
 // - for upper thing need single atomic transaction if needed  - done with multi staged events✅
+// - fetch posts associated with active client ID and also for profile -> fetching for eachProfile -> redirected url where data is loaded -> fetch for that userID

@@ -87,7 +87,12 @@ func ServeRoutes(router *gin.Engine,masterController *controller.MasterControlle
 		api.GET("/post/count",masterController.PostController.GetPostCountByUserID)
 		api.POST("/post/create",masterController.PostController.CreatePost)
 		api.GET("/feed/post/:id",masterController.PostController.GetPostByID)
+		api.GET("/feed/client/posts",masterController.PostController.GetAllPostsOfClient)
 		api.DELETE("/post/:id",masterController.PostController.DeletePost)
+
+
+		// profile
+		api.GET("profile",masterController.UserController.FetchFullProfileData)
 
 		// like
 		api.POST("/like",masterController.LikeController.UpdateLike)
