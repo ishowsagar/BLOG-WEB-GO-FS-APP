@@ -1,0 +1,102 @@
+version: "3.8"
+
+services:
+  postgres_instagram_db:
+    image: postgres:15-alpine
+    container_name: instagram_db_container
+    env_file:
+      - ./Backend/.env
+    environment:
+      - POSTGRES_DB=instagramdb
+      - POSTGRES_USER=blog_admin
+      - POSTGRES_PASSWORD=blog
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - fs-go-app-network
+
+  redis_cache_micro_service:
+    image: redis:7-alpine
+    container_name: instagram_redis_cache_container
+    env_file:
+      - ./Backend/.env
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    networks:
+      - fs-go-app-network
+
+  rabbit_mq_notifications_micro_service:
+    image: rabbitmq:3-management
+    container_name: instagram_rabbitmq_container
+    env_file:
+      - ./Backend/.env
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    volumes:
+      - rabbitdata:/var/lib/rabbitmq
+    networks:
+      - fs-go-app-network
+
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: go_backend_server_container
+    env_file:
+      - ./Backend/.env
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_DBASE_NAME=instagramdb
+      - DB_USER=blog_admin
+      - DB_PASSWORD=blog
+      - DB_HOST=postgres_instagram_db
+      - DB_PORT=5432
+      - BINARY=BLOG_PROJECT_BINARY
+      - jwtSecretSigningKey=someSecretThatIsNotMeantToBeLeaked
+      - SERVER_PORT=8080
+      - REDIS_HOST_ADDR=redis_cache_micro_service:6379
+    depends_on:
+      - postgres_instagram_db
+      - rabbit_mq_notifications_micro_service
+      - redis_cache_micro_service
+    command: >
+      sh -c "
+      echo 'Waiting for postgres...' && while ! nc -z instagram_db_container 5432; do sleep 1; done;
+      echo 'Waiting for redis...' && while ! nc -z instagram_redis_cache_container 6379; do sleep 1; done;
+      echo 'Waiting for rabbitmq...' && while ! nc -z instagram_rabbitmq_container 5672; do sleep 1; done;
+      echo 'All infrastructure assets are online! Starting Go application layer...' &&
+      ./main
+      "
+    networks:
+      - fs-go-app-network
+
+  frontend:
+    build:
+      context: ./frontend/instagram-clone-site
+      dockerfile: dockerfile
+    container_name: react_frontend_container
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    networks:
+      - fs-go-app-network
+
+volumes:
+  pgdata:
+  redisdata:
+  rabbitdata:
+
+networks:
+  fs-go-app-network:
+    driver: bridge
+  

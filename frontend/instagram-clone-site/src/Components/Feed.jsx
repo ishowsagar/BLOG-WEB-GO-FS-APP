@@ -6,6 +6,14 @@ export default function Feed() {
 
   const { postBatch, bottomRef } = usePostContext();
 
+  if (!postBatch || !Array.isArray(postBatch)) {
+    return (
+      <div style={{ color: "#999", textAlign: "center", padding: "2rem" }}>
+        Loading feed...
+      </div>
+    );
+  }
+
   const storiesElements = postBatch.map((post) => {
     // const displayUsername = post.username
     //   ? post.username

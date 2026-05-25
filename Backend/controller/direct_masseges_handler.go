@@ -74,11 +74,31 @@ func (ws *WSController) HandleDMs(c *gin.Context) {
 	activeClient := &services.Client{
 		ID:                  userID,
 		Hub:                 ws.hub,
-		Send:                make(chan *services.ClientNotifyPayload),
+		Send:                make(chan *services.ClientNotifyPayload,100),
 		WebsocketConnection: wsConnection,
+		BroadcastStatus: make(chan *services.StatusPayload,50),
 	}
 
+	activeClient.OnDisconnect = func(userID uint) {
+		if ws.rabbitBroker != nil {
+			err = ws.rabbitBroker.UnbindUserFromExchange(userID)
+			if err != nil {
+				slog.Error("failed to unbind user in rabbit broker on disconnect","error",err)
+				return
+			}
+		}
+	}
+	slog.Info("Client stored in active clients successfully⚡","clientID -",activeClient.ID)
+
+	err = ws.rabbitBroker.BindUserToTheExchange(userID)
+	if err != nil {
+		slog.Error("failed to bib=nd user in the rabbitMQ broker's declared exchange","error",err)
+		return
+	}
+
+
 	ws.hub.ActiveClients <- activeClient
+	ws.hub.Online <- activeClient
 	go activeClient.MessageReader(ws.db)
 	go activeClient.MessageWriter()
 }

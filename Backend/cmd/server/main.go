@@ -7,10 +7,12 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
+	s3bucket "github.com/ishowsagar/go-blog-web-application/Aws-S3"
 	cache "github.com/ishowsagar/go-blog-web-application/Cache"
 	"github.com/ishowsagar/go-blog-web-application/controller"
 	"github.com/ishowsagar/go-blog-web-application/database"
-	"github.com/ishowsagar/go-blog-web-application/migrations"
+	"github.com/ishowsagar/go-blog-web-application/events"
+	"github.com/ishowsagar/go-blog-web-application/initializers"
 	routes "github.com/ishowsagar/go-blog-web-application/router"
 	"github.com/ishowsagar/go-blog-web-application/services"
 	_ "github.com/ishowsagar/go-blog-web-application/store"
@@ -23,9 +25,7 @@ import (
 func main() {
 
 	// slog logger for entire application
-	logger := slog.New(slog.NewTextHandler(os.Stdout,&slog.HandlerOptions{
-		Level: slog.LevelInfo,
-	}))
+	logger := slog.New(slog.NewJSONHandler(os.Stdout,nil))
 	slog.SetDefault(logger) //* default logger set for whole app
 
 	// custom logger
@@ -70,6 +70,9 @@ func main() {
 		return 
 	}
 
+	// log DB host/name for debugging which DB instance we connect to (no password logged)
+	slog.Info("DB config","host",config.DbHost,"dbname",config.DbName)
+
 	connectionStr := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%v sslmode=disable",config.DbHost,config.DbUser,config.DbPass,config.DbName,config.DbPort)
 	baseDbModel,err := database.ConnectToDatabase(connectionStr)
 	if err != nil {
@@ -85,11 +88,11 @@ func main() {
 	}
 
 	// migrations
-	err = migrations.AutoMigrate(baseDbModel.DB)
-	if err != nil {
-		slog.Warn("failed to migrate models","error",err)
-		return	
-	}
+	// err = migrations.AutoMigrate(baseDbModel.DB)
+	// if err != nil {
+	// 	slog.Warn("failed to migrate models","error",err)
+	// 	return	
+	// }
 
 	//  for constraints
 	// err = migrations.EnsureCascadeConstraints(baseDbModel.DB)
@@ -136,18 +139,69 @@ func main() {
 	likeController := controller.NewLikeController(likeDbModel,pushNotificationService)
 	followController := controller.NewFollowController(followDbModel)
 
-	// ws controller
-	hub := services.IntializeNewHubInstance()
-	wsController := controller.NewWsController(baseDbModel.DB,hub,config.JwtSecret)
+	// **  Stack verification  health check firstly before running main app  **//
+
+	initializers.VerifyInfraStack(baseDbModel.DB,redisClient.Client,"amqp://guest:guest@instagram_rabbitmq_container:5672/")
+
+	// ** ....END... **//
+
+
 	
+	// start hub service to handle broadcasts and client management
+	hub := services.IntializeNewHubInstance()
+	go hub.RunService()
+	
+	// start pubsub
+	broker := events.NewPubSubBroker(hub) // intializes an instance with hub
+	// start connection
+	// testing - since composed services depends on each other so mapping to service from where it will pull via internal networking
+	err = broker.Connect("amqp://guest:guest@instagram_rabbitmq_container:5672/") //& initializes rabbit connection and exchange and queues and stores in this instance on which <- this being called on
+	if err != nil {
+		slog.Info("failed to open rabbit connection to declare exchanges and all","error",err)
+		return
+	}
+
+
+	// ! KEEPS RUNNING IN BACKGROUND -> checks for incoming deliveries related to "user.*" -> might need diff exchange for seperate but for now only this
+	err = broker.StartConsumingDeliveries() //& checks for incoming stamped deliveries events in "notification" exchange router
+	if err != nil {
+		slog.Error("failed to start subs service which consumes incoming data to subscribers","error",err.Error())
+		return
+	}
+	defer broker.Close() // closing connection once it is done
+	
+	// inject broker into hub so clients can publish delivery messages
+	hub.SetBroker(broker)
+
+	// ws controller
+	wsController := controller.NewWsController(baseDbModel.DB,hub,config.JwtSecret,broker)
+
+
 	// connect notification service to hub for broadcasting
 	pushNotificationService.SetHub(hub)
 
-	// start hub service to handle broadcasts and client management
-	go hub.RunService()
+	
+	//& AWS-S3-BUCKET SETUP
+	
+	// bucketManeger type's instance which -> stores s3Client which holds all the bucket operations
+	bucketManager,err := s3bucket.NewBucketManager(config.S3SecretKey,config.S3AccessKeyID,config.S3BucketName) //& returns s3client in instance
+	if err !=nil {
+		slog.Error("failed to initialze bucketManager","error",err)
+		return
+	}
+	// fires up ensureBucketExists method to check or build bucketD
+	err = bucketManager.ConnectToS3Bucket() 
+	if err != nil {
+		slog.Error("failed to setup s3 bucket in our go application.","error",err)
+	}
 
+	s3bucketModel := services.NewS3BucketModel(bucketManager,sqlDB)
+	s3Controller := controller.NewS3Controller(s3bucketModel)
+	
 	// master controller -> stores all corresponding controllers
-	masterController := controller.NewMasterController(userController,postController,commentController,likeController,followController)
+	masterController := controller.NewMasterController(userController,postController,commentController,likeController,followController,s3Controller)
+
+
 
 	router := gin.Default()
 	routes.ServeRoutes(router,masterController,config,wsController) // serving controller to router to route methods on them routes

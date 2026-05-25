@@ -1,0 +1,27 @@
+# Ignore Node dependencies
+**/node_modules/
+
+# Ignore your local Docker database volumes/data
+**/postgres_data/
+**/db_data/
+*.db
+*.sql
+
+# Ignore environment files with secrets
+*.env
+
+# Ignore Go binary builds
+/dist
+/bin
+/server_logs
+/Backend/BLOG_PROJECT_BINARY
+/backend_main
+*.exe
+*.exe~
+*.out
+*.test
+
+# os junk
+.vscode/
+.idea/
+.DS_Store

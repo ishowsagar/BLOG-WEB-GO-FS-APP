@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
 	"github.com/gorilla/websocket"
+	"github.com/ishowsagar/go-blog-web-application/events"
 	"github.com/ishowsagar/go-blog-web-application/services"
 	"github.com/ishowsagar/go-blog-web-application/utils"
 	"gorm.io/gorm"
@@ -16,14 +17,16 @@ type WSController struct {
 	db *gorm.DB
 	hub *services.Hub
 	jwtSecret string
+	rabbitBroker *events.PubSubBroker
 }
 
 // returns instance of type WsController which -> stores method for handeling ws handlers
-func NewWsController(db *gorm.DB,hub *services.Hub,jwtSecret string) *WSController {
+func NewWsController(db *gorm.DB,hub *services.Hub,jwtSecret string,rabbitBroker *events.PubSubBroker) *WSController {
 	return &WSController{
 		db: db,
 		hub : hub,
 		jwtSecret: jwtSecret,
+		rabbitBroker: rabbitBroker,
 	}
 }
 
@@ -132,19 +135,35 @@ func(ws *WSController) ServeRealtimeNotification(c *gin.Context) {
 
 	// * active client is created
 
-	// make client
+	// active client is initialized and stored in  hub's clients []
 	client := &services.Client{
 		ID: userID,
 		WebsocketConnection: wsConn,
 		Hub: ws.hub,
-		Send: make(chan *services.ClientNotifyPayload),
+		Send: make(chan *services.ClientNotifyPayload, 100),
+		BroadcastStatus: make(chan *services.StatusPayload, 50), // buffered so status updates queue up even if writer is temporarily busy
+	}
+
+	// set optional disconnect callback so controller can unbind user from broker
+	client.OnDisconnect = func(id uint) {
+		if ws.rabbitBroker != nil {
+			if err := ws.rabbitBroker.UnbindUserFromExchange(id); err != nil {
+				slog.Error("failed to unbind user in rabbit broker on disconnect","error",err)
+			}
+		}
 	}
 
 	slog.Info("Client stored in active clients successfully⚡","clientID -",client.ID)
 	
+	//* adding rabbitMQ broker after creating client to -> to bind user in the "exchange-noti..."
+	err = ws.rabbitBroker.BindUserToTheExchange(client.ID) // & bind to broker exchange when client is created and also unnbind when client gets disconnected
+	if err != nil {
+		slog.Error("failed to bib=nd user in the rabbitMQ broker's declared exchange","error",err)
+	}
 
 	// register it as active client -> redirect client there
 	ws.hub.ActiveClients <- client
+	ws.hub.Online <- client
 
 	// * reading and sending responses
 
@@ -153,7 +172,7 @@ func(ws *WSController) ServeRealtimeNotification(c *gin.Context) {
 
 	// frontend sends data -> read by reader -> sends to broadcast chan -> which checks target from active clients -> sends to that client and done by writing to it
 	go client.MessageReader(ws.db) // sends the recieved payload of type notifyPostNoti to broadcast chan -> braodcast chan shares to client send where it is wriiten to ws conn client
-	go client.MessageWriter() // sends response to the client -> back to the browser
+	go client.MessageWriter() // sends response to that reciever active client -> sends response to his frontend ws connection
 	// return
 	
 }

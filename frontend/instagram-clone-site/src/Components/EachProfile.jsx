@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
-import { useWebSocket } from "../hooks/useWebSocket";
+import { useNavigate, useParams } from "react-router-dom";
+import { useContext } from "react";
+import { RealtimeContext } from "../Layout/MainLayout";
 
 export default function EachProfile() {
   console.log("/eachProfile");
@@ -26,10 +27,10 @@ export default function EachProfile() {
 
   //   utils
   const token = localStorage.getItem("token");
-  const { send: sendDm, subscribe: subscribeDm } = useWebSocket(
-    token,
-    "/api/ws/dm",
-  );
+  const navigate = useNavigate();
+  const realtime = useContext(RealtimeContext);
+  const sendDm = realtime?.sendDm;
+  const subscribeDm = realtime?.subscribeDm;
   let params = useParams(); // invoking function return object which -> stores params
   const userid = params.userid;
   const followedKey = userid ? `followed_${userid}` : null;
@@ -145,7 +146,7 @@ export default function EachProfile() {
 
       // if it was a successfull follow operation
       setFolloweeID(followeeid); // storing id of recently followed user
-      //   setHasFollowed(true); // set to true when followed
+      //   setHasFollowed(true); // to true when followed
 
       // check which div is clicked -> which user is clicked to followe
       // whichUserAlreadyFollowedCheck(followeeid,followeeID)
@@ -209,13 +210,26 @@ export default function EachProfile() {
 
   useEffect(() => {
     const senderId = getCurrentUserIdFromToken();
-    if (!token || !senderId || !receiverId) return undefined;
+    if (!token || !senderId || !receiverId || !subscribeDm) return undefined;
 
-    const unsubscribe = subscribeDm((notification) => {
+    const unsubscribe = subscribeDm((notificationRaw) => {
+      // normalize keys that may vary between publishers
+      const notification = { ...notificationRaw };
+      if (notification.receiver_id && !notification.reciever_id) {
+        notification.reciever_id = notification.receiver_id;
+      }
+      if (notification.senderId && !notification.sender_id) {
+        notification.sender_id = notification.senderId;
+      }
+
       if (notification.type !== "dm") return;
 
       const incomingSenderId = Number(notification.sender_id);
       const incomingReceiverId = Number(notification.reciever_id);
+      const incomingReceiverName =
+        notification.reciever_name || notification.recieverName;
+      const incomingSenderName =
+        notification.sender_name || notification.senderName;
 
       if (incomingSenderId === senderId && incomingReceiverId === receiverId) {
         return;
@@ -230,6 +244,8 @@ export default function EachProfile() {
             type: "dm",
             content: notification.content,
             direction: "incoming",
+            senderName: incomingSenderName,
+            recieverName: incomingReceiverName,
           },
         ]);
         setDmStatus("new message received");
@@ -291,13 +307,20 @@ export default function EachProfile() {
       {showDmBox && (
         <div
           style={{
-            marginTop: "1rem",
+            position: "fixed",
+            right: "1rem",
+            bottom: "1rem",
+            width: "min(360px, calc(100vw - 2rem))",
+            maxHeight: "70vh",
             padding: "1rem",
-            borderRadius: "14px",
-            background: "rgba(255,255,255,0.04)",
+            borderRadius: "18px",
+            background: "rgba(15, 15, 24, 0.96)",
             border: "1px solid rgba(255,255,255,0.08)",
+            boxShadow: "0 24px 70px rgba(0,0,0,0.38)",
+            backdropFilter: "blur(18px)",
             display: "grid",
             gap: "0.85rem",
+            zIndex: 9999,
           }}
         >
           <div
@@ -329,13 +352,13 @@ export default function EachProfile() {
           <div
             ref={dmListRef}
             style={{
-              maxHeight: "280px",
+              maxHeight: "36vh",
               overflowY: "auto",
               display: "grid",
               gap: "0.6rem",
-              padding: "0.5rem",
-              borderRadius: "12px",
-              background: "rgba(0,0,0,0.25)",
+              padding: "0.45rem",
+              borderRadius: "14px",
+              background: "rgba(0,0,0,0.24)",
             }}
           >
             {dmMessages.length === 0 ? (
@@ -353,8 +376,8 @@ export default function EachProfile() {
                     padding: "0.75rem 0.9rem",
                     borderRadius:
                       message.direction === "outgoing"
-                        ? "14px 14px 4px 14px"
-                        : "14px 14px 14px 4px",
+                        ? "16px 16px 6px 16px"
+                        : "16px 16px 16px 6px",
                     background:
                       message.direction === "outgoing"
                         ? "linear-gradient(135deg, #ff4d9d, #ff8a5b)"
@@ -396,7 +419,7 @@ export default function EachProfile() {
                     >
                       {message.direction === "outgoing"
                         ? "You"
-                        : `Receiver · User ${message.sender_id}`}
+                        : `${message.senderName || `User ${message.sender_id}`}`}
                     </div>
                   </div>
                   <div>{message.content}</div>
@@ -412,7 +435,7 @@ export default function EachProfile() {
             rows={4}
             style={{
               width: "100%",
-              padding: "0.85rem",
+              padding: "0.8rem",
               borderRadius: "12px",
               border: "1px solid rgba(255,255,255,0.12)",
               background: "#111",

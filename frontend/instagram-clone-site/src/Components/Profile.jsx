@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useLocation, Outlet, useNavigate, Link } from "react-router-dom";
 import pfp from "../assets/pfp.jpg";
 import ProfileNav from "./ProfileNav";
+import WebSocketDebug from "./WebSocketDebug";
 export default function Profile() {
   console.log("/profile");
   // states
@@ -138,6 +139,7 @@ export default function Profile() {
       {/* seperately select based on routes */}
       <div className="profile_grid_nav">
         <ProfileNav />
+        <WebSocketDebug token={token} />
       </div>
       {/* these things i want to apprear based on routes */}
       {/* <div className="profile_posts_grid"> */}

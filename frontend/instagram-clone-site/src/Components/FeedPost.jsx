@@ -2,8 +2,17 @@ import { Link } from "react-router-dom";
 import { usePostContext } from "../Layout/MainLayout";
 
 export default function FeedPost() {
-  console.log("/feedpost")
+  console.log("/feedpost");
   const { postBatch } = usePostContext();
+
+  if (!postBatch || !Array.isArray(postBatch)) {
+    return (
+      <div style={{ color: "#999", textAlign: "center", padding: "2rem" }}>
+        Loading posts...
+      </div>
+    );
+  }
+
   console.log(postBatch[0]); // data is coming i have confirmed it
   const postElements = postBatch.map((post) => {
     console.log("postBatch's post clicked");

@@ -20,8 +20,8 @@
 
 .searchbar_container.focused {
   background-color: #fff;
-  border-color: royalblue;
-  box-shadow: 0 0 10px rgba(65, 105, 225, 0.2);
+  border-color: #000;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
 }
 
 .searchbar_icon {
@@ -37,7 +37,7 @@
   background: transparent;
   outline: none;
   font-size: 0.95rem;
-  color: #333;
+  color: #000;
 }
 
 .searchbar_input::placeholder {

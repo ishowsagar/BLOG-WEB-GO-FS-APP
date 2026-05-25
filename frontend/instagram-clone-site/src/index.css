@@ -93,6 +93,7 @@
     }
     .sidebar_nav {
       display: none;
+      transform: translateX(-100px);
     }
   }
 
@@ -543,16 +544,16 @@
     .search_page_searchicon {
       width: 22px;
       height: 22px;
-      filter: brightness(0.3) saturate(1.2);
-      opacity: 0.92;
+      filter: brightness(0.9) saturate(0.8);
+      opacity: 0.8;
     }
 
     .search_page_input {
       flex: 1;
       background: transparent;
-      color: #003d99;
+      color: #03122a;
       font-size: 1.1rem;
-      font-weight: 600;
+      font-weight: 610;
     }
 
     .search_page_input::placeholder {
@@ -1294,20 +1295,41 @@
     flex-wrap: wrap;
   }
   .profile_button {
-    background: #a1c2bd;
-    color: #19183b;
     border: none;
-    border-radius: 12px;
-    padding: 0.8rem 2.2rem;
-    font-size: 1.1rem;
+    border-radius: 20px;
+    padding: 0.9rem 2.4rem;
+    font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-    transition: background 0.2s;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
   }
-  .profile_button:hover {
-    background: #ff6b6b;
+  .profile_button:nth-child(1) {
+    background: linear-gradient(135deg, #4a90e2, #357abd);
     color: white;
+  }
+  .profile_button:nth-child(1):hover {
+    background: linear-gradient(135deg, #357abd, #2d5fa3);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(74, 144, 226, 0.4);
+  }
+  .profile_button:nth-child(2) {
+    background: linear-gradient(135deg, #ff6b6b, #ff5252);
+    color: white;
+  }
+  .profile_button:nth-child(2):hover {
+    background: linear-gradient(135deg, #ff5252, #ff4040);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(255, 107, 107, 0.4);
+  }
+  .profile_button:nth-child(n + 3) {
+    background: linear-gradient(135deg, #f0f0f0, #e0e0e0);
+    color: #333;
+  }
+  .profile_button:nth-child(n + 3):hover {
+    background: linear-gradient(135deg, #e0e0e0, #d0d0d0);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
   }
   .profile_highlights {
     display: flex;
@@ -2476,24 +2498,26 @@
 #pp-feed-likes {
   color: #000000;
   font-weight: 270;
-  font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
-  
+  font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
 }
 
 #pp-feed-likes:hover {
   color: #001a4d;
   font-weight: 777;
   font-family: Arial, Helvetica, sans-serif;
-  transition:font-weight 0.1ms ease-in ;
+  transition: font-weight 0.1ms ease-in;
 }
-
 
 #pp-feed-likes::after {
   content: "💚";
   position: absolute;
   /* left: 115px; */
-  transform: translateX(138.5px) scale(1.2) translateY(11px) ;
+  transform: translateX(138.5px) scale(1.2) translateY(11px);
 }
 
 
-
+.floating-msg-btn:hover {
+  cursor: pointer;
+  transform: scale(1.1);
+  transition: transform 0.1s ease-out;
+}

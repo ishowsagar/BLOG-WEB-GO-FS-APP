@@ -10,10 +10,11 @@ type MasterController struct {
 	CommentController *CommentController  
 	LikeController *LikeController
 	FollowController *FollowController
+	S3Controller *S3Controller
 }
 
 // func that creates instance of MasterController type w--> which stores all the corresponding controller methods types
-func NewMasterController(userController *UserController,postController *PostController,commentController *CommentController, likeController *LikeController,followController *FollowController) *MasterController {
+func NewMasterController(userController *UserController,postController *PostController,commentController *CommentController, likeController *LikeController,followController *FollowController,s3Controller *S3Controller) *MasterController {
 	return &MasterController{
 		// todo - add later controller when they are done bareboning
 		UserController: userController,
@@ -21,5 +22,6 @@ func NewMasterController(userController *UserController,postController *PostCont
 		PostController: postController,
 		LikeController : likeController,
 		FollowController: followController,
+		S3Controller: s3Controller,
 	}
 }

@@ -1,0 +1,226 @@
+[90m<#dump // migrations\migrations.go:24[0m
+[90m#models.Comment[0m {
+  [33m+[0mID               => [38;5;38m0[0m[90m #uint[0m
+  [33m+[0mUser             => [90m#models.User[0m {
+    [33m+[0mID             => [38;5;38m0[0m[90m #uint[0m
+    [33m+[0mName           => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+    [33m+[0mEmail          => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+    [33m+[0mPassword       => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+    [33m+[0mUsername       => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+    [33m+[0mNickname       => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+    [33m+[0mBio            => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+    [33m+[0mCreatedAt      => [1;38;5;113m0001-01-01 00:00:00 +0000 UTC[0m[90m #time.Time[0m
+    [33m+[0mFollowersCount => [38;5;38m0[0m[90m #uint[0m
+    [33m+[0mFollowingCount => [38;5;38m0[0m[90m #uint[0m
+  }
+  [33m+[0mPost               => [90m#models.Post[0m {
+    [33m+[0mID               => [38;5;38m0[0m[90m #uint[0m
+    [33m+[0mUser             => [90m#models.User[0m {
+      [33m+[0mID             => [38;5;38m0[0m[90m #uint[0m
+      [33m+[0mName           => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+      [33m+[0mEmail          => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+      [33m+[0mPassword       => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+      [33m+[0mUsername       => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+      [33m+[0mNickname       => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+      [33m+[0mBio            => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+      [33m+[0mCreatedAt      => [1;38;5;113m0001-01-01 00:00:00 +0000 UTC[0m[90m #time.Time[0m
+      [33m+[0mFollowersCount => [38;5;38m0[0m[90m #uint[0m
+      [33m+[0mFollowingCount => [38;5;38m0[0m[90m #uint[0m
+    }
+    [33m+[0mUserID    => [38;5;38m0[0m[90m #uint[0m
+    [33m+[0mTitle     => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+    [33m+[0mContent   => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+    [33m+[0mLikeCount => [38;5;38m0[0m[90m #uint[0m
+    [33m+[0mCreatedAt => [1;38;5;113m0001-01-01 00:00:00 +0000 UTC[0m[90m #time.Time[0m
+    [33m+[0mUpdatedAt => [1;38;5;113m0001-01-01 00:00:00 +0000 UTC[0m[90m #time.Time[0m
+  }
+  [33m+[0mUserID    => [38;5;38m0[0m[90m #uint[0m
+  [33m+[0mPostID    => [38;5;38m0[0m[90m #uint[0m
+  [33m+[0mContent   => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+  [33m+[0mCreatedAt => [1;38;5;113m0001-01-01 00:00:00 +0000 UTC[0m[90m #time.Time[0m
+  [33m+[0mUpdatedAt => [1;38;5;113m0001-01-01 00:00:00 +0000 UTC[0m[90m #time.Time[0m
+}
+[90m#models.Post[0m {
+  [33m+[0mID               => [38;5;38m0[0m[90m #uint[0m
+  [33m+[0mUser             => [90m#models.User[0m {
+    [33m+[0mID             => [38;5;38m0[0m[90m #uint[0m
+    [33m+[0mName           => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+    [33m+[0mEmail          => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+    [33m+[0mPassword       => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+    [33m+[0mUsername       => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+    [33m+[0mNickname       => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+    [33m+[0mBio            => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+    [33m+[0mCreatedAt      => [1;38;5;113m0001-01-01 00:00:00 +0000 UTC[0m[90m #time.Time[0m
+    [33m+[0mFollowersCount => [38;5;38m0[0m[90m #uint[0m
+    [33m+[0mFollowingCount => [38;5;38m0[0m[90m #uint[0m
+  }
+  [33m+[0mUserID    => [38;5;38m0[0m[90m #uint[0m
+  [33m+[0mTitle     => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+  [33m+[0mContent   => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+  [33m+[0mLikeCount => [38;5;38m0[0m[90m #uint[0m
+  [33m+[0mCreatedAt => [1;38;5;113m0001-01-01 00:00:00 +0000 UTC[0m[90m #time.Time[0m
+  [33m+[0mUpdatedAt => [1;38;5;113m0001-01-01 00:00:00 +0000 UTC[0m[90m #time.Time[0m
+}
+[90m#models.User[0m {
+  [33m+[0mID             => [38;5;38m0[0m[90m #uint[0m
+  [33m+[0mName           => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+  [33m+[0mEmail          => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+  [33m+[0mPassword       => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+  [33m+[0mUsername       => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+  [33m+[0mNickname       => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+  [33m+[0mBio            => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+  [33m+[0mCreatedAt      => [1;38;5;113m0001-01-01 00:00:00 +0000 UTC[0m[90m #time.Time[0m
+  [33m+[0mFollowersCount => [38;5;38m0[0m[90m #uint[0m
+  [33m+[0mFollowingCount => [38;5;38m0[0m[90m #uint[0m
+}
+[90m#models.Token[0m {
+  [33m+[0mID               => [38;5;38m0[0m[90m #uint[0m
+  [33m+[0mUser             => [90m#models.User[0m {
+    [33m+[0mID             => [38;5;38m0[0m[90m #uint[0m
+    [33m+[0mName           => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+    [33m+[0mEmail          => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+    [33m+[0mPassword       => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+    [33m+[0mUsername       => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+    [33m+[0mNickname       => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+    [33m+[0mBio            => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+    [33m+[0mCreatedAt      => [1;38;5;113m0001-01-01 00:00:00 +0000 UTC[0m[90m #time.Time[0m
+    [33m+[0mFollowersCount => [38;5;38m0[0m[90m #uint[0m
+    [33m+[0mFollowingCount => [38;5;38m0[0m[90m #uint[0m
+  }
+  [33m+[0mUserID => [38;5;38m0[0m[90m #uint[0m
+  [33m+[0mExpiry => [1;38;5;113m0001-01-01 00:00:00 +0000 UTC[0m[90m #time.Time[0m
+  [33m+[0mHash   => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+}
+[90m#models.Like[0m {
+  [33m+[0mID               => [38;5;38m0[0m[90m #uint[0m
+  [33m+[0mUser             => [90m#models.User[0m {
+    [33m+[0mID             => [38;5;38m0[0m[90m #uint[0m
+    [33m+[0mName           => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+    [33m+[0mEmail          => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+    [33m+[0mPassword       => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+    [33m+[0mUsername       => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+    [33m+[0mNickname       => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+    [33m+[0mBio            => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+    [33m+[0mCreatedAt      => [1;38;5;113m0001-01-01 00:00:00 +0000 UTC[0m[90m #time.Time[0m
+    [33m+[0mFollowersCount => [38;5;38m0[0m[90m #uint[0m
+    [33m+[0mFollowingCount => [38;5;38m0[0m[90m #uint[0m
+  }
+  [33m+[0mPost               => [90m#models.Post[0m {
+    [33m+[0mID               => [38;5;38m0[0m[90m #uint[0m
+    [33m+[0mUser             => [90m#models.User[0m {
+      [33m+[0mID             => [38;5;38m0[0m[90m #uint[0m
+      [33m+[0mName           => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+      [33m+[0mEmail          => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+      [33m+[0mPassword       => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+      [33m+[0mUsername       => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+      [33m+[0mNickname       => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+      [33m+[0mBio            => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+      [33m+[0mCreatedAt      => [1;38;5;113m0001-01-01 00:00:00 +0000 UTC[0m[90m #time.Time[0m
+      [33m+[0mFollowersCount => [38;5;38m0[0m[90m #uint[0m
+      [33m+[0mFollowingCount => [38;5;38m0[0m[90m #uint[0m
+    }
+    [33m+[0mUserID    => [38;5;38m0[0m[90m #uint[0m
+    [33m+[0mTitle     => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+    [33m+[0mContent   => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+    [33m+[0mLikeCount => [38;5;38m0[0m[90m #uint[0m
+    [33m+[0mCreatedAt => [1;38;5;113m0001-01-01 00:00:00 +0000 UTC[0m[90m #time.Time[0m
+    [33m+[0mUpdatedAt => [1;38;5;113m0001-01-01 00:00:00 +0000 UTC[0m[90m #time.Time[0m
+  }
+  [33m+[0mUserID    => [38;5;38m0[0m[90m #uint[0m
+  [33m+[0mPostID    => [38;5;38m0[0m[90m #uint[0m
+  [33m+[0mLikeCount => [38;5;38m0[0m[90m #uint[0m
+  [33m+[0mLikedAt   => [1;38;5;113m0001-01-01 00:00:00 +0000 UTC[0m[90m #time.Time[0m
+}
+[90m#models.Follow[0m {
+  [33m+[0mID               => [38;5;38m0[0m[90m #uint[0m
+  [33m+[0mFollower         => [90m#models.User[0m {
+    [33m+[0mID             => [38;5;38m0[0m[90m #uint[0m
+    [33m+[0mName           => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+    [33m+[0mEmail          => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+    [33m+[0mPassword       => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+    [33m+[0mUsername       => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+    [33m+[0mNickname       => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+    [33m+[0mBio            => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+    [33m+[0mCreatedAt      => [1;38;5;113m0001-01-01 00:00:00 +0000 UTC[0m[90m #time.Time[0m
+    [33m+[0mFollowersCount => [38;5;38m0[0m[90m #uint[0m
+    [33m+[0mFollowingCount => [38;5;38m0[0m[90m #uint[0m
+  }
+  [33m+[0mFollowee         => [90m#models.User[0m {
+    [33m+[0mID             => [38;5;38m0[0m[90m #uint[0m
+    [33m+[0mName           => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+    [33m+[0mEmail          => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+    [33m+[0mPassword       => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+    [33m+[0mUsername       => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+    [33m+[0mNickname       => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+    [33m+[0mBio            => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+    [33m+[0mCreatedAt      => [1;38;5;113m0001-01-01 00:00:00 +0000 UTC[0m[90m #time.Time[0m
+    [33m+[0mFollowersCount => [38;5;38m0[0m[90m #uint[0m
+    [33m+[0mFollowingCount => [38;5;38m0[0m[90m #uint[0m
+  }
+  [33m+[0mFollowerID => [38;5;38m0[0m[90m #uint[0m
+  [33m+[0mFolloweeID => [38;5;38m0[0m[90m #uint[0m
+  [33m+[0mFollowedAt => [1;38;5;113m0001-01-01 00:00:00 +0000 UTC[0m[90m #time.Time[0m
+}
+[90m#models.Message[0m {
+  [33m+[0mID         => [38;5;38m0[0m[90m #uint[0m
+  [33m+[0mSenderID   => [38;5;38m0[0m[90m #uint[0m
+  [33m+[0mRecieverID => [38;5;38m0[0m[90m #uint[0m
+  [33m+[0mContent    => [33m"[0m[1;38;5;113m[0m[33m"[0m[90m #string[0m
+  [33m+[0mCreatedAt  => [1;38;5;113m0001-01-01 00:00:00 +0000 UTC[0m[90m #time.Time[0m
+}
+time=2026-05-19T11:16:31.749+05:30 level=INFO msg="successfully migrated models🚀."
+time=2026-05-19T11:16:31.750+05:30 level=INFO msg="successfully connected to the database✅"
+time=2026-05-19T11:16:31.751+05:30 level=INFO msg="notification service has started🚀" "waiting for any notification to come⏳"=...
+time=2026-05-19T11:16:31.812+05:30 level=INFO msg="RabbitMQ connected" queue=amq.gen-ll13ihhq18BhfhbLfEYCHg
+time=2026-05-19T11:16:31.814+05:30 level=INFO msg="started consuming from RabbitMQ" queue=amq.gen-ll13ihhq18BhfhbLfEYCHg
+[GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] GET    /health/                  --> github.com/ishowsagar/go-blog-web-application/router.ServeRoutes.func1 (3 handlers)
+[GIN-debug] GET    /static/*filepath         --> github.com/gin-gonic/gin.(*RouterGroup).createStaticHandler.func1 (4 handlers)
+[GIN-debug] HEAD   /static/*filepath         --> github.com/gin-gonic/gin.(*RouterGroup).createStaticHandler.func1 (4 handlers)
+[GIN-debug] POST   /form/register            --> github.com/ishowsagar/go-blog-web-application/controller.(*UserController).RegisterUser-fm (4 handlers)
+[GIN-debug] POST   /form/login               --> github.com/ishowsagar/go-blog-web-application/controller.(*UserController).LoginUser-fm (4 handlers)
+[GIN-debug] POST   /form/password/reset      --> github.com/ishowsagar/go-blog-web-application/controller.(*UserController).UpdateUserPassword-fm (4 handlers)
+[GIN-debug] POST   /cached/register          --> github.com/ishowsagar/go-blog-web-application/controller.(*UserController).RegisterUser-fm (5 handlers)
+[GIN-debug] POST   /cached/login             --> github.com/ishowsagar/go-blog-web-application/controller.(*UserController).SuperfastLogin-fm (5 handlers)
+[GIN-debug] GET    /api/ws                   --> github.com/ishowsagar/go-blog-web-application/controller.(*WSController).ServeRealtimeNotification-fm (4 handlers)
+[GIN-debug] GET    /api/ws/dm                --> github.com/ishowsagar/go-blog-web-application/controller.(*WSController).HandleDMs-fm (4 handlers)
+[GIN-debug] GET    /api/users/profile        --> github.com/ishowsagar/go-blog-web-application/controller.(*UserController).FetchProfileData-fm (7 handlers)
+[GIN-debug] GET    /api/users/search         --> github.com/ishowsagar/go-blog-web-application/controller.(*UserController).FindUsersByNAME-fm (7 handlers)
+[GIN-debug] GET    /api/user/profile/:userid --> github.com/ishowsagar/go-blog-web-application/controller.(*UserController).FetchProfileDataByURlParamID-fm (7 handlers)
+[GIN-debug] GET    /api/feed/comments/:postid --> github.com/ishowsagar/go-blog-web-application/controller.(*CommentController).LoadPostComments-fm (7 handlers)
+[GIN-debug] GET    /api/feed/comment         --> github.com/ishowsagar/go-blog-web-application/controller.(*CommentController).LoadAllCommentsAssociatedWithPostAndUsers-fm (7 handlers)
+[GIN-debug] GET    /api/feed/post/comments/:postid --> github.com/ishowsagar/go-blog-web-application/controller.(*CommentController).GetCommentsCountByPostID-fm (7 handlers)
+[GIN-debug] POST   /api/post/comment/:postid --> github.com/ishowsagar/go-blog-web-application/controller.(*CommentController).PostComment-fm (7 handlers)
+[GIN-debug] DELETE /api/comment/delete       --> github.com/ishowsagar/go-blog-web-application/controller.(*CommentController).DeleteCommentByUser-fm (7 handlers)
+[GIN-debug] GET    /api/feed/full            --> github.com/ishowsagar/go-blog-web-application/controller.(*PostController).LoadFeed-fm (7 handlers)
+[GIN-debug] GET    /api/feed/batch           --> github.com/ishowsagar/go-blog-web-application/controller.(*PostController).FeedBatchRequest-fm (7 handlers)
+[GIN-debug] GET    /api/post/count           --> github.com/ishowsagar/go-blog-web-application/controller.(*PostController).GetPostCountByUserID-fm (7 handlers)
+[GIN-debug] POST   /api/post/create          --> github.com/ishowsagar/go-blog-web-application/controller.(*PostController).CreatePost-fm (7 handlers)
+[GIN-debug] GET    /api/feed/post/:id        --> github.com/ishowsagar/go-blog-web-application/controller.(*PostController).GetPostByID-fm (7 handlers)
+[GIN-debug] GET    /api/feed/client/posts    --> github.com/ishowsagar/go-blog-web-application/controller.(*PostController).GetAllPostsOfClient-fm (7 handlers)
+[GIN-debug] DELETE /api/post/:id             --> github.com/ishowsagar/go-blog-web-application/controller.(*PostController).DeletePost-fm (7 handlers)
+[GIN-debug] GET    /api/messages             --> github.com/ishowsagar/go-blog-web-application/controller.(*WSController).LoadMessages-fm (7 handlers)
+[GIN-debug] GET    /api/profile              --> github.com/ishowsagar/go-blog-web-application/controller.(*UserController).FetchFullProfileData-fm (7 handlers)
+[GIN-debug] POST   /api/like                 --> github.com/ishowsagar/go-blog-web-application/controller.(*LikeController).UpdateLike-fm (7 handlers)
+[GIN-debug] POST   /api/users/follow/:followeeID --> github.com/ishowsagar/go-blog-web-application/controller.(*FollowController).FollowUser-fm (7 handlers)
+[GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
+Please check https://github.com/gin-gonic/gin/blob/master/docs/doc.md#dont-trust-all-proxies for details.
+[GIN-debug] Listening and serving HTTP on :8080
+[GIN] 2026/05/19 - 11:16:31 |[97;42m 200 [0m|[90;47m  559.4µs [0m|       127.0.0.1 |[97;44m GET     [0m "/api/ws/dm?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHBpcnkiOiIyMDI2LTA1LTE5VDExOjA1OjEyLjUzNTE1OTQrMDU6MzAiLCJ1c2VyX2lkIjoxNn0.vDv3-HuzKLEMbYBIqaK_sLRTy8PLZpuYxBJfw78ks9o"
+[GIN] 2026/05/19 - 11:16:31 |[97;42m 200 [0m|[90;47m       0s [0m|       127.0.0.1 |[97;44m GET     [0m "/api/ws/dm?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHBpcnkiOiIyMDI2LTA1LTIwVDExOjE0OjA4LjUyMzk5NyswNTozMCIsInVzZXJfaWQiOjQxfQ.2FjdI_z9tgbAuWAXVPZVbfrLUmo99H3pV7MHdUSw42k"
+time=2026-05-19T11:16:33.012+05:30 level=INFO msg="websockets connection started for the active client✅"
+[GIN] 2026/05/19 - 11:16:33 |[97;42m 200 [0m|[90;47m       0s [0m|             ::1 |[97;44m GET     [0m "/api/ws/dm?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHBpcnkiOiIyMDI2LTA1LTIwVDExOjEyOjQ3LjY1NTg1ODgrMDU6MzAiLCJ1c2VyX2lkIjoxNn0.KIMNtRn1QslqdqdeUJGbeYIqdFTE1YJUOCHcpaeoN8c"
+time=2026-05-19T11:16:33.013+05:30 level=INFO msg="Client stored in active clients successfully⚡" "clientID -"=41
+[GIN] 2026/05/19 - 11:16:33 |[97;42m 200 [0m|[90;47m   3.96ms [0m|             ::1 |[97;44m GET     [0m "/api/ws?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHBpcnkiOiIyMDI2LTA1LTE3VDEwOjE1OjMwLjc0NzkyODIrMDU6MzAiLCJ1c2VyX2lkIjo0MX0.EUfcoQNvv606HHulcErD_RGpY88d9D4zm-H1FpT_vcE"
+time=2026-05-19T11:16:33.016+05:30 level=INFO msg="user activity status" status=online🟢 userID=41
+time=2026-05-19T11:16:34.012+05:30 level=INFO msg="websockets connection started for the active client✅"
+time=2026-05-19T11:16:34.013+05:30 level=INFO msg="Client stored in active clients successfully⚡" "clientID -"=41
+time=2026-05-19T11:16:34.015+05:30 level=INFO msg="websockets connection started for the active client✅"
+time=2026-05-19T11:16:34.016+05:30 level=INFO msg="Client stored in active clients successfully⚡" "clientID -"=16
+time=2026-05-19T11:16:34.032+05:30 level=INFO msg="websockets connection started for the active client✅"
+time=2026-05-19T11:16:34.032+05:30 level=INFO msg="Client stored in active clients successfully⚡" "clientID -"=16

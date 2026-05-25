@@ -115,7 +115,19 @@ func(cC *CommentController) PostComment(c *gin.Context) {
 	}	
 
 	// testing - invoking method attached on *pns -> to redirect corres to corres chan for reader to read
-	cC.PushNotificationService.NotifiesCommentPostedOnPost(*postedComment)
+	// todo - fetch full comment payload and send to pns method who redirects payload to the pns
+	commentNotificationPayload,err := cC.CommentDbModel.GetUserDetailByPostsCommentID(postedComment.ID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			slog.Error("no comment found","error",err)
+			return
+		}
+		slog.Error("failed to comment info for notification payload","error",err)
+		return
+	}
+	cC.PushNotificationService.NotifiesCommentPostedOnPost(commentNotificationPayload) // redirect payload to the pns method which redirects to tthe pns
+	// cC.PushNotificationService.NotifiesCommentPostedOnPost(*postedComment)
+	
 
 
 	//  if posted comment successfully 🚀

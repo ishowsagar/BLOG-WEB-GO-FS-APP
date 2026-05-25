@@ -11,6 +11,9 @@ help :
 	@echo run - builds & run go project
 	@echo stop - stops the api server
 
+container :
+	docker compose up -d rabbit
+
 # ! building & running {-s flag for silent output}
 build :
 	@echo FOUND AND DELETING OLD DEPRICIATED "$(BINARY)"

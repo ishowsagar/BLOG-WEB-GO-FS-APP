@@ -134,3 +134,47 @@ func(l *LikeDBModel) UpdateLikeByOneCount(like models.Like) (*models.Like,error)
 
 	return &likeVar,nil
 }
+
+// method that belongs to the likeDbModel which -> get user details of the passed postID from likes
+func(l *LikeDBModel) GetUserDetailsByPostID(postID uint) (*models.PostUserDetails,error) {
+
+	ctx,timeout := context.WithTimeout(context.Background(),utils.DbTimeoutDuration)
+	defer timeout()
+
+	query := `
+		select 
+			l.post_id as postID,sum(l.like_count) as likesCount,p.user_id as reciverID,u.name as recieverName
+		from 
+			likes l
+		left JOIN 
+			posts p
+		ON
+			p.id = l.post_id
+		LEFT JOIN 
+			users u
+		on
+			u.id = p.user_id
+		where
+			l.post_id=$1
+		GROUP by 
+			l.post_id,p.user_id,u.name
+	`
+
+	resRow:= l.DB.QueryRowContext(ctx,query,postID)
+	var res models.PostUserDetails
+	scanErr :=resRow.Scan(
+		&res.PostID,
+		&res.LikesCount,
+		&res.RecieverID,
+		&res.RecieverName,
+	)
+
+	if scanErr != nil {
+		if scanErr == sql.ErrNoRows {
+			return nil,sql.ErrNoRows
+		}
+		return nil,scanErr
+	}
+	return &res,nil
+
+}

@@ -73,3 +73,22 @@ type BatchResponse struct {
 	NextCursor string
 	Batch interface{}
 }
+
+//  err type for sending err through ws writers to the client
+type WebSocketHandlerERR struct {
+	Ok bool
+	Error interface{}
+}
+
+// type that construct an s3 related error
+type S3UploadErr struct {
+	Ok bool
+	Error interface{}
+}
+
+// type for success only s3 uploads
+type S3UploadSuccessResponse struct{
+	Ok bool
+	Status string
+	ImageURl string
+}

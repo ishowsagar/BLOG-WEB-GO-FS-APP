@@ -221,3 +221,44 @@ func(c *CommentDBModel) LoadAllCommentsOfPost(postID uint) ([]*CommentsData,erro
 	// return it
 	return comments,nil
 }
+
+
+// todo - add query call method to query entry to get data of that client whose post is being commented on
+	func(cC *CommentDBModel) GetUserDetailByPostsCommentID(commentID uint) (*models.CommentPayload,error) {
+	 ctx,timeout := context.WithTimeout(context.Background(),utils.DbTimeoutDuration)
+	 defer timeout()
+
+	 query := `
+		select
+		c.id as comment_id,c.content as comment_content,c.user_id as commentor_id,u.id as reciever_id,c.post_id as post_id
+		from
+		comments c
+		left JOIN posts p on p.id = c.post_id
+		left JOIN (
+		select id from users u 
+			group by u.id
+		) u on u.id = p.user_id
+		where
+		c.id = $1;
+	 `
+
+	resRow := cC.DB.QueryRowContext(ctx,query,commentID)
+	var payload models.CommentPayload	
+	err := resRow.Scan(
+		&payload.CommentID,
+		&payload.CommentContent,
+		&payload.CommentorID,
+		&payload.RecieverID,
+		&payload.PostID,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil,sql.ErrNoRows
+		}
+		return nil,err
+	}
+
+	return &payload,nil
+
+	}

@@ -1,0 +1,40 @@
+# base image for the container on what top of our app will be build
+
+#* 1st Build step for go binary , copy required files and set dir in container
+FROM golang:1.25-alpine AS builder 
+
+# set working dir
+WORKDIR /app
+
+#  copy files from project into our container dir ./ means in root of set working dir
+# split copy -> first neccessary mod and sum files into ./ root dir of container
+COPY go.mod go.sum ./ 
+RUN go mod download
+
+# copy everything else from . projectSource into . cDirDestination
+COPY . . 
+
+RUN CGO_ENABLED=0 GOOS=linux go build -o main ./cmd/server 
+
+
+#* 2 - Running in production
+FROM alpine:3.19
+
+RUN apk add --no-cache netcat-openbsd
+
+WORKDIR /app
+
+# bug - facing env bug -> just creating an empty one for non crash
+# fix - damn it fixed it very gracefully since it will be checking env in its space only
+RUN touch .env
+
+# from let u access prior steps dir
+COPY --from=builder /app/main .
+
+EXPOSE 8080
+
+# running the built binary to start backend
+CMD [ "./main" ]
+
+
+

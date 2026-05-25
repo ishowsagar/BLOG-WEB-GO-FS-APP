@@ -20,6 +20,9 @@ type ENVConfig struct {
 	RedisDB int
 	RedisDBPassword string
 	RedisHost string 
+	S3AccessKeyID string
+	S3SecretKey string
+	S3BucketName string
 }
 
 var once sync.Once 
@@ -33,6 +36,7 @@ func LoadConfig() (*ENVConfig,error) {
 		return nil,err
 	}
 
+	//** Note - since our app is pulling var from local env file which is inaccessible to the docker containers, so we had to define matching variables in yml so it pulls from yml env **// 
 	// access env protected variables
 	dbUSER := os.Getenv("DB_USER")
 	dbPASS := os.Getenv("DB_PASSWORD")
@@ -43,6 +47,11 @@ func LoadConfig() (*ENVConfig,error) {
 	redisDbPass := os.Getenv("REDIS_DB_PASSWORD")
 	redisDbStr := os.Getenv("REDIS_DB")
 	redisDbHost := os.Getenv("REDIS_HOST_ADDR")
+
+	// * since we stored aws s3 important keys in env, container would look for them in its space <- must define there too
+	s3AccessKeyID := os.Getenv("S3AccessKeyID")
+	s3SecretKey := os.Getenv("S3SecretKey")
+	s3BucketName := os.Getenv("S3BucketName")
 
 	dbPort, err := strconv.Atoi(dbPortStr)
 	if err != nil {
@@ -75,6 +84,9 @@ func LoadConfig() (*ENVConfig,error) {
 		RedisDB: redisDb,
 		RedisDBPassword: redisDbPass,
 		RedisHost: redisDbHost,
+		S3AccessKeyID: s3AccessKeyID,
+		S3SecretKey: s3SecretKey,
+		S3BucketName: s3BucketName,
 	},nil
 }
 

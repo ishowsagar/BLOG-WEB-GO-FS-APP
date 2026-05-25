@@ -38,6 +38,7 @@ func ServeRoutes(router *gin.Engine,masterController *controller.MasterControlle
 		AllowCredentials: true,
 		MaxAge: 1 * time.Hour,
 	}))
+	router.Static("/static", "./static")
 
 	// * frontend Testing
 	client := router.Group("/form")
@@ -89,10 +90,14 @@ func ServeRoutes(router *gin.Engine,masterController *controller.MasterControlle
 		api.GET("/feed/post/:id",masterController.PostController.GetPostByID)
 		api.GET("/feed/client/posts",masterController.PostController.GetAllPostsOfClient)
 		api.DELETE("/post/:id",masterController.PostController.DeletePost)
+		api.GET("/messages",wsController.LoadMessages)
 
 
 		// profile
-		api.GET("profile",masterController.UserController.FetchFullProfileData)
+		api.GET("/profile",masterController.UserController.FetchFullProfileData)
+		
+		// s3Bucket
+		api.POST("/user/pfp/upload",masterController.S3Controller.HandleUploadImageStream)
 
 		// like
 		api.POST("/like",masterController.LikeController.UpdateLike)

@@ -90,8 +90,8 @@ type Like struct {
 type Follow struct {
 	ID uint `json:"id" gorm:"primaryKey"`
 	// references - to set fk on them to
-	Follower User `json:"-" gorm:"foreignKey:FollowerID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-    Followee User `json:"-" gorm:"foreignKey:FolloweeID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Follower User `json:"-" gorm:"foreignKey:FollowerID;references:ID;constraint:OnUpdate:CASCAe:CASCADE"`
+    Followee User `json:"-" gorm:"foreignKey:FolloweeID;references:ID;constraint:OnUpdate:CASCADE,OnDE,OnDeletDelete:CASCADE"`
 
 	// adding constraint to not to let anyone follow twice
 	FollowerID uint `json:"follower_id"  gorm:"not null;uniqueIndex:idx_follower_followee"`
@@ -130,8 +130,6 @@ type Message struct {
 }
 
 
-
-
 type ClientNotifyPayload struct {
 	SenderID uint `json:"sender_id"`
 	RecieverID uint `json:"reciever_id"`
@@ -139,4 +137,45 @@ type ClientNotifyPayload struct {
 	Content string `json:"content"`
 	PostID uint `json:"post_id"`
 	CreatedAt time.Time `json:"created_at"`
+}
+
+
+// model type for ProfilePicture Cloud Storage
+type ProfilePictureStorage struct {
+	ID uint `json:"id" gorm:"primaryKey"`
+	// ref purpose - gorm:fk:thisField:ref:id [of table checks which table is being refrenced by name of field Prefix]
+	User User `json:"-"`
+	UserID uint `json:"user_id" gorm:"foreignKey:UserID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;contraint:unique:userID"`
+	ProfilePictureUrl string `json:"profile_picture_url"`
+}
+
+
+// type struct for sending user related detials from post
+type PostUserDetails struct {
+	PostID uint `json:"post_id"`
+	LikesCount uint `json:"likes_count"`
+	RecieverID uint `json:"reciever_id"`
+	RecieverName string `json:"reciever_name"`
+}
+
+// type of data sending for user details using postID
+
+type PostDetailedNotification struct {
+	LikeData *Like
+	PostUserDetails *PostUserDetails
+}
+
+
+// comment notification data for sending comment + WhosePostWasComment that client ID
+//  todo - add type struct for having full comment payload - commentPayload + whosePost user data
+type CommentRecieverUserDetails struct {
+	Comment *Comment
+	RecieverID uint `json:"reciever_id"`
+}
+type CommentPayload struct {
+	PostID uint `json:"post_id"`
+	CommentID uint `json:"comment_id"`
+	CommentorID uint `json:"commentor_id"` 
+	CommentContent string `json:"comment_content"`
+	RecieverID uint `json:"reciever_id"` 
 }

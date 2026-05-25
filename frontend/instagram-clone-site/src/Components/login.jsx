@@ -88,7 +88,7 @@ export function Login() {
       //  - checking resp before using returned response
 
       // if client logged in successfully
-      setForm(initialFormData);
+      setForm(initialFormData)
 
       // since token would have been issued for the client -
 

@@ -19,6 +19,7 @@ type LikeController struct {
  PushNotificationService services.PushNotificationService
 }
 
+
 //  type of data struct client would send for liking post
 type LikeRequest struct {
 	// just need to know which Post is being liked,rest is not sent by the client
@@ -115,7 +116,28 @@ func(l *LikeController) UpdateLike(c *gin.Context) {
  	slog.Info("status","errors","like updated for already liked post")
 
 	// testing like chan which redirecs like to the 
-	l.PushNotificationService.NotifiesLikePostedOnPost(*updatedLikes)
+	// todo - need to send reciever'sID of the client whose post is being liked
+	postDetails,err := l.LikeDbModel.GetUserDetailsByPostID(likeReq.PostID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			c.AbortWithStatusJSON(http.StatusNotFound,utils.ErrResponse{
+				Status: err.Error(),
+			})
+			return
+		}
+		slog.Error("error",err)
+			c.AbortWithStatusJSON(500,utils.ErrResponse{
+				Status: err.Error(),
+			})
+			return
+	}
+	
+	postDeets := models.PostDetailedNotification{
+		PostUserDetails: postDetails,
+		LikeData: updatedLikes,
+	}
+
+	l.PushNotificationService.NotifiesLikePostedOnPost(&postDeets)
 
 		// send resp to client - that post has been liked
 		c.JSON(http.StatusOK,utils.LikeSuccessResponse{
@@ -138,8 +160,29 @@ func(l *LikeController) UpdateLike(c *gin.Context) {
 			return
 		}
 
+	
+	updatedPostDetails,err := l.LikeDbModel.GetUserDetailsByPostID(likeReq.PostID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			c.AbortWithStatusJSON(http.StatusNotFound,utils.ErrResponse{
+				Status: err.Error(),
+			})
+			return
+		}
+		slog.Error("error",err)
+			c.AbortWithStatusJSON(500,utils.ErrResponse{
+				Status: err.Error(),
+			})
+			return
+	}
+
+	updatedPostDeets := models.PostDetailedNotification{
+		PostUserDetails:updatedPostDetails,
+		LikeData: firstLike,
+	}
+
 	// testing like notification service
-	l.PushNotificationService.NotifiesLikePostedOnPost(*firstLike)
+	l.PushNotificationService.NotifiesLikePostedOnPost(&updatedPostDeets)
 
 
  	slog.Info("status","errors","finally posted first like on the post")

@@ -43,7 +43,7 @@ func(r *RedisCacheClient) SetCachedToken(userID uint,tokenExpiry time.Time,token
 	// need to generate key-val data variables to store into cache db
 	key := fmt.Sprintf("auth:token:user:%d",userID) // key be8ing userID
 	
-	// mapped data of token 
+	// mapped data of token - same like struct 
 	payload := map[string]interface{} {
 		"hash" : tokenHash,
 		"expiry" : tokenExpiry,
@@ -86,7 +86,7 @@ func(r *RedisCacheClient) GetCachedToken(userID uint) (tokenHash string,tokenExp
 	}
 
 	// if key-pair found -> return value stored in it. store into same type of data struct what it was used to store into when setting in the cache db
-	var payload struct {
+	var payload struct { // same map like struct field and json tags for population
 		Hash string `json:"hash"`
 		Expiry time.Time `json:"expiry"`
 	}

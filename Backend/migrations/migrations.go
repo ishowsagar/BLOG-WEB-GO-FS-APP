@@ -21,7 +21,7 @@ func AutoMigrate(db *gorm.DB) error {
 	// 	return err
 	// }
 
-	dumper.Dump(models.Comment{},models.Post{},models.User{},models.Token{},models.Like{},models.Follow{},models.Message{})
+	dumper.Dump(models.Comment{},models.Post{},models.User{},models.Token{},models.Like{},models.Follow{},models.Message{},models.ProfilePictureStorage{})
 	slog.Info("successfully migrated models🚀.")
 	return nil
 }

@@ -3,6 +3,7 @@ import { useEffect, useRef, useCallback } from "react";
 export const useWebSocket = (token, endpointPath = "/api/ws") => {
   const wsRef = useRef(null);
   const messageHandlersRef = useRef([]);
+  const queueRef = useRef([]);
   const reconnectTimeoutRef = useRef(null);
 
   useEffect(() => {
@@ -25,7 +26,15 @@ export const useWebSocket = (token, endpointPath = "/api/ws") => {
         // #2 On opening notify client
         ws.onopen = () => {
           console.log("✅ WebSocket connected");
-          // Token already sent in URL query param
+          // flush queued messages
+          try {
+            while (queueRef.current.length > 0) {
+              const queued = queueRef.current.shift();
+              ws.send(JSON.stringify(queued));
+            }
+          } catch (e) {
+            console.error("Failed to flush ws queue:", e);
+          }
         };
 
         //  data written to ws url, checking .onmessage passing func which recieves the wrote data
@@ -95,7 +104,9 @@ export const useWebSocket = (token, endpointPath = "/api/ws") => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify(message));
     } else {
-      console.warn("WebSocket not ready");
+      // queue the message until connection is open
+      queueRef.current.push(message);
+      console.warn("WebSocket not ready, message queued", message);
     }
   }, []);
 
@@ -103,5 +114,6 @@ export const useWebSocket = (token, endpointPath = "/api/ws") => {
     subscribe,
     send,
     isConnected: wsRef.current?.readyState === WebSocket.OPEN,
+    queuedMessages: () => queueRef.current.length,
   };
 };
