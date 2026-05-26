@@ -122,7 +122,6 @@ func(h *Hub) RunService() {
 			if ok {
 					// if disconnected remove from clients map [key is client itself]
 					delete(h.Clients,readdisconnectedclient)
-					close(readdisconnectedclient.Send) // stop furthur ingres on this chan's send chan which stores actual content
 				}
 				
 			// * deleting from client store too
@@ -130,7 +129,6 @@ func(h *Hub) RunService() {
 			if exists {
 				// if exists delete and close connection
 				delete(h.ClientStore,readdisconnectedclient.ID) // passing ID as id is the key for that key-var to be removed
-				close(readdisconnectedclient.Send)
 				slog.Info("client gracefully shutdowned from system","userID",readdisconnectedclient.ID)
 			}
 				
@@ -472,6 +470,7 @@ func(c *Client) MessageReader(db *gorm.DB) {
 		if c.OnDisconnect != nil {
 			c.OnDisconnect(c.ID)
 		}
+		close(c.Send)
 
 		
 		c.WebsocketConnection.Close() //! close close as soon as *c is unregistered

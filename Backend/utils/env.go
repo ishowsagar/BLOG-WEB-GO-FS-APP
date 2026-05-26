@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"log/slog"
 	"os"
 	"strconv"
@@ -23,6 +24,7 @@ type ENVConfig struct {
 	S3AccessKeyID string
 	S3SecretKey string
 	S3BucketName string
+	S3RegionName string
 }
 
 var once sync.Once 
@@ -52,6 +54,7 @@ func LoadConfig() (*ENVConfig,error) {
 	s3AccessKeyID := os.Getenv("S3AccessKeyID")
 	s3SecretKey := os.Getenv("S3SecretKey")
 	s3BucketName := os.Getenv("S3BucketName")
+	s3RegionName := os.Getenv("S3Region")
 
 	dbPort, err := strconv.Atoi(dbPortStr)
 	if err != nil {
@@ -72,6 +75,15 @@ func LoadConfig() (*ENVConfig,error) {
 
 	dbName := os.Getenv("DB_DBASE_NAME")
 
+
+	// env check
+	fmt.Println("--- DOCKER ENV CHECK ---")
+	fmt.Printf("Access ID:  '%s'\n", os.Getenv("S3AccessKeyID"))
+	fmt.Printf("Secret Key: '%s' (Length: %d)\n", os.Getenv("S3SecretKey"), len(os.Getenv("AWS_SECRET_ACCESS_KEY")))
+	fmt.Printf("Bucket:     '%s'\n", os.Getenv("S3BucketName"))
+	fmt.Printf("Region:     '%s'\n", os.Getenv("S3Region"))
+	fmt.Println("------------------------")
+
 	// returning instance with env accessed vars
 	return &ENVConfig{
 		DbHost: dbHOST,
@@ -87,6 +99,7 @@ func LoadConfig() (*ENVConfig,error) {
 		S3AccessKeyID: s3AccessKeyID,
 		S3SecretKey: s3SecretKey,
 		S3BucketName: s3BucketName,
+		S3RegionName: s3RegionName,
 	},nil
 }
 

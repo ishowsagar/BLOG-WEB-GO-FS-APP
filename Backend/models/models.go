@@ -168,10 +168,13 @@ type PostDetailedNotification struct {
 
 // comment notification data for sending comment + WhosePostWasComment that client ID
 //  todo - add type struct for having full comment payload - commentPayload + whosePost user data
+// fixed - done added payload type for invoker in the handler and also in the pns
 type CommentRecieverUserDetails struct {
 	Comment *Comment
 	RecieverID uint `json:"reciever_id"`
 }
+
+// notification type struct payload
 type CommentPayload struct {
 	PostID uint `json:"post_id"`
 	CommentID uint `json:"comment_id"`

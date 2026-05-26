@@ -12,13 +12,13 @@ import (
 // 3 - s3.Client -> This what created from configs -> handles all those upload get operations
 
 // @ variables for connecting to the aws s3
-var (
+
 	// &Note -> aws console is very glitchy and prone to err -> use aws cli <- smooth,easy and best
 	// create user -> aws --create-user --user-name X
 	// attach policies on the created user - aws iam attach-user-policy --user-name X --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess
 	// generate keys - aws iam create-access-key --user-name X
 	//! get credentials from aws console so it verifies and connect in connect function
-	Region string = "us-east-1"
+	// Region string = "us-east-1"
 	// s3Endpoint string = ""
 	// bug- exposed keys in the codespace
 	// fix - fetch through env only, make sure naming is same as that would be checked by containe in its own environement space
@@ -28,7 +28,7 @@ var (
 	// fixed - yes that '-' causes error as aws strictly does not let u create those names with uncivilized names
 
 
-)
+
 
 
 // & Commands for listing resources we have just created
@@ -41,7 +41,7 @@ var (
 func(b *BucketManager) ConnectToS3Bucket() error {
 // os.Getenv()
 	//  invoke method which belongs to type BuckerManager -> uses underlying s3Client which -> checks for bucket existence if not -> build it
-	err := b.EnsureBucketExists(context.Background(),b.S3BucketName,Region)
+	err := b.EnsureBucketExists(context.Background(),b.S3BucketName,b.S3Region)
 	if err != nil {
 		// bug - was using log.Fatalf() -> which logs but immeditiatly exits(1) out so next return never executes
 		// fix - use fmt.Errorf() -> which returns the err directly and also could intake placeholders for dynamic err handeling operations

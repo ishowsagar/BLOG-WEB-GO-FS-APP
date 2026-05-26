@@ -146,6 +146,7 @@ func main() {
 	// ** ....END... **//
 
 
+	// ! bug -> fix s3 related err tmrw it maybbe due to sending wrong keys and ids
 	
 	// start hub service to handle broadcasts and client management
 	hub := services.IntializeNewHubInstance()
@@ -184,15 +185,17 @@ func main() {
 	//& AWS-S3-BUCKET SETUP
 	
 	// bucketManeger type's instance which -> stores s3Client which holds all the bucket operations
-	bucketManager,err := s3bucket.NewBucketManager(config.S3SecretKey,config.S3AccessKeyID,config.S3BucketName) //& returns s3client in instance
+	bucketManager,err := s3bucket.NewBucketManager(config.S3SecretKey,config.S3AccessKeyID,config.S3BucketName,config.S3RegionName) //& returns s3client in instance
 	if err !=nil {
 		slog.Error("failed to initialze bucketManager","error",err)
 		return
 	}
+	slog.Info("bucket manager is successfully created","accessKeyID",bucketManager.SecretAccessID,"secretKey",bucketManager.SecretKey)
 	// fires up ensureBucketExists method to check or build bucketD
 	err = bucketManager.ConnectToS3Bucket() 
 	if err != nil {
 		slog.Error("failed to setup s3 bucket in our go application.","error",err)
+		return
 	}
 
 	s3bucketModel := services.NewS3BucketModel(bucketManager,sqlDB)
