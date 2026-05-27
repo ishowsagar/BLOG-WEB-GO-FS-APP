@@ -46,6 +46,7 @@ IDEA - instead of deploying here and manually doing the code pushing, by using g
 <!-- ****  TESTING  **** -->
 
 - pushing a code change -> when a change is detected -> connects to the remote ubuntu aws ec2 server instance and pull latest changes as new code was pushed -> build the project to serve in one go
+- added `restart: unless-stopped` to let aws acknowledge that whenever instance is booted up -> boot up these, unless explicitly not told to stop -> serves application as soon as vps is up⚡
 
 <!-- ! failure -->
 
@@ -54,3 +55,10 @@ IDEA - instead of deploying here and manually doing the code pushing, by using g
 2. build crash and backend container exited out of the composed environment cause there was env failure, as i had mapped env vars in the compose but also gave permission to use local machine env, so both places env makes it hang up unexpectedly
 3. Trailing spaces are not allowed in the env,cleared those unwanted spaces in the env delcarement.
 4. frontend failed to load on the port 5173 cause instance did not expose port [ :5173 ] in inbound rules, once set and save rule -> ready to serve that
+5. since we moved entire project to dockerized env and running there, we have to map base origin of the instance to the api calls
+6. Also again, classic clean state postgresDB running, had to backup original data and dump into the docker postgres container
+
+<!-- ** Success ** -->
+
+1- Env fixes -> maps out correct variables to codebase placeholders which was being picked by native codefile
+2- CORS & URL fixes -> maps out correct url to api calls base url, from localhost to public ipv4 addr of ec2
