@@ -18,7 +18,7 @@ export const useWebSocket = (token, endpointPath = "/api/ws") => {
         const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
 
         // since we are sending token, we won't send to client as it is but an encoded
-        const wsUrl = `${protocol}//localhost:8080${endpointPath}?token=${encodeURIComponent(token)}`; //sending token through qp,it does not supports header
+        const wsUrl = `${protocol}//3.84.111.249:8080${endpointPath}?token=${encodeURIComponent(token)}`; //sending token through qp,it does not supports header
 
         // #1 Opening new instance of webSocket connection
         const ws = new WebSocket(wsUrl); // have to provide the url where the handler is listening for ws request where -> conn is migrated into ws conn and readers waiting for incoming data & writer sending response with ws writeJson method

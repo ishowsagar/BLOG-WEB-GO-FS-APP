@@ -306,8 +306,8 @@ export default function MainLayout() {
 
   const batchReq = {
     url: cursor
-      ? `http://localhost:8080/api/feed/batch?limit=4&nextCursor=${cursor}`
-      : `http://localhost:8080/api/feed/batch?limit=4`,
+      ? `http://3.84.111.249:8080/api/feed/batch?limit=4&nextCursor=${cursor}`
+      : `http://3.84.111.249:8080/api/feed/batch?limit=4`,
     header: { Authorization: token },
     method: "GET",
   };

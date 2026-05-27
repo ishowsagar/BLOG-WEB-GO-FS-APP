@@ -26,7 +26,7 @@ export default function ProfilePosts() {
         header: {
           Authorization: token,
         },
-        url: "http://localhost:8080/api/feed/client/posts",
+        url: "http://3.84.111.249:8080/api/feed/client/posts",
       };
 
       try {

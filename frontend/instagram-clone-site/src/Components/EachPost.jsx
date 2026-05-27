@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-  
+
 function formatRelativeTime(timestamp) {
   if (!timestamp) return "just now";
 
@@ -45,7 +45,7 @@ export default function EachPost() {
     (eachPost) => {
       //* server controller method will send response{struct has ok bool to check if it was a sucess} from this url having id in its url param
       if (!id || !token) return; // early return
-      const url = `http://localhost:8080/api/feed/post/${id}`; // if id and token exists✅
+      const url = `http://3.84.111.249:8080/api/feed/post/${id}`; // if id and token exists✅
       async function fetchEachPostData() {
         try {
           const req = await fetch(url, {
@@ -70,12 +70,12 @@ export default function EachPost() {
       }
       fetchEachPostData();
     },
-    [id, token,postLikesCount],
+    [id, token, postLikesCount],
   );
 
   useEffect(() => {
     if (!id || !token) return; // early return
-    const url = `http://localhost:8080/api/feed/post/comments/${id}`; // if id and token exists✅
+    const url = `http://3.84.111.249:8080/api/feed/post/comments/${id}`; // if id and token exists✅
     async function fetchPostCommentsCount() {
       try {
         const req = await fetch(url, {
@@ -119,7 +119,7 @@ export default function EachPost() {
 
   // add comment
   async function postComment(eachPost) {
-    const commentsUrl = `http://localhost:8080/api/post/comment/${eachPost.id}`;
+    const commentsUrl = `http://3.84.111.249:8080/api/post/comment/${eachPost.id}`;
     try {
       const commentContent = {
         content: commentText,
@@ -163,7 +163,7 @@ export default function EachPost() {
 
     async function loadAllComments() {
       console.log("comments loaded");
-      const commentsUrl = `http://localhost:8080/api/feed/comments/${eachPost.id}`;
+      const commentsUrl = `http://3.84.111.249:8080/api/feed/comments/${eachPost.id}`;
       try {
         const req = await fetch(commentsUrl, {
           method: "GET",
@@ -211,7 +211,7 @@ export default function EachPost() {
       },
     };
     try {
-      const likeReq = await fetch("http://localhost:8080/api/like", {
+      const likeReq = await fetch("http://3.84.111.249:8080/api/like", {
         method: payload.method,
         headers: {
           Authorization: token,

@@ -50,6 +50,7 @@ IDEA - instead of deploying here and manually doing the code pushing, by using g
 <!-- ! failure -->
 
 1. Should never explicitly define env variables like - xName=yVal -> this would break terms
-fix - instead let it pull from local machine env by telling the placeholder it stores in the actual .env file e.g -> xName=${xName} -> it fixes and tells to pull env locally instead of hardcoded stored
+   fix - instead let it pull from local machine env by telling the placeholder it stores in the actual .env file e.g -> xName=${xName} -> it fixes and tells to pull env locally instead of hardcoded stored
 2. build crash and backend container exited out of the composed environment cause there was env failure, as i had mapped env vars in the compose but also gave permission to use local machine env, so both places env makes it hang up unexpectedly
 3. Trailing spaces are not allowed in the env,cleared those unwanted spaces in the env delcarement.
+4. frontend failed to load on the port 5173 cause instance did not expose port [ :5173 ] in inbound rules, once set and save rule -> ready to serve that

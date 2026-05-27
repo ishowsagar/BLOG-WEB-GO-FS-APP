@@ -23,7 +23,7 @@ export const WebSocketDebug = ({ token }) => {
     }
 
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//localhost:8080/api/ws?token=${encodeURIComponent(token)}`;
+    const wsUrl = `${protocol}//3.84.111.249:8080/api/ws?token=${encodeURIComponent(token)}`;
 
     const ws = new WebSocket(wsUrl);
 

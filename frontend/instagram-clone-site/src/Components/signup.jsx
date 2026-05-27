@@ -53,7 +53,7 @@ export function Signup() {
     setSignedup(true); // set to true when client hit sign up button to contionally render text
 
     try {
-      const res = await fetch("http://localhost:8080/form/register", {
+      const res = await fetch("http://3.84.111.249:8080/form/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),

@@ -93,7 +93,7 @@ export function ResetPassword() {
 
     const payload = {
       method: "POST",
-      url: "http://localhost:8080/form/password/reset",
+      url: "http://3.84.111.249:8080/form/password/reset",
     };
 
     localStorage.removeItem("token");

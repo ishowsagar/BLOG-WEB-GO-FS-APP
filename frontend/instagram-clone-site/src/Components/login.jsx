@@ -54,7 +54,7 @@ export function Login() {
 
     const payload = {
       method: "POST",
-      url: "http://localhost:8080/form/login",
+      url: "http://3.84.111.249:8080/form/login",
     };
 
     localStorage.removeItem("token");
@@ -88,7 +88,7 @@ export function Login() {
       //  - checking resp before using returned response
 
       // if client logged in successfully
-      setForm(initialFormData)
+      setForm(initialFormData);
 
       // since token would have been issued for the client -
 

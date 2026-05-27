@@ -54,8 +54,8 @@ export default function Search() {
     const payload = {
       //todo - might need a  ternary check for if search query exists in state fetch on this or that
       url: query
-        ? `http://localhost:8080/api/users/search?name=${query}`
-        : `http://localhost:8080/api/users/search?name=Owner`,
+        ? `http://3.84.111.249:8080/api/users/search?name=${query}`
+        : `http://3.84.111.249:8080/api/users/search?name=Owner`,
       header: {
         Authorization: token,
       },
@@ -116,7 +116,7 @@ export default function Search() {
     // request
     // todo - need to fetch user id of fetched user who needed to follow - followeeID
     const payload = {
-      url: `http://localhost:8080/api/users/follow/${followeeid}`,
+      url: `http://3.84.111.249:8080/api/users/follow/${followeeid}`,
       header: {
         Authorization: token,
       },
@@ -449,8 +449,8 @@ export default function Search() {
             <p className="search_card_label">Search results</p>
             <h2 className="search_card_title">Powered BY Postgres DB</h2>
             <p className="search_empty_state">
-              Handlers call those search endpoint, then render
-              posts, accounts, or reels depending on the selected tab:{" "}
+              Handlers call those search endpoint, then render posts, accounts,
+              or reels depending on the selected tab:{" "}
               <strong>{activeFilter}</strong>.
             </p>
             <div className="search_empty_placeholder">

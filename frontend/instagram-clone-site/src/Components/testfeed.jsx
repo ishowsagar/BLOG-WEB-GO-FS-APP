@@ -8,7 +8,7 @@ export default function TestFeed() {
   useEffect(() => {
     async function load() {
       if (!token) return; // no token -> won't call protected API
-      const res = await fetch("http://localhost:8080/api/feed", {
+      const res = await fetch("http://3.84.111.249:8080/api/feed", {
         method: "GET",
         headers: { Authorization: token },
       });
@@ -23,9 +23,9 @@ export default function TestFeed() {
     <>
       <h1>Blog titles</h1>
       {posts.map((blog) => (
-        <div key={blog.id} style={{backgroundColor:"skyblue"}}>
-        <h3 >{blog.title}</h3>
-        <p>{blog.content}</p>
+        <div key={blog.id} style={{ backgroundColor: "skyblue" }}>
+          <h3>{blog.title}</h3>
+          <p>{blog.content}</p>
         </div>
       ))}
     </>
