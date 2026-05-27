@@ -172,7 +172,7 @@ func main() {
 	defer broker.Close() // closing connection once it is done
 	
 	// inject broker into hub so clients can publish delivery messages
-	hub.SetBroker(broker)
+	hub.SetBroker(broker) //sets broker in the hub instance
 
 	// ws controller
 	wsController := controller.NewWsController(baseDbModel.DB,hub,config.JwtSecret,broker)
