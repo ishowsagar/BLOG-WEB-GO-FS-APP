@@ -17,6 +17,8 @@ type PushNotificationService struct {
 	PostNotification chan models.Post //  chan for recieving and sending post related data struct notifications
 	LikeNotification chan *models.PostDetailedNotification
 	CommentNotification chan *models.CommentPayload
+	// todo - add last chan for follow notifications
+	FollowNotificationPanel chan *models.FollowPayload
 	Hub *Hub // WebSocket hub for broadcasting to connected clients
 
 }
@@ -34,7 +36,7 @@ func NewPNService() *PushNotificationService {
 		// chan whose -> value is rdirected Like
 		LikeNotification: make(chan *models.PostDetailedNotification, 10), // can max buffer upto 5 likes
 		CommentNotification: make(chan *models.CommentPayload,10), // must add buffer size for chan to make them robust
-
+		FollowNotificationPanel: make(chan *models.FollowPayload,10),
 	}
 
 	// starting go routine to keep reading notification
@@ -128,6 +130,28 @@ func(pns *PushNotificationService) StartService() {
 			// if pns.Hub != nil {
 			// 	pns.Hub.Broadcast <- payload
 			// }
+		
+		// follow notification  payload recieved when invoked in handler and sent via pns method
+		case followPayload := <- pns.FollowNotificationPanel :
+			slog.Info("follow payload recieved in the pns service")
+			payload := &ClientNotifyPayload{
+				SenderID: followPayload.FollowSenderID,
+				RecieverID: followPayload.FollowRecieverID,
+				Type: "follow_posted",
+				Content: "new follower recieved",
+			}
+
+			// publishing delivery if reciever is not nil to the broker exchange
+			if followPayload.FollowRecieverID != 0 {
+				err := pns.Hub.BrokerInterface.PublishEvents(followPayload.FollowRecieverID,payload)
+				if err != nil {
+					slog.Error("failed to publish delivery of this follow event to the exchange","error",err)
+					break
+				}
+			slog.Info("successfully published the delivery of this followPayload & sent to the broker consumer","recieverID :",followPayload.FollowRecieverID)
+				
+			}
+
 		// test - adding a reader select's case to read incoming comment chan val
 		case comment := <- pns.CommentNotification :
 			slog.Info("someone posted comment on your post","postID",comment.PostID,"userID",comment.CommentorID)
@@ -147,7 +171,11 @@ func(pns *PushNotificationService) StartService() {
 			// if pns.Hub != nil {
 			// 	pns.Hub.Broadcast <- payload
 			// }
-			pns.Hub.BrokerInterface.PublishEvents(comment.RecieverID,payload) //* stamping the delivery of this payload on the reciever which is checked by the ch.Consume if there is any delivry coming on this ex
+			err := pns.Hub.BrokerInterface.PublishEvents(comment.RecieverID,payload) //* stamping the delivery of this payload on the reciever which is checked by the ch.Consume if there is any delivry coming on this ex
+				if err != nil {
+					slog.Error("failed to publish delivery of this commment event to the exchange","error",err)
+					break
+				}
 			slog.Info("successfully published the delivery of this commentPayload & sent to the broker consumer","recieverID :",comment.RecieverID)
 		}
 	}
@@ -269,6 +297,28 @@ func RetryCommentQueryWithTimeout(pns *PushNotificationService,timeout time.Dura
 				return
 		case <- newTicker.C :
 			// retry new ticker afer this time interval
+		}
+	}
+}
+
+func(p *PushNotificationService) RetryFollowWithTimeout(pns *PushNotificationService,timeout time.Duration,followPayload *models.FollowPayload) {
+	ctx,cancel := context.WithTimeout(context.Background(),timeout)
+	defer cancel()
+
+	// ticker - ticked finished timer based func invocation
+	ticker := time.NewTicker(70 *time.Millisecond)
+	defer ticker.Stop()
+	for {
+		select {
+			// when invoked sends payload to the pns where it is published & available to recived on reciever end
+		case pns.FollowNotificationPanel <- followPayload :
+			slog.Info("new follow recieved","redirected follow to pns service, followerID ",followPayload.FollowSenderID)
+			return
+		case <- ctx.Done() :
+			slog.Warn("queue is timed out","dropping follow",followPayload.FollowSenderID,"userID",followPayload.FollowRecieverID)
+			return
+		case <- ticker.C :
+			// retry as default case when nothing happens
 		}
 	}
 }

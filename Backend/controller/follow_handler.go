@@ -1,9 +1,11 @@
 package controller
 
 import (
+	"database/sql"
 	"log/slog"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/ishowsagar/go-blog-web-application/services"
@@ -13,11 +15,13 @@ import (
 // @ types
 type FollowController struct {
 	FollowDbModel *services.FollowDBModel
+	Pns *services.PushNotificationService
 }
 
-func NewFollowController(followDbModel *services.FollowDBModel) *FollowController {
+func NewFollowController(followDbModel *services.FollowDBModel,pns *services.PushNotificationService) *FollowController {
 	return &FollowController{
 		FollowDbModel: followDbModel,
+		Pns: pns,
 	}
 }
 
@@ -55,7 +59,7 @@ func(f *FollowController) FollowUser(c *gin.Context) {
 
 	//  call method to follow user sequentially <- belongs to FollowDbModel
 
-	err = f.FollowDbModel.FollowUserTransaction(clientID,uint(userToFollowID))
+	followEntryID,err := f.FollowDbModel.FollowUserTransaction(clientID,uint(userToFollowID))
 	if err != nil {
 		if err == services.ErrFollowAlreadyExists {
 			errMsg := "user already followed"
@@ -78,6 +82,21 @@ func(f *FollowController) FollowUser(c *gin.Context) {
 		})
 		return
 	}
+
+	// * sending follow payload to the methods of pns which -> redirects payload to the pns for publisher
+	// test - it might show many rows as follower as sender would have meny entries associated with that id
+	// fix - we to get exact entry using newly record created for the follow, need to grab entry's enntryID
+	// fix2 -> easy, instead of getting entryID, grab all follows order by desc order limit res to1 -> fetch the latest entry
+	followNotificationPayload,followNotiErr := f.FollowDbModel.GetFollowDetailsByFollowerUserID(followEntryID)
+	if followNotiErr != nil {
+		if followNotiErr == sql.ErrNoRows {
+			slog.Error("user not found that was requested to follow","error",err)
+			return
+		}
+		slog.Error("failed to get follow payload","error",err)
+		return
+	}
+	f.Pns.RetryFollowWithTimeout(f.Pns,100 * time.Millisecond,followNotificationPayload)
 
 	//  if succesffully done its work
 	c.JSON(http.StatusOK,utils.SuccessResponse{

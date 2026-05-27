@@ -6,6 +6,7 @@ import (
 	"errors"
 	"log/slog"
 
+	"github.com/ishowsagar/go-blog-web-application/models"
 	"github.com/ishowsagar/go-blog-web-application/utils"
 	"github.com/jackc/pgx/v5/pgconn"
 )
@@ -56,105 +57,80 @@ func(f *FollowDBModel) FollowUser(followerID,followingID uint) (bool,error) {
 
 }
 
-// add followers,folllowee id into followes,updates users both flwr/wing count for them, if followed- following count,and who followed his flwr count +1
-func(f *FollowDBModel) FollowUserTransaction(followerID,followingID uint) error {
+// ✅ Added named return parameter 'err' so the defer block can safely catch errors and rollback
+func (f *FollowDBModel) FollowUserTransaction(followerID, followingID uint) (entryID uint,err error) {
 
-	ctx,timeout := context.WithTimeout(context.Background(),utils.DbTimeoutDuration)
+	ctx, timeout := context.WithTimeout(context.Background(), utils.DbTimeoutDuration)
 	defer timeout()
 
-	// flow -  begin transaction,commit, or rollback
-	tx,err := f.DB.BeginTx(ctx,nil) //* tx now holds all db operations
-	if err!= nil {
-		return err
+	// Begin transaction
+	tx, err := f.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return 0,err
 	}
 
+	// ✅ This now works perfectly because 'err' is a named return value!
 	defer func() {
-		// ! if at the end, still hit any err, rollback changes
 		if err != nil {
 			tx.Rollback()
 		}
 	}()
 
+	var followEntryID uint
 
-
-	//# Single atomic transaction -
-	
-	//  for following a user,relationship added
-
-		followingQuery := `
-			Insert into
-				follows(follower_id,followee_id)
-			Values
-				($1,$2)
-
-		`
-		res,err := tx.ExecContext(ctx,followingQuery,followerID,followingID)
-		if err != nil {
-			var pgErr *pgconn.PgError
-			if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-				slog.Error("duplicate follow relationship","error",err,"followerID",followerID,"followingID",followingID)
-				return ErrFollowAlreadyExists
-			}
-			slog.Error("failed to insert follow","error",err,"followerID",followerID,"followingID",followingID)
-			return err
+	followingQuery := `
+		INSERT INTO follows (follower_id, followee_id)
+		VALUES ($1, $2)
+		RETURNING id
+	`
+	// ✅ Switched to QueryRowContext safely without touching uninitialized 'res'
+	err = tx.QueryRowContext(ctx, followingQuery, followerID, followingID).Scan(&followEntryID)
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			slog.Error("duplicate follow relationship", "error", err, "followerID", followerID, "followingID", followingID)
+			return 0,ErrFollowAlreadyExists
 		}
-		rows,err := res.RowsAffected() // how many rows were changed
-		if err != nil {
-			slog.Error("failed to read follow insert rows affected","error",err,"followerID",followerID,"followingID",followingID)
-			return err
-		}
-		if rows == 0 {
-			slog.Error("no follow row inserted","followerID",followerID,"followingID",followingID)
-			return sql.ErrNoRows // if 0 -> return sql.ErrNoRows
-		}
-		slog.Info("follow insert successful","rows_affected",rows,"followerID",followerID,"followingID",followingID)
+		slog.Error("failed to insert follow", "error", err, "followerID", followerID, "followingID", followingID)
+		return 0,err
+	}
+	slog.Info("follow insert successful", "inserted_id", followEntryID, "followerID", followerID, "followingID", followingID)
 
-	// update followers count for whom client might be following(followee)
-	// bug - had update with no prior inserted value
-	// fix - fixed with adding coalesce(whichField,setDefaultifNotThere) - fix null values
-		followerCountUpdateQuery := `
-			update
-				users
-			set
-				followers_count = COALESCE(followers_count, 0) + 1
-			where 
-				id=$1 
-		`
-		res,err = tx.ExecContext(ctx,followerCountUpdateQuery,followingID)
-		if err != nil {
-			slog.Error("failed to update followers_count","error",err,"followeeID",followingID)
-			return err
-		}
-		rows,_ = res.RowsAffected()
-		slog.Info("followers_count updated","rows_affected",rows,"followeeID",followingID)
+	// Update followers count for the person being followed (followee)
+	followerCountUpdateQuery := `
+		UPDATE users
+		SET followers_count = COALESCE(followers_count, 0) + 1
+		WHERE id = $1
+	`
+	res, err := tx.ExecContext(ctx, followerCountUpdateQuery, followingID)
+	if err != nil {
+		slog.Error("failed to update followers_count", "error", err, "followeeID", followingID)
+		return 0,err
+	}
+	rows, _ := res.RowsAffected()
+	slog.Info("followers_count updated", "rows_affected", rows, "followeeID", followingID)
 
-		
-	// update following count of whom who is following someone
+	// Update following count of the person who clicked follow (follower)
 	followingCountUpdateQuery := `
-			update
-				users
-			set
-				following_count = COALESCE(following_count, 0) + 1
-			where 
-				id=$1 
-		`
-		res,err = tx.ExecContext(ctx,followingCountUpdateQuery,followerID)
-		if err != nil {
-			slog.Error("failed to update following_count","error",err,"followerID",followerID)
-			return err
-		}
-		rows,_ = res.RowsAffected()
-		slog.Info("following_count updated","rows_affected",rows,"followerID",followerID)
+		UPDATE users
+		SET following_count = COALESCE(following_count, 0) + 1
+		WHERE id = $1
+	`
+	res, err = tx.ExecContext(ctx, followingCountUpdateQuery, followerID)
+	if err != nil {
+		slog.Error("failed to update following_count", "error", err, "followerID", followerID)
+		return 0,err
+	}
+	rows, _ = res.RowsAffected()
+	slog.Info("following_count updated", "rows_affected", rows, "followerID", followerID)
 
-	
-		// & commiting all transaction at once
-		err = tx.Commit()
-		if err != nil {
-			tx.Rollback()
-			return err
-		} 
+	// Commit all transaction steps atomically
+	err = tx.Commit()
+	if err != nil {
+		return 0,err
+	}
 
-		return nil
+	return followEntryID,nil
 }
 
 // func that updates follower count
@@ -217,4 +193,35 @@ func(f *FollowDBModel) UpdateFollowingCount(userID uint) (bool,error) {
 	}
 	return true,nil
 
+}
+
+// get follow details of any follow happened by its entryID <- handler assigns
+func(f *FollowDBModel) GetFollowDetailsByFollowerUserID	(followSenderID uint) (*models.FollowPayload,error) {
+	ctx,timeout := context.WithTimeout(context.Background(),utils.DbTimeoutDuration)
+	defer timeout()
+
+	query := `
+		Select
+			follower_id as follow_sender_id,followee_id as follow_reciever_id
+		from
+			follows
+		where
+			id=$1
+	`
+
+	resRow := f.DB.QueryRowContext(ctx,query,followSenderID)
+	var payload models.FollowPayload	
+	err := resRow.Scan(
+		&payload.FollowSenderID,
+		&payload.FollowRecieverID,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil,sql.ErrNoRows
+		}
+		return nil,err
+	}
+
+	return &payload,nil
 }

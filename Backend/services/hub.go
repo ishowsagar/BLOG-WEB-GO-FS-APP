@@ -80,6 +80,7 @@ func IntializeNewHubInstance() *Hub {
 		RegisterRoomClient: make(chan *Client),
 		ChatRoomClients: make(map[uint]map[*Client]bool),
 		ClientStore: make(map[uint]*Client),
+		TargettedClientNotificationTypeOnly: make(chan *ClientNotifyPayload),
 		// DirectMessagesHub: make(chan *models.DirectMessage),
 	}
 }
@@ -397,11 +398,18 @@ func(h *Hub) RunService() {
 						slog.Info("successfully recieved payload of type Like")
 						// ticker sends when done ticked
 						targettedActiveClient.Send <- notifyPayload
+						slog.Info("successfully sent notification payload to the targetted client")
 					case "comment_posted" :
 						slog.Info("successfully recieved payload of type Comment")
 						// ticker sends when done ticked
 						targettedActiveClient.Send <- notifyPayload
-					// must have default for fallback if nothing meets the conditions declared above
+						slog.Info("successfully sent notification payload to the targetted client")
+					case "follow_posted" :
+						slog.Info("successfully recieved payload of type follow")
+						// if upon recieving send to that targtted client chan where writer responds to that client with payload info 
+						targettedActiveClient.Send <- notifyPayload
+						slog.Info("successfully sent notification payload to the targetted client")
+						// must have default for fallback if nothing meets the conditions declared above
 					default : 
 						slog.Info("unknown notificaiton payload","notification_type",notifyPayload.Type)
 				}

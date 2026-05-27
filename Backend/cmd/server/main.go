@@ -137,7 +137,7 @@ func main() {
 	commentController := controller.NewCommentController(commentDbModel,pushNotificationService)
 	postController := controller.NewPostController(postDbModel,pushNotificationService)
 	likeController := controller.NewLikeController(likeDbModel,pushNotificationService)
-	followController := controller.NewFollowController(followDbModel)
+	followController := controller.NewFollowController(followDbModel,pushNotificationService)
 
 	// **  Stack verification  health check firstly before running main app  **//
 

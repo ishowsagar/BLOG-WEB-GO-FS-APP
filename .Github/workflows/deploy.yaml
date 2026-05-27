@@ -1,0 +1,32 @@
+# name of the service for vps devOFF
+name: Continuous Deployment
+
+# on push where -> push to which branch
+on:
+  push:
+    branches:
+      - main
+
+# what it will do actually, job of this cd thing
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps :
+      - name: Checkout codebase
+        uses : actions/checkout@v4
+      
+      - name : Execute shh commands to deploy
+        uses : appleboy/ssh-actions@v1.0.3
+        with :
+          host :
+          username :
+          key :
+          script : |
+# navigate to project dir
+
+# pull latest code from the github
+
+# builds whole compose, later change focused only
+
+

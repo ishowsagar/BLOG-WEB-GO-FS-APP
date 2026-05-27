@@ -182,3 +182,8 @@ type CommentPayload struct {
 	CommentContent string `json:"comment_content"`
 	RecieverID uint `json:"reciever_id"` 
 }
+// notification type struct for follow payload
+type FollowPayload struct {
+	FollowSenderID uint `json:"follow_sender_id"`
+	FollowRecieverID uint `json:"follow_reciever_id"`
+}

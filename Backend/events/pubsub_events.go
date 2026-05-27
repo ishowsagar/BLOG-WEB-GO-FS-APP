@@ -204,7 +204,8 @@ func (p *PubSubBroker) StartConsumingDeliveries() error {
 				default:
 					slog.Error("CONSUMER unable to send to Broadcast", "error", "channel full or blocked")
 				}
-			} else if payload.RoomID == 0 && payload.RecieverID != 0 {
+				// !bug - this case has no explicit type which makes it execute first
+			} else if payload.RoomID == 0 && payload.RecieverID != 0 && payload.Type=="dm" {
 				slog.Info("CONSUMER routing to TargettedBrokerMessages", "target_user", payload.RecieverID)
 				select {
 				case p.hub.TargettedBrokerMessages <- &payload:
@@ -226,7 +227,15 @@ func (p *PubSubBroker) StartConsumingDeliveries() error {
 				default :
 						slog.Error("CONSUMER unable to send to TargettedBrokerMessages", "error", "channel full or blocked", "receiver", payload.RecieverID)	
 				}
-			} 
+			}else if payload.Type == "follow_posted" && payload.RecieverID != 0 && payload.RoomID == 0 {
+				select {
+				case p.hub.TargettedClientNotificationTypeOnly<- &payload :
+					slog.Info("follow notification is successfully sent to hub's TargettedClientNotificationTypeOnly chan")
+				default :
+				// bug - failing here and also need to fix above thing 
+					slog.Info("CONSUMER is unable to send to TargettedClientNotificationTypeOnly","error","channel is either full or blocked")
+				}
+			}  
 
 			slog.Debug("forwarded to hub", "sender_id", payload.SenderID, "receiver_id", payload.RecieverID)
 		}
