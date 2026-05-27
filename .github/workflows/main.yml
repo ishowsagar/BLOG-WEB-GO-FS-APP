@@ -25,4 +25,4 @@ jobs:
           script: |
             cd /home/ubuntu/BLOG-WEB-GO-FS-APP
             git pull origin main
-            docker compose up -d --build backend
+            docker compose up -d --build backend frontend
