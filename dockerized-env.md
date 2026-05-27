@@ -1,4 +1,5 @@
 <!-- @ Moving forward to continuous deployment -->
+
 IDEA - instead of deploying here and manually doing the code pushing, by using github actions, let actions access remote server, pull changes and build composed project
 
 -> .Github/workflows/deploys.yaml - script for running cd automation
@@ -42,6 +43,11 @@ IDEA - instead of deploying here and manually doing the code pushing, by using g
 1 - due to Private repo,it was failing to clone into the dir.
 2 - fix the repo visibility to public from settings and successfully cloned down the repo.
 
-
 <!-- ****  TESTING  **** -->
+
 - pushing a code change -> when a change is detected -> connects to the remote ubuntu aws ec2 server instance and pull latest changes as new code was pushed -> build the project to serve in one go
+
+<!-- ! failure -->
+
+!. Should never explicitly define env variables like - xName=yVal -> this would break terms
+fix - instead let it pull from local machine env by telling the placeholder it stores in the actual .env file e.g -> xName=${xName} -> it fixes and tells to pull env locally instead of hardcoded stored
