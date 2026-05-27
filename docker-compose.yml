@@ -53,17 +53,7 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - DB_DBASE_NAME=instagramdb
-      - DB_USER=blog_admin
-      - DB_PASSWORD=blog
       - DB_HOST=postgres_instagram_db
-      - DB_PORT=5432
-      - BINARY=BLOG_PROJECT_BINARY
-      - S3AccessKeyID=${S3AccessKeyID}
-      - S3SecretKey=${S3SecretKey}
-      - S3BucketName=${S3BucketName}
-      - S3Region=${S3Region}
-      - jwtSecretSigningKey=someSecretThatIsNotMeantToBeLeaked
       - SERVER_PORT=8080
       - REDIS_HOST_ADDR=redis_cache_micro_service:6379
     depends_on:
