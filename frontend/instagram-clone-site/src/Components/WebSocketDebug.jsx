@@ -117,8 +117,6 @@ export const WebSocketDebug = ({ token }) => {
 
   return (
     <div
-      className="WebSocketDebug"
-      data-websocket-debug="true"
       style={{
         position: "fixed",
         top: 12,
