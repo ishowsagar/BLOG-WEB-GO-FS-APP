@@ -65,3 +65,11 @@ IDEA - instead of deploying here and manually doing the code pushing, by using g
 
 1- Env fixes -> maps out correct variables to codebase placeholders which was being picked by native codefile
 2- CORS & URL fixes -> maps out correct url to api calls base url, from localhost to public ipv4 addr of ec2
+
+<!-- & Domain expansion to https -->
+
+> Bought domain
+> Added two A records and deleted all defaults
+> 1 - Pointing directly to aws ec2 server ipv4 addr
+> 2 - Pointing to same ip but host being www not @
+> 3 - to reverse proxy frontend client requests, we hid the exposed 5173 but exposed standard web request port 80 mapped to "frontend" service container 80 - it means when they hit domain on this port -> serves the frontend service exposed on mapped container port
