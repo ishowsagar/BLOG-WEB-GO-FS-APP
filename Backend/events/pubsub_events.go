@@ -188,7 +188,7 @@ func (p *PubSubBroker) StartConsumingDeliveries() error {
 
 			
 			//& if incoming delivery payload has roomID <- recieving delivieries related to room
-			if payload.RoomID != 0 {
+			if payload.RoomID != 0 && payload.Type =="room_msg" {
 				slog.Info("CONSUMER routing to RoomClientsPayloads", "room_id", payload.RoomID, "sender_id", payload.SenderID)
 				select {
 				case p.hub.RoomClientsPayloads <- &payload:
@@ -205,11 +205,11 @@ func (p *PubSubBroker) StartConsumingDeliveries() error {
 					slog.Error("CONSUMER unable to send to Broadcast", "error", "channel full or blocked")
 				}
 				// !bug - this case has no explicit type which makes it execute first
-			} else if payload.RoomID == 0 && payload.RecieverID != 0 && payload.Type=="dm" {
+			} else if payload.RoomID == 0 && payload.RecieverID != 0 && payload.Type=="dm" &&payload.SenderID != 0 && payload.SenderID != payload.RecieverID {
 				slog.Info("CONSUMER routing to TargettedBrokerMessages", "target_user", payload.RecieverID)
 				select {
 				case p.hub.TargettedBrokerMessages <- &payload:
-					slog.Info("CONSUMER successfully sent to TargettedBrokerMessages")
+					slog.Info("CONSUMER successfully sent to TargettedBrokerMessages","senderID",payload.SenderID,"recieverID",payload.RecieverID)
 				default:
 					slog.Error("CONSUMER unable to send to TargettedBrokerMessages", "error", "channel full or blocked", "receiver", payload.RecieverID)
 				}

@@ -182,30 +182,30 @@ func(h *Hub) RunService() {
 			
 			// & broker case -> when payload comes from consumer - "dm"
 			case targttedMsg := <- h.TargettedBrokerMessages :
-			slog.Info("HUB received TargettedBrokerMessages", "receiver", targttedMsg.RecieverID, "sender", targttedMsg.SenderID, "clients_count", len(h.Clients))
+			slog.Info("HUB received TargettedBrokerMessages", "receiverID", targttedMsg.RecieverID, "senderID", targttedMsg.SenderID, "clients_count", len(h.Clients))
 			// check for target client and redirect to its ws writer for response
-			found := false
-			slog.Debug("HUB looping through clients to find target", "target_id", targttedMsg.RecieverID)
-			for currentActiveClient := range h.Clients {
-				if currentActiveClient.ID == targttedMsg.RecieverID || currentActiveClient.ID == targttedMsg.SenderID {
-					found = true
-					slog.Info("HUB found target client, sending to Send channel", "client_id", currentActiveClient.ID)
-					go func(cl *Client, payload *ClientNotifyPayload) {
-						select {
-						case cl.Send <- payload:
-							slog.Info("HUB message sent to client.Send")
-						case <-time.After(time.Second):
-							slog.Warn("HUB failed to route targeted message (timeout)", "client_id", cl.ID)
-						}
-					}(currentActiveClient, targttedMsg)
+			 connectedClientsForMessagging := make(map[*Client]bool)
+			for activeStoredClient := range h.Clients {
+				if activeStoredClient.ID == targttedMsg.RecieverID {
+					// * save reciever in map
+					connectedClientsForMessagging[activeStoredClient] = true
 				}
 			}
-			if !found {
-				slog.Error("HUB target client not found", "target_id", targttedMsg.RecieverID, "active_clients", len(h.Clients))
-			} else {
-				slog.Debug("HUB targeted delivery summary", "receiver", targttedMsg.RecieverID)
+
+			// if both clients are not connected mutually
+			if len(connectedClientsForMessagging) == 0 {
+				slog.Info("no connected clients for receiver", "receiverID", targttedMsg.RecieverID)
+				break
 			}
-			
+			for reciever := range connectedClientsForMessagging{
+				select {
+				case reciever.Send <- targttedMsg :
+					slog.Info("successfully sent message to reciever client writer")
+				default :
+				slog.Warn("client send blocked", "clientID", reciever.ID)
+    
+				}
+			}
 			
 			//@ Recieves room client and set them in desired room
 			case client := <- h.RegisterRoomClient :
