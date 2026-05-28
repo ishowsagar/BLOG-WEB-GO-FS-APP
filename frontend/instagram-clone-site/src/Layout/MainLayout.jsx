@@ -3,9 +3,15 @@ import Footer from "../Components/Footer";
 import Sidebar from "../Components/Sidebar";
 import { WebSocketDebug } from "../Components/WebSocketDebug";
 import { Outlet, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useEffect, useRef, useState, createContext, useContext } from "react";
 import { useWebSocket } from "../hooks/useWebSocket";
 import sendIcon from "../assets/icons/send.png";
+import HomeIcon from "../assets/icons/homes.png";
+import SearchIcon from "../assets/icons/search.png";
+import CreateIcon from "../assets/icons/Create.png";
+import ReelsIcon from "../assets/icons/reels.png";
+import UserIcon from "../assets/icons/user.png";
 import { apiUrl } from "../Services/apiConfig";
 
 const postDataContext = createContext();
@@ -45,10 +51,11 @@ export default function MainLayout() {
 
   function joinRoom(roomId) {
     if (!currentUserId || !sendNotifications) return;
+    setShowRoomInbox(true);
+    setActiveRoomId(roomId);
     sendNotifications({
       sender_id: currentUserId,
       reciever_id: 0,
-      room_id: roomId,
       room_status: true,
       type: "room_msg",
       content: "",
@@ -416,10 +423,12 @@ export default function MainLayout() {
         >
           <section className="Site_wrapper">
             <button
+              className="mobile_shortcut_button mobile_shortcut_room"
               onClick={() => {
                 const willShow = !showRoomInbox;
                 setShowRoomInbox(willShow);
                 if (willShow) joinRoom(1); // auto-join room 1 when opening
+                if (!willShow) setActiveRoomId(null);
               }}
               style={{
                 position: "fixed",
@@ -437,7 +446,6 @@ export default function MainLayout() {
                 gap: "0.5rem",
                 zIndex: 9998,
               }}
-              className="floating-msg-btn"
             >
               Group Chat{" "}
               {roomThreadEntries.length > 0
@@ -446,6 +454,7 @@ export default function MainLayout() {
             </button>
 
             <button
+              className="mobile_shortcut_button mobile_shortcut_dm"
               onClick={() => setShowDmInbox((prev) => !prev)}
               style={{
                 position: "fixed",
@@ -463,7 +472,6 @@ export default function MainLayout() {
                 gap: "0.5rem",
                 zIndex: 9998,
               }}
-              className="floating-msg-btn"
             >
               <img
                 src={sendIcon}
@@ -476,6 +484,7 @@ export default function MainLayout() {
 
             {showDmInbox && (
               <div
+                className="mobile_drawer mobile_drawer_dm"
                 style={{
                   position: "fixed",
                   bottom: "5rem",
@@ -714,6 +723,7 @@ export default function MainLayout() {
 
             {showRoomInbox && (
               <div
+                className="mobile_drawer mobile_drawer_room"
                 style={{
                   position: "fixed",
                   bottom: "5rem",
@@ -996,6 +1006,29 @@ export default function MainLayout() {
                 <Outlet />
               </main>
             </div>
+
+            <nav className="mobile_bottom_nav" aria-label="Mobile navigation">
+              <Link to="/" className="mobile_bottom_nav_item">
+                <img src={HomeIcon} alt="Home" />
+                <span>Home</span>
+              </Link>
+              <Link to="/search" className="mobile_bottom_nav_item">
+                <img src={SearchIcon} alt="Search" />
+                <span>Search</span>
+              </Link>
+              <Link to="/create" className="mobile_bottom_nav_item">
+                <img src={CreateIcon} alt="Create" />
+                <span>Create</span>
+              </Link>
+              <Link to="/reels" className="mobile_bottom_nav_item">
+                <img src={ReelsIcon} alt="Reels" />
+                <span>Reels</span>
+              </Link>
+              <Link to="/profile" className="mobile_bottom_nav_item">
+                <img src={UserIcon} alt="Profile" />
+                <span>Profile</span>
+              </Link>
+            </nav>
 
             <Footer />
           </section>

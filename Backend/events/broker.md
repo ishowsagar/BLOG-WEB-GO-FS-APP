@@ -36,14 +36,15 @@ Conclusion -> invoke publish method to mark the delivery of the event and consum
 > Dm payload
 
     ```json
-   {
-  "sender_id": 41,
-  "reciever_id": 16,
-  "sender_name": "edge Client",
-  "reciever_name": "brave Client",
-  "type": "dm",
-  "content": "hello from RabbitMQ UI",
-  "post_id": 0
+
+{
+"sender_id": 41,
+"reciever_id": 16,
+"sender_name": "edge Client",
+"reciever_name": "brave Client",
+"type": "dm",
+"content": "hello from RabbitMQ UI",
+"post_id": 0
 }
 
 > Room chat payload
@@ -57,76 +58,75 @@ Conclusion -> invoke publish method to mark the delivery of the event and consum
   "room_id": 1,
   "room_status": false,
   "type": "room_msg",
-  "content": "hello from RabbitMQ UI",
+  "content": "hello in the group chat",
   "post_id": 0
 }
 ```
 
 > Use `room_status: true` when joining the room, and `room_status: false` with non-empty `content` when sending a room message.
 
-
 case currentRoomPayloadRequest := <- h.RoomClientsPayloads :
-				slog.Info("Succesfully recieved payload in roomCLientsPayload chan", "room_id", currentRoomPayloadRequest.RoomID, "sender_id", currentRoomPayloadRequest.SenderID, "room_status", currentRoomPayloadRequest.RoomStatus)
+slog.Info("Succesfully recieved payload in roomCLientsPayload chan", "room_id", currentRoomPayloadRequest.RoomID, "sender_id", currentRoomPayloadRequest.SenderID, "room_status", currentRoomPayloadRequest.RoomStatus)
 
-				roomClients, roomExists := h.ChatRoomClients[currentRoomPayloadRequest.RoomID]
-				if !roomExists && currentRoomPayloadRequest.RoomStatus {
-					roomClients = make(map[*Client]bool)
-					h.ChatRoomClients[currentRoomPayloadRequest.RoomID] = roomClients
-				}
+    			roomClients, roomExists := h.ChatRoomClients[currentRoomPayloadRequest.RoomID]
+    			if !roomExists && currentRoomPayloadRequest.RoomStatus {
+    				roomClients = make(map[*Client]bool)
+    				h.ChatRoomClients[currentRoomPayloadRequest.RoomID] = roomClients
+    			}
 
-				var senderClient *Client // store msg sender in room
-				for activeClient := range h.Clients {
-					if activeClient.ID == currentRoomPayloadRequest.SenderID {
-						senderClient = activeClient
-						break
-					}
-				}
+    			var senderClient *Client // store msg sender in room
+    			for activeClient := range h.Clients {
+    				if activeClient.ID == currentRoomPayloadRequest.SenderID {
+    					senderClient = activeClient
+    					break
+    				}
+    			}
 
-				if senderClient == nil {
-					slog.Warn("HUB room payload sender not found among active clients", "room_id", currentRoomPayloadRequest.RoomID, "sender_id", currentRoomPayloadRequest.SenderID)
-					break
-				}
+    			if senderClient == nil {
+    				slog.Warn("HUB room payload sender not found among active clients", "room_id", currentRoomPayloadRequest.RoomID, "sender_id", currentRoomPayloadRequest.SenderID)
+    				break
+    			}
 
-				if currentRoomPayloadRequest.RoomStatus {
-					if !roomExists {
-						slog.Info("HUB created room map", "room_id", currentRoomPayloadRequest.RoomID)
-					}
-					roomClients[senderClient] = true //* stores sender Client in room
-					slog.Info("client is added to the room", "roomID", currentRoomPayloadRequest.RoomID, "clientID", currentRoomPayloadRequest.SenderID)
+    			if currentRoomPayloadRequest.RoomStatus {
+    				if !roomExists {
+    					slog.Info("HUB created room map", "room_id", currentRoomPayloadRequest.RoomID)
+    				}
+    				roomClients[senderClient] = true //* stores sender Client in room
+    				slog.Info("client is added to the room", "roomID", currentRoomPayloadRequest.RoomID, "clientID", currentRoomPayloadRequest.SenderID)
 
-					if currentRoomPayloadRequest.RecieverID != 0 && currentRoomPayloadRequest.RecieverID != currentRoomPayloadRequest.SenderID {
-						for activeClient := range h.Clients {
-							if activeClient.ID == currentRoomPayloadRequest.RecieverID {
-								roomClients[activeClient] = true
-								slog.Info("receiver added to the room", "roomID", currentRoomPayloadRequest.RoomID, "clientID", currentRoomPayloadRequest.RecieverID)
-								break
-							}
-						}
-					}
-					break
-				}
+    				if currentRoomPayloadRequest.RecieverID != 0 && currentRoomPayloadRequest.RecieverID != currentRoomPayloadRequest.SenderID {
+    					for activeClient := range h.Clients {
+    						if activeClient.ID == currentRoomPayloadRequest.RecieverID {
+    							roomClients[activeClient] = true
+    							slog.Info("receiver added to the room", "roomID", currentRoomPayloadRequest.RoomID, "clientID", currentRoomPayloadRequest.RecieverID)
+    							break
+    						}
+    					}
+    				}
+    				break
+    			}
 
-				if currentRoomPayloadRequest.Content == "" {
-					delete(roomClients, senderClient)
-					slog.Info("client is disconnected from the room", "roomID", currentRoomPayloadRequest.RoomID, "clientID", currentRoomPayloadRequest.SenderID)
-					if len(roomClients) == 0 {
-						delete(h.ChatRoomClients, currentRoomPayloadRequest.RoomID)
-						slog.Info("HUB: room deleted (empty)", "room_id", currentRoomPayloadRequest.RoomID)
-					}
-					break
-				}
+    			if currentRoomPayloadRequest.Content == "" {
+    				delete(roomClients, senderClient)
+    				slog.Info("client is disconnected from the room", "roomID", currentRoomPayloadRequest.RoomID, "clientID", currentRoomPayloadRequest.SenderID)
+    				if len(roomClients) == 0 {
+    					delete(h.ChatRoomClients, currentRoomPayloadRequest.RoomID)
+    					slog.Info("HUB: room deleted (empty)", "room_id", currentRoomPayloadRequest.RoomID)
+    				}
+    				break
+    			}
 
-				if !roomExists {
-					slog.Warn("HUB room message received but room does not exist locally", "room_id", currentRoomPayloadRequest.RoomID)
-					break
-				}
+    			if !roomExists {
+    				slog.Warn("HUB room message received but room does not exist locally", "room_id", currentRoomPayloadRequest.RoomID)
+    				break
+    			}
 
-				// * loop over each client in the roomClients -> rediect payload to eachClient.Send chan so it writes response to the those client in the writers
-				for currentRoomClient := range roomClients {
-					select {
-					case currentRoomClient.Send <- currentRoomPayloadRequest:
-						slog.Info("message sent in the room", "roomID", currentRoomPayloadRequest.RoomID, "message", currentRoomPayloadRequest.Content)
-					default:
-						slog.Warn("HUB failed to send room message, client.Send full", "client_id", currentRoomClient.ID, "room_id", currentRoomPayloadRequest.RoomID)
-					}
-				}
+    			// * loop over each client in the roomClients -> rediect payload to eachClient.Send chan so it writes response to the those client in the writers
+    			for currentRoomClient := range roomClients {
+    				select {
+    				case currentRoomClient.Send <- currentRoomPayloadRequest:
+    					slog.Info("message sent in the room", "roomID", currentRoomPayloadRequest.RoomID, "message", currentRoomPayloadRequest.Content)
+    				default:
+    					slog.Warn("HUB failed to send room message, client.Send full", "client_id", currentRoomClient.ID, "room_id", currentRoomPayloadRequest.RoomID)
+    				}
+    			}
