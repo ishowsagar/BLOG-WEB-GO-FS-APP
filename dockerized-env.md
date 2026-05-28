@@ -57,6 +57,9 @@ IDEA - instead of deploying here and manually doing the code pushing, by using g
 4. frontend failed to load on the port 5173 cause instance did not expose port [ :5173 ] in inbound rules, once set and save rule -> ready to serve that
 5. since we moved entire project to dockerized env and running there, we have to map base origin of the instance to the api calls
 6. Also again, classic clean state postgresDB running, had to backup original data and dump into the docker postgres container
+7. Keys get compromised if mistakenly pushed to the compose env, makes it inactive
+8. If keys get exposed and restricted, make sure to create new , grab both accessid and secretkey, replace them in env only, don't expose to compose env of any service
+9. Upon restarting ec2 instance, Don't forget to change newly assgined ipv4 addr cause it changes everytime, make sure to update in the github secrets.
 
 <!-- ** Success ** -->
 
