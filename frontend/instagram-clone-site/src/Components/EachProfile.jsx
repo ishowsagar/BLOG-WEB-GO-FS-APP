@@ -223,34 +223,40 @@ export default function EachProfile() {
         notification.sender_id = notification.senderId;
       }
 
-      if (notification.type !== "dm") return;
-
       const incomingSenderId = Number(notification.sender_id);
       const incomingReceiverId = Number(notification.reciever_id);
+      if (!incomingSenderId || !incomingReceiverId) return;
+
       const incomingReceiverName =
         notification.reciever_name || notification.recieverName;
       const incomingSenderName =
         notification.sender_name || notification.senderName;
 
+      const isCurrentConversationMessage =
+        (incomingSenderId === senderId && incomingReceiverId === receiverId) ||
+        (incomingSenderId === receiverId && incomingReceiverId === senderId);
+
+      if (!isCurrentConversationMessage) return;
+
       if (incomingSenderId === senderId && incomingReceiverId === receiverId) {
         return;
       }
 
-      if (incomingSenderId === receiverId && incomingReceiverId === senderId) {
-        setDmMessages((prev) => [
-          ...prev,
-          {
-            sender_id: incomingSenderId,
-            reciever_id: incomingReceiverId,
-            type: "dm",
-            content: notification.content,
-            direction: "incoming",
-            senderName: incomingSenderName,
-            recieverName: incomingReceiverName,
-          },
-        ]);
-        setDmStatus("new message received");
-      }
+      setDmMessages((prev) => [
+        ...prev,
+        {
+          sender_id: incomingSenderId,
+          reciever_id: incomingReceiverId,
+          type: notification.type || "dm",
+          content: notification.content,
+          direction: incomingSenderId === senderId ? "outgoing" : "incoming",
+          senderName: incomingSenderName,
+          recieverName: incomingReceiverName,
+        },
+      ]);
+      setDmStatus(
+        incomingSenderId === senderId ? "message sent" : "new message received",
+      );
     });
 
     return unsubscribe;
