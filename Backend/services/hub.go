@@ -185,27 +185,15 @@ func(h *Hub) RunService() {
 			slog.Info("HUB received TargettedBrokerMessages", "receiver", targttedMsg.RecieverID, "sender", targttedMsg.SenderID, "clients_count", len(h.Clients))
 			// check for target client and redirect to its ws writer for response
 			found := false
-			sentCount := 0
-			seen := make(map[uint]bool) // dedupe by user ID in case multiple *Client entries exist for same user
 			slog.Debug("HUB looping through clients to find target", "target_id", targttedMsg.RecieverID)
 			for currentActiveClient := range h.Clients {
-				// skip duplicate client IDs
-				if seen[currentActiveClient.ID] {
-					continue
-				}
-				// do not echo the message back to the sender
-				if currentActiveClient.ID == targttedMsg.SenderID {
-					continue
-				}
 				if currentActiveClient.ID == targttedMsg.RecieverID {
-					seen[currentActiveClient.ID] = true
 					found = true
 					slog.Info("HUB found target client, sending to Send channel", "client_id", currentActiveClient.ID)
 					go func(cl *Client, payload *ClientNotifyPayload) {
 						select {
 						case cl.Send <- payload:
 							slog.Info("HUB message sent to client.Send")
-							// incrementing sentCount in goroutine not safe for this loop; it's okay to log only
 						case <-time.After(time.Second):
 							slog.Warn("HUB failed to route targeted message (timeout)", "client_id", cl.ID)
 						}
@@ -215,7 +203,7 @@ func(h *Hub) RunService() {
 			if !found {
 				slog.Error("HUB target client not found", "target_id", targttedMsg.RecieverID, "active_clients", len(h.Clients))
 			} else {
-				slog.Debug("HUB targeted delivery summary", "sent_count", sentCount)
+				slog.Debug("HUB targeted delivery summary", "receiver", targttedMsg.RecieverID)
 			}
 			
 			
