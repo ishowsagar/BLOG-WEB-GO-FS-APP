@@ -180,14 +180,14 @@ func(h *Hub) RunService() {
 					}
 				}
 			
-			// & broker case -> when payload comes from consumer
+			// & broker case -> when payload comes from consumer - "dm"
 			case targttedMsg := <- h.TargettedBrokerMessages :
 			slog.Info("HUB received TargettedBrokerMessages", "receiver", targttedMsg.RecieverID, "sender", targttedMsg.SenderID, "clients_count", len(h.Clients))
 			// check for target client and redirect to its ws writer for response
 			found := false
 			slog.Debug("HUB looping through clients to find target", "target_id", targttedMsg.RecieverID)
 			for currentActiveClient := range h.Clients {
-				if currentActiveClient.ID == targttedMsg.RecieverID {
+				if currentActiveClient.ID == targttedMsg.RecieverID || currentActiveClient.ID == targttedMsg.SenderID {
 					found = true
 					slog.Info("HUB found target client, sending to Send channel", "client_id", currentActiveClient.ID)
 					go func(cl *Client, payload *ClientNotifyPayload) {
