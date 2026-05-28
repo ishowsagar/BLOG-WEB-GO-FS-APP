@@ -7,6 +7,7 @@ import {
   NavLink,
 } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { apiUrl } from "../Services/apiConfig";
 
 export function ResetPassword() {
   //  form intial empty values
@@ -93,7 +94,7 @@ export function ResetPassword() {
 
     const payload = {
       method: "POST",
-      url: "http://3.84.111.249:8080/form/password/reset",
+      url: apiUrl("/form/password/reset"),
     };
 
     localStorage.removeItem("token");

@@ -3,6 +3,7 @@ import { useLocation, Outlet, useNavigate, Link } from "react-router-dom";
 import pfp from "../assets/pfp.jpg";
 import ProfileNav from "./ProfileNav";
 import WebSocketDebug from "./WebSocketDebug";
+import { apiUrl } from "../Services/apiConfig";
 export default function Profile() {
   console.log("/profile");
   // states
@@ -29,7 +30,7 @@ export default function Profile() {
       // fixed - added controller and repo's corresponding methods to fetch data sequentially
       //  need to pass userID to fetch data for that profile - user struct data type
       // frotend does not need to pass id, it will be fetched by backend to req data
-      const url = `http://3.84.111.249:8080/api/profile`;
+      const url = apiUrl("/api/profile");
       const reqMethod = "GET";
       try {
         const req = await fetch(url, {

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { apiUrl } from "../Services/apiConfig";
 
 export default function TestFeed() {
   const token =
@@ -8,7 +9,7 @@ export default function TestFeed() {
   useEffect(() => {
     async function load() {
       if (!token) return; // no token -> won't call protected API
-      const res = await fetch("http://3.84.111.249:8080/api/feed", {
+      const res = await fetch(apiUrl("/api/feed"), {
         method: "GET",
         headers: { Authorization: token },
       });

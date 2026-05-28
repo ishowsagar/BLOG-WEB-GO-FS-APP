@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import SearchIcon from "../assets/icons/search.png";
+import { apiUrl } from "../Services/apiConfig";
 
 const FILTERS = ["Top", "Accounts", "Reels", "Tags"];
 
@@ -54,8 +55,8 @@ export default function Search() {
     const payload = {
       //todo - might need a  ternary check for if search query exists in state fetch on this or that
       url: query
-        ? `http://3.84.111.249:8080/api/users/search?name=${query}`
-        : `http://3.84.111.249:8080/api/users/search?name=Owner`,
+        ? apiUrl(`/api/users/search?name=${encodeURIComponent(query)}`)
+        : apiUrl("/api/users/search?name=Owner"),
       header: {
         Authorization: token,
       },
@@ -116,7 +117,7 @@ export default function Search() {
     // request
     // todo - need to fetch user id of fetched user who needed to follow - followeeID
     const payload = {
-      url: `http://3.84.111.249:8080/api/users/follow/${followeeid}`,
+      url: apiUrl(`/api/users/follow/${followeeid}`),
       header: {
         Authorization: token,
       },

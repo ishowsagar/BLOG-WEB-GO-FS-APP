@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, redirect, useNavigate } from "react-router-dom";
+import { apiUrl } from "../Services/apiConfig";
 
 export function Signup() {
   //  form intial empty values
@@ -53,7 +54,7 @@ export function Signup() {
     setSignedup(true); // set to true when client hit sign up button to contionally render text
 
     try {
-      const res = await fetch("http://3.84.111.249:8080/form/register", {
+      const res = await fetch(apiUrl("/form/register"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),

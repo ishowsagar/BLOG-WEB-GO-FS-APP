@@ -1,5 +1,6 @@
 import { use, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { apiUrl } from "../Services/apiConfig";
 
 const postImg1 =
   "https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=400&q=80";
@@ -26,7 +27,7 @@ export default function ProfilePosts() {
         header: {
           Authorization: token,
         },
-        url: "http://3.84.111.249:8080/api/feed/client/posts",
+        url: apiUrl("/api/feed/client/posts"),
       };
 
       try {

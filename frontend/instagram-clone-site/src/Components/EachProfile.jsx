@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useContext } from "react";
 import { RealtimeContext } from "../Layout/MainLayout";
+import { apiUrl } from "../Services/apiConfig";
 
 export default function EachProfile() {
   console.log("/eachProfile");
@@ -46,7 +47,7 @@ export default function EachProfile() {
     async function fetchProfileDataByID() {
       // fetch userid from the url
       console.log("opened profile of user with userID :", userid);
-      const url = `http://3.84.111.249:8080/api/user/profile/${userid}`;
+      const url = apiUrl(`/api/user/profile/${userid}`);
 
       //   fetch
 
@@ -119,7 +120,7 @@ export default function EachProfile() {
     // request
     // todo - need to fetch user id of fetched user who needed to follow - followeeID
     const payload = {
-      url: `http://3.84.111.249:8080/api/users/follow/${followeeid}`,
+      url: apiUrl(`/api/users/follow/${followeeid}`),
       header: {
         Authorization: token,
       },

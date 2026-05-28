@@ -7,6 +7,7 @@ import {
   NavLink,
 } from "react-router-dom";
 import { useState } from "react";
+import { apiUrl } from "../Services/apiConfig";
 
 export function Login() {
   //  form intial empty values
@@ -54,7 +55,7 @@ export function Login() {
 
     const payload = {
       method: "POST",
-      url: "http://3.84.111.249:8080/form/login",
+      url: apiUrl("/form/login"),
     };
 
     localStorage.removeItem("token");

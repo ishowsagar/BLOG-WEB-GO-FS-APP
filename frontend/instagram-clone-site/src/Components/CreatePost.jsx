@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { nanoid } from "nanoid";
 import { useNavigate } from "react-router-dom";
 import { usePostContext } from "../Layout/MainLayout";
+import { apiUrl } from "../Services/apiConfig";
 // const INITIAL_FEED_POST_FORM = {
 //   name: "",
 //   title: "",
@@ -33,7 +34,7 @@ export default function CreatePost() {
     const payload = {
       // url depends on cursor -> if it has last batch post ID -> if yes with cursor&limit otherwise just with limit
       // "GET" - /api/feed?limit=X{limitOffset}&cursor=Y{lastCursor} - return feed[],cursor,hasMore
-      url: `http://3.84.111.249:8080/api/post/create`,
+      url: apiUrl("/api/post/create"),
       header: {
         Authorization: token,
       },

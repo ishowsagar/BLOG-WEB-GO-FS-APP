@@ -6,6 +6,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import { useEffect, useRef, useState, createContext, useContext } from "react";
 import { useWebSocket } from "../hooks/useWebSocket";
 import sendIcon from "../assets/icons/send.png";
+import { apiUrl } from "../Services/apiConfig";
 
 const postDataContext = createContext();
 export const RealtimeContext = createContext(null);
@@ -306,8 +307,8 @@ export default function MainLayout() {
 
   const batchReq = {
     url: cursor
-      ? `http://3.84.111.249:8080/api/feed/batch?limit=4&nextCursor=${cursor}`
-      : `http://3.84.111.249:8080/api/feed/batch?limit=4`,
+      ? apiUrl(`/api/feed/batch?limit=4&nextCursor=${cursor}`)
+      : apiUrl("/api/feed/batch?limit=4"),
     header: { Authorization: token },
     method: "GET",
   };

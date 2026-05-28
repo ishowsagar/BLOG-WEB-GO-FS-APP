@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useWebSocket } from "../hooks/useWebSocket";
+import { wsUrl } from "../Services/apiConfig";
 
 /**
  * WebSocketDebug component - shows real-time WebSocket connection status and incoming messages
@@ -22,10 +22,9 @@ export const WebSocketDebug = ({ token }) => {
       return;
     }
 
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//3.84.111.249:8080/api/ws?token=${encodeURIComponent(token)}`;
+    const socketUrl = `${wsUrl("/api/ws")}?token=${encodeURIComponent(token)}`;
 
-    const ws = new WebSocket(wsUrl);
+    const ws = new WebSocket(socketUrl);
 
     ws.onopen = () => {
       console.log("✅ WebSocket connected");
