@@ -85,6 +85,8 @@ services:
       - "443:443"
     depends_on:
       - backend
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     networks:
       - fs-go-app-network
     restart: unless-stopped
