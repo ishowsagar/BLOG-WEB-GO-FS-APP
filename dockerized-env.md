@@ -77,5 +77,11 @@ IDEA - instead of deploying here and manually doing the code pushing, by using g
 > blocked port 5173 for frontend, only standard 80 port to access site where nginx router redirects request to the service
 
 <!-- ! failures -->
+
 1. Failed to issue certbot certs on domain "denvergram.me" <- cause i was using old ec2 ipv4 addr => upon replacing it with correct current address -> it was a success
 2. Since now nginx config explictly blocks the request directly on port 8080/5173 but redirecting to service which is exposed on only port :80 -> fixed this too, now client requests would be redirected to that service which is exposed to same port req is coming and redirects to the service, not directly this time
+
+<!-- insights -->
+
+1 - since ec2 is still exposing ports like 8080/5173 for local development testing,it is still exposing application to old ports
+2 - once fully upgraded to domain, safely remove those if needed

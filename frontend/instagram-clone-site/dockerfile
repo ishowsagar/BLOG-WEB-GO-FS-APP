@@ -14,7 +14,7 @@ FROM nginx:stable-alpine
 COPY --from=builder /app/dist /usr/share/nginx/html
 
 # custom nginx to serve SPA and proxy API/websocket requests to backend service
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/nginx.config
 
 EXPOSE 80
 
