@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, Outlet, useNavigate, Link } from "react-router-dom";
 import pfp from "../assets/pfp.jpg";
 import ProfileNav from "./ProfileNav";
@@ -8,6 +8,12 @@ export default function Profile() {
   console.log("/profile");
   // states
   const [logout, setLogout] = useState(false); // boolean for conditional rendering n store log out states
+  const [showPfpOverlay, setShowPfpOverlay] = useState(false);
+  const [selectedPfpFile, setSelectedPfpFile] = useState(null);
+  const [selectedPfpPreview, setSelectedPfpPreview] = useState("");
+  const [isUploadingPfp, setIsUploadingPfp] = useState(false);
+  const [pfpMessage, setPfpMessage] = useState("");
+  const fileInputRef = useRef(null);
   const navigate = useNavigate();
   // Free online images for demo
   const avatarImg =
@@ -24,6 +30,16 @@ export default function Profile() {
   const [error, setError] = useState("");
 
   const token = localStorage.getItem("token");
+  const profileAvatar = useMemo(
+    () =>
+      profileData?.avatar ||
+      profileData?.avatar_url ||
+      profileData?.profile_picture ||
+      profileData?.pfp ||
+      pfp,
+    [profileData],
+  );
+
   useEffect(() => {
     async function fetchProfile() {
       //  todo - add method to fetch data
@@ -57,6 +73,66 @@ export default function Profile() {
     fetchProfile();
   }, [token]);
 
+  useEffect(() => {
+    if (!selectedPfpFile) {
+      setSelectedPfpPreview("");
+      return undefined;
+    }
+
+    const previewUrl = URL.createObjectURL(selectedPfpFile);
+    setSelectedPfpPreview(previewUrl);
+
+    return () => URL.revokeObjectURL(previewUrl);
+  }, [selectedPfpFile]);
+
+  async function uploadProfilePhoto() {
+    if (!selectedPfpFile || !token || isUploadingPfp) return;
+
+    setIsUploadingPfp(true);
+    setPfpMessage("");
+
+    const uploadUrl = apiUrl("/api/user/pfp/upload");
+
+    try {
+      const response = await fetch(uploadUrl, {
+        method: "POST",
+        headers: {
+          Authorization: token,
+          "Content-Type": selectedPfpFile.type || "application/octet-stream",
+        },
+        body: selectedPfpFile,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.Ok) {
+        throw new Error(data.Error || data.Status || "failed to upload photo");
+      }
+
+      const uploadedUrl =
+        data.ImageURl || data.ImageUrl || data.imageUrl || data.URL || "";
+
+      if (uploadedUrl) {
+        setProfileData((prev) => ({
+          ...prev,
+          avatar: uploadedUrl,
+          avatar_url: uploadedUrl,
+          profile_picture: uploadedUrl,
+          pfp: uploadedUrl,
+        }));
+      }
+
+      setPfpMessage("Profile photo updated");
+      setShowPfpOverlay(false);
+      setSelectedPfpFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    } catch (err) {
+      setPfpMessage(err.message || "failed to upload photo");
+    } finally {
+      setIsUploadingPfp(false);
+    }
+  }
+
   // logs out user from the current login session
   function handleClientLogout(e) {
     // log out logic - clear token, send user to login Page
@@ -84,7 +160,21 @@ export default function Profile() {
   return (
     <div className="profile_outer">
       <div className="profile_header_row">
-        <img src={pfp} alt="Profile avatar" className="profile_avatar" />
+        <div className="profile_avatar_shell">
+          <img
+            src={profileAvatar}
+            alt="Profile avatar"
+            className="profile_avatar"
+          />
+          <button
+            type="button"
+            className="profile_avatar_edit_button"
+            onClick={() => setShowPfpOverlay(true)}
+            aria-label="upload profile photo"
+          >
+            <span aria-hidden="true">✎</span>
+          </button>
+        </div>
         <div className="profile_header_info">
           <div className="profile_username">
             {Username} <span>⚙️</span>
@@ -104,6 +194,11 @@ export default function Profile() {
         {Bio}
         <span style={{ color: "#ff69b4" }}></span>
       </div>
+      {pfpMessage && (
+        <div className="profile_pfp_message" role="status">
+          {pfpMessage}
+        </div>
+      )}
       <div className="profile_buttons">
         <button className="profile_button">
           <Link to="/profile/edit">Edit Profile</Link>
@@ -113,6 +208,69 @@ export default function Profile() {
           Log out
         </button>
       </div>
+      {showPfpOverlay && (
+        <div
+          className="profile_pfp_overlay"
+          onClick={() => setShowPfpOverlay(false)}
+        >
+          <div
+            className="profile_pfp_modal"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="profile_pfp_modal_header">
+              <div>
+                <div className="profile_pfp_modal_title">Update photo</div>
+                <div className="profile_pfp_modal_subtitle">
+                  Choose an image and upload it to your profile
+                </div>
+              </div>
+              <button
+                type="button"
+                className="profile_pfp_modal_close"
+                onClick={() => setShowPfpOverlay(false)}
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="profile_pfp_dropzone">
+              <input
+                ref={fileInputRef}
+                className="profile_pfp_input"
+                type="file"
+                accept="image/*"
+                onChange={(event) => {
+                  const nextFile = event.target.files?.[0] || null;
+                  setSelectedPfpFile(nextFile);
+                  setPfpMessage("");
+                }}
+              />
+
+              <div className="profile_pfp_preview_wrap">
+                <img
+                  className="profile_pfp_preview"
+                  src={selectedPfpPreview || profileAvatar}
+                  alt="Selected preview"
+                />
+                <div className="profile_pfp_preview_hint">
+                  Click the file picker to choose a new profile photo.
+                </div>
+              </div>
+
+              <div className="profile_pfp_actions">
+                <button
+                  type="button"
+                  className="profile_button"
+                  onClick={uploadProfilePhoto}
+                  disabled={!selectedPfpFile || isUploadingPfp}
+                >
+                  {isUploadingPfp ? "Uploading..." : "Upload photo"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="profile_highlights">
         <div className="profile_highlight">

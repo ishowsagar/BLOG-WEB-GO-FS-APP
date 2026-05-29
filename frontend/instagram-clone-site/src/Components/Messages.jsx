@@ -266,13 +266,16 @@ export default function Messages() {
 
   return (
     <section
+      className="messages-page"
       style={{
         padding: "2rem",
         minHeight: "72vh",
-        background: "linear-gradient(180deg,#f3f9ff,#eef7ff)",
+        background:
+          "radial-gradient(circle at top left, rgba(59, 130, 246, 0.16), transparent 34%), radial-gradient(circle at top right, rgba(244, 114, 182, 0.13), transparent 28%), linear-gradient(180deg, #060b16 0%, #090f1d 55%, #0d1426 100%)",
       }}
     >
       <div
+        className="messages-shell"
         style={{
           display: "flex",
           gap: 16,
@@ -282,19 +285,24 @@ export default function Messages() {
         }}
       >
         <aside
+          className="messages-list-panel"
           style={{
             width: 360,
             overflowY: "auto",
-            background: "#f8fbff",
-            borderRadius: 12,
+            background:
+              "linear-gradient(180deg, rgba(18, 26, 44, 0.98), rgba(12, 18, 34, 0.96))",
+            borderRadius: 18,
             padding: "0.5rem",
-            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)",
+            boxShadow:
+              "0 18px 40px rgba(0,0,0,0.26), inset 0 1px 0 rgba(255,255,255,0.04)",
             paddingBottom: 20,
+            border: "none",
           }}
         >
           {profiles.map((p) => (
             <button
               key={p.id}
+              className={`messages-peer-button${activePeer === p.id ? " is-active" : ""}`}
               onClick={() => {
                 setActivePeer(p.id);
               }}
@@ -302,17 +310,19 @@ export default function Messages() {
                 width: "100%",
                 padding: "0.85rem 1rem",
                 border: "none",
-                borderBottom: "1px solid rgba(15,23,42,0.03)",
+                borderBottom: "1px solid rgba(148, 163, 184, 0.08)",
                 textAlign: "left",
-                background: activePeer === p.id ? "#ffffff" : "transparent",
+                background:
+                  activePeer === p.id
+                    ? "linear-gradient(135deg, rgba(59, 130, 246, 0.28), rgba(244, 114, 182, 0.18))"
+                    : "rgba(255,255,255,0.015)",
                 cursor: "pointer",
                 display: "flex",
                 gap: 12,
                 alignItems: "center",
                 boxShadow:
-                  activePeer === p.id
-                    ? "0 6px 18px rgba(16,24,40,0.04)"
-                    : "none",
+                  activePeer === p.id ? "0 10px 24px rgba(0,0,0,0.22)" : "none",
+                color: "#f1f5f9",
               }}
             >
               <img
@@ -341,7 +351,8 @@ export default function Messages() {
                   height: 48,
                   borderRadius: "50%",
                   objectFit: "cover",
-                  border: "2px solid #eef2ff",
+                  border: "2px solid rgba(203, 213, 225, 0.18)",
+                  boxShadow: "0 8px 18px rgba(0,0,0,0.18)",
                 }}
               />
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -349,7 +360,7 @@ export default function Messages() {
                   <div
                     style={{
                       fontWeight: 700,
-                      color: "#0f172a",
+                      color: "#ffffff",
                       fontSize: "0.98rem",
                     }}
                   >
@@ -359,10 +370,10 @@ export default function Messages() {
                     style={{
                       marginLeft: "auto",
                       fontSize: "0.8rem",
-                      color: "#94a3b8",
+                      color: "#cbd5e1",
                     }}
                   >
-                    now
+                    open
                   </div>
                 </div>
               </div>
@@ -371,16 +382,18 @@ export default function Messages() {
         </aside>
 
         <div
+          className="messages-chat-panel"
           style={{
             flex: 1,
             maxWidth: 820,
-            borderRadius: 12,
+            borderRadius: 20,
             overflow: "hidden",
             display: "grid",
             gridTemplateRows: "auto 1fr auto",
-            background: "#ffffff",
-            boxShadow: "0 12px 36px rgba(16,24,40,0.08)",
-            border: "1px solid rgba(15,23,42,0.04)",
+            background:
+              "linear-gradient(180deg, rgba(10, 16, 32, 0.97), rgba(8, 14, 28, 0.95))",
+            boxShadow: "0 24px 60px rgba(0,0,0,0.34)",
+            border: "none",
             marginLeft: 8,
             alignSelf: "flex-start",
           }}
@@ -388,10 +401,13 @@ export default function Messages() {
           <div
             style={{
               padding: "0.9rem 1rem",
-              borderBottom: "1px solid #f1f5f9",
+              borderBottom: "none",
+              boxShadow: "inset 0 -1px 0 rgba(148, 163, 184, 0.08)",
               display: "flex",
               alignItems: "center",
               gap: 12,
+              background:
+                "linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(8, 15, 31, 0.9))",
             }}
           >
             {activePeer ? (
@@ -432,11 +448,12 @@ export default function Messages() {
                     height: 44,
                     borderRadius: "50%",
                     objectFit: "cover",
-                    border: "2px solid #eef2ff",
+                    border: "2px solid rgba(148, 163, 184, 0.18)",
+                    boxShadow: "0 8px 18px rgba(0,0,0,0.22)",
                   }}
                 />
                 <div>
-                  <div style={{ fontWeight: 800, color: "#0f172a" }}>
+                  <div style={{ fontWeight: 800, color: "#f8fafc" }}>
                     {profiles.find((p) => p.id === activePeer)?.name}
                   </div>
                   <div style={{ fontSize: "0.85rem", color: "#94a3b8" }}>
@@ -445,13 +462,22 @@ export default function Messages() {
                 </div>
               </>
             ) : (
-              <div style={{ fontWeight: 700, color: "#0f172a" }}>
+              <div style={{ fontWeight: 700, color: "#f8fafc" }}>
                 Select a conversation
               </div>
             )}
           </div>
 
-          <div style={{ padding: "1rem", overflowY: "auto", minHeight: 0 }}>
+          <div
+            className="messages-thread"
+            style={{
+              padding: "1rem",
+              overflowY: "auto",
+              minHeight: 0,
+              background:
+                "linear-gradient(180deg, rgba(8, 14, 28, 0.32), rgba(8, 14, 28, 0.12))",
+            }}
+          >
             {activePeer ? (
               <div style={{ display: "grid", gap: 12 }}>
                 {loadingMessages ? (
@@ -459,7 +485,7 @@ export default function Messages() {
                 ) : messagesErr ? (
                   <div style={{ color: "#ef4444" }}>{messagesErr}</div>
                 ) : messages.length === 0 ? (
-                  <div style={{ color: "#64748b" }}>
+                  <div style={{ color: "#94a3b8" }}>
                     No messages yet. Start the conversation.
                   </div>
                 ) : (
@@ -471,18 +497,22 @@ export default function Messages() {
                       return (
                         <div
                           key={`${m.id || idx}-${m.created_at || idx}-${m.content?.slice(0, 8)}`}
+                          className={`messages-bubble ${isOutgoing ? "is-outgoing" : "is-incoming"}`}
                           style={{
                             justifySelf: isOutgoing ? "end" : "start",
                             maxWidth: "72%",
                             padding: "0.6rem 0.8rem",
-                            borderRadius: 12,
+                            borderRadius: 16,
                             background: isOutgoing
-                              ? "linear-gradient(135deg,#ff8a5b,#ff4d9d)"
-                              : "#eef3ff",
-                            color: isOutgoing ? "#fff" : "#0f172a",
+                              ? "linear-gradient(135deg, #f97316 0%, #ec4899 100%)"
+                              : "linear-gradient(135deg, rgba(30, 41, 59, 0.96), rgba(15, 23, 42, 0.96))",
+                            color: isOutgoing ? "#fff" : "#e2e8f0",
                             boxShadow: isOutgoing
-                              ? "0 6px 18px rgba(255,77,157,0.12)"
-                              : "0 2px 6px rgba(15,23,42,0.03)",
+                              ? "0 12px 28px rgba(236, 72, 153, 0.18)"
+                              : "0 12px 28px rgba(0,0,0,0.24)",
+                            border: isOutgoing
+                              ? "1px solid rgba(255,255,255,0.08)"
+                              : "1px solid rgba(148, 163, 184, 0.12)",
                           }}
                         >
                           <div style={{ fontSize: "0.95rem" }}>{m.content}</div>
@@ -499,15 +529,19 @@ export default function Messages() {
           </div>
 
           <div
+            className="messages-composer"
             style={{
               padding: "0.85rem",
-              borderTop: "1px solid #f1f5f9",
+              borderTop: "none",
+              boxShadow: "inset 0 1px 0 rgba(148, 163, 184, 0.08)",
               display: "flex",
               gap: 10,
               alignItems: "center",
+              background: "rgba(8, 15, 31, 0.94)",
             }}
           >
             <input
+              className="messages-input"
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => {
@@ -529,25 +563,32 @@ export default function Messages() {
               style={{
                 flex: 1,
                 padding: "0.65rem 0.9rem",
-                borderRadius: 10,
-                border: "1px solid #e6eef6",
-                background: "#fff",
+                borderRadius: 14,
+                border: "1px solid rgba(148, 163, 184, 0.1)",
+                background: "rgba(13, 19, 34, 0.96)",
+                color: "#f8fafc",
+                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)",
               }}
             />
             <button
+              className="messages-send-button"
               onClick={() => handleSend()}
               disabled={!activePeer || !draft.trim()}
               style={{
                 padding: "0.6rem 0.95rem",
-                borderRadius: 10,
+                borderRadius: 14,
                 border: "none",
                 background:
                   activePeer && draft.trim()
-                    ? "linear-gradient(135deg,#ff4d9d,#ff8a5b)"
-                    : "#f1f5f9",
+                    ? "linear-gradient(135deg, #f97316 0%, #ec4899 100%)"
+                    : "rgba(148, 163, 184, 0.14)",
                 color: activePeer && draft.trim() ? "#fff" : "#94a3b8",
                 fontWeight: 700,
                 cursor: activePeer && draft.trim() ? "pointer" : "default",
+                boxShadow:
+                  activePeer && draft.trim()
+                    ? "0 12px 24px rgba(236, 72, 153, 0.24)"
+                    : "none",
               }}
             >
               Send

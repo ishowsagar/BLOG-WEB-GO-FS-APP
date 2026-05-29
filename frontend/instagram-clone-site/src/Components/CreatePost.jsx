@@ -185,6 +185,8 @@ export default function CreatePost() {
           placeholder="What's on your mind?"
           required
         />
+        <label>Select Image</label>
+        <input type="file" id="file"  />
 
         <button
           className="createpost_button"

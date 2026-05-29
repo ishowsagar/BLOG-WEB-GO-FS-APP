@@ -38,3 +38,4 @@
 [GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
 Please check https://github.com/gin-gonic/gin/blob/master/docs/doc.md#dont-trust-all-proxies for details.
 [GIN-debug] Listening and serving HTTP on :8080
+[GIN] 2026/05/29 - 12:23:02 |[97;42m 200 [0m|[90;47m 247.425µs [0m|      172.22.0.1 |[97;44m GET     [0m "/health/"
