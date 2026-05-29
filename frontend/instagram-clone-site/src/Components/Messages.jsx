@@ -24,27 +24,34 @@ export default function Messages() {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [messagesErr, setMessagesErr] = useState(null);
   const messagesListRef = useRef(null);
-  const [threadHasMessages, setThreadHasMessages] = useState({});
-  const [threadActivity, setThreadActivity] = useState({});
+  const [threadLastSeenAt, setThreadLastSeenAt] = useState({});
+  const [nowTick, setNowTick] = useState(Date.now());
 
-  function updateThreadActivity(peerId, senderId) {
+  function updateThreadLastSeen(peerId, createdAt) {
     const key = Number(peerId);
-    if (!key) return;
+    if (!key || !createdAt) return;
 
-    const sentByMe = Number(senderId) === Number(currentUserId);
-    const sentByPeer = Number(senderId) === key;
-    if (!sentByMe && !sentByPeer) return;
+    const timestamp = new Date(createdAt).getTime();
+    if (Number.isNaN(timestamp)) return;
 
-    setThreadActivity((prev) => {
-      const existing = prev[key] || { sentByMe: false, sentByPeer: false };
+    setThreadLastSeenAt((prev) => {
+      const existing = prev[key] || 0;
       return {
         ...prev,
-        [key]: {
-          sentByMe: existing.sentByMe || sentByMe,
-          sentByPeer: existing.sentByPeer || sentByPeer,
-        },
+        [key]: Math.max(existing, timestamp),
       };
     });
+  }
+
+  function formatLastSeen(peerId) {
+    const timestamp = threadLastSeenAt[Number(peerId)];
+    if (!timestamp) return "offline";
+
+    const diffMs = Math.max(0, nowTick - timestamp);
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins <= 0) return "Last seen just now";
+    if (diffMins === 1) return "Last seen 1 min ago";
+    return `Last seen ${diffMins} mins ago`;
   }
 
   useEffect(() => {
@@ -145,24 +152,13 @@ export default function Messages() {
         if (!res.ok) throw new Error(data.Status || "failed to fetch messages");
         const items = Array.isArray(data.Data) ? data.Data : [];
         if (!cancelled) {
-          const hasMessages = items.length > 0;
-          const activity = items.reduce(
-            (acc, it) => {
-              const senderId = Number(it.sender_id || it.SenderID);
-              if (senderId === Number(currentUserId)) acc.sentByMe = true;
-              if (senderId === Number(activePeer)) acc.sentByPeer = true;
-              return acc;
-            },
-            { sentByMe: false, sentByPeer: false },
-          );
-          setThreadHasMessages((prev) => ({
-            ...prev,
-            [activePeer]: hasMessages,
-          }));
-          setThreadActivity((prev) => ({
-            ...prev,
-            [activePeer]: activity,
-          }));
+          const lastItem = items[items.length - 1];
+          if (lastItem) {
+            updateThreadLastSeen(
+              activePeer,
+              lastItem.created_at || lastItem.CreatedAt,
+            );
+          }
           setMessages(
             items.slice(-20).map((it) => ({
               id: it.id || it.ID,
@@ -207,14 +203,10 @@ export default function Messages() {
             content: incoming.content || incoming.Content || "",
             created_at: incoming.created_at || incoming.CreatedAt,
           };
-          updateThreadActivity(
+          updateThreadLastSeen(
             Number(s) === Number(currentUserId) ? Number(r) : Number(s),
-            s,
+            msg.created_at,
           );
-          setThreadHasMessages((prev) => ({
-            ...prev,
-            [Number(s) === Number(currentUserId) ? Number(r) : Number(s)]: true,
-          }));
           setMessages((prev) => [...prev, msg].slice(-20));
         }
       } catch (e) {
@@ -239,8 +231,7 @@ export default function Messages() {
     };
 
     // optimistic UI append
-    updateThreadActivity(activePeer, currentUserId);
-    setThreadHasMessages((prev) => ({ ...prev, [activePeer]: true }));
+    updateThreadLastSeen(activePeer, outgoing.created_at);
     setMessages((prev) => [...prev, outgoing].slice(-20));
     setDraft("");
 
@@ -267,6 +258,11 @@ export default function Messages() {
     if (!messagesListRef.current) return;
     messagesListRef.current.scrollTop = messagesListRef.current.scrollHeight;
   }, [messages, activePeer]);
+
+  useEffect(() => {
+    const timer = setInterval(() => setNowTick(Date.now()), 60000);
+    return () => clearInterval(timer);
+  }, []);
 
   return (
     <section
@@ -369,20 +365,6 @@ export default function Messages() {
                     now
                   </div>
                 </div>
-                <div
-                  style={{
-                    fontSize: "0.86rem",
-                    color: threadHasMessages[p.id] ? "#0f172a" : "#64748b",
-                    fontWeight: threadHasMessages[p.id] ? 700 : 400,
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
-                >
-                  {threadHasMessages[p.id]
-                    ? "New message"
-                    : "No messages yet — say hello!"}
-                </div>
               </div>
             </button>
           ))}
@@ -458,10 +440,7 @@ export default function Messages() {
                     {profiles.find((p) => p.id === activePeer)?.name}
                   </div>
                   <div style={{ fontSize: "0.85rem", color: "#94a3b8" }}>
-                    {threadActivity[activePeer]?.sentByMe &&
-                    threadActivity[activePeer]?.sentByPeer
-                      ? "🟢 Active now"
-                      : "offline"}
+                    {formatLastSeen(activePeer)}
                   </div>
                 </div>
               </>
