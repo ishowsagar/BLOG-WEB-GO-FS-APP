@@ -72,10 +72,14 @@ export default function Profile() {
 
   // resp is undefined -> handler must return these fetched from repo corres method
   //  fixed - now controller method on this route is returning those fields too
-  const Username = `${profileData?.username}`;
-  const Nickname = `${profileData?.nickname}`;
-  const postsCount = `${profileData?.post_count}`;
-  const Bio = `${profileData?.bio}`;
+  const Username = profileData?.username || profileData?.user_name || "user";
+  const DisplayName =
+    profileData?.name ||
+    profileData?.nickname ||
+    profileData?.display_name ||
+    Username;
+  const postsCount = profileData?.post_count || profileData?.posts_count || 0;
+  const Bio = profileData?.bio || "";
 
   return (
     <div className="profile_outer">
@@ -86,7 +90,7 @@ export default function Profile() {
             {Username} <span>⚙️</span>
           </div>
           <div className="profile_name">
-            {Nickname}
+            {DisplayName}
             <span>♪</span>
           </div>
           <div className="profile_stats profile_stats_row">

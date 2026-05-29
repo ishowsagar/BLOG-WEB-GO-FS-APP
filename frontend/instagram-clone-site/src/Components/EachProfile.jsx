@@ -83,10 +83,10 @@ export default function EachProfile() {
 
   // Use profile data fields with sensible fallbacks
   const Username = profileData?.username || profileData?.user_name || "user";
-  const Nickname =
+  const DisplayName =
+    profileData?.name ||
     profileData?.nickname ||
     profileData?.display_name ||
-    profileData?.name ||
     Username;
   const Bio = profileData?.bio || profileData?.description || "";
 
@@ -295,7 +295,7 @@ export default function EachProfile() {
             {Username} <span>⚙️</span>
           </div>
           <div className="profile_name">
-            {Nickname}
+            {DisplayName}
             <span>♪</span>
           </div>
           <div className="profile_stats profile_stats_row">
