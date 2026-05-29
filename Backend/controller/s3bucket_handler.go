@@ -134,8 +134,21 @@ func(s *S3Controller) HandleUploadImageStream(c *gin.Context) {
 // handler method to fetch pfp exclusively
 func(s *S3Controller) GetProfilePictureBucketURl(c *gin.Context) {
 
-	// fetch active clientID -> whose pfp has to be fetched
+	// fetch requested profile id if provided, otherwise fall back to the authenticated user
+	requestedUserID := c.Query("userid")
 	userID := c.GetUint("user_id")
+	if requestedUserID != "" {
+		var parsedID uint
+		if _, err := fmt.Sscanf(requestedUserID, "%d", &parsedID); err != nil || parsedID == 0 {
+			c.AbortWithStatusJSON(http.StatusBadRequest, utils.S3UploadErr{
+				Ok: false,
+				Error: "invalid userid",
+			})
+			return
+		}
+		// if query sending id of profile userID, set userID to be of that, instead activeClientID
+		userID = parsedID
+	}
 	if userID == 0 {
 		c.AbortWithStatusJSON(http.StatusUnauthorized,utils.S3UploadErr{
 			Ok: false,
@@ -169,3 +182,4 @@ func(s *S3Controller) GetProfilePictureBucketURl(c *gin.Context) {
 		"ImageURL" : resolvedURL,
 	})
 }
+

@@ -651,4 +651,6 @@ func(u *UserController) GetFollowedUserProfiles(c *gin.Context) {
 // - follow unfollow -> by adding a seperate nested injected page - when searched - clicked - load page of his info and follow unfollow there - Done ✅
 // - for upper thing need single atomic transaction if needed  - done with multi staged events✅
 // - fetch posts associated with active client ID and also for profile -> fetching for eachProfile -> redirected url where data is loaded -> fetch for that userID
-// - fetch users profiles which active client has followed to be loaded in -> followings + messages tab
+// - fetch users profiles which active client has followed to be loaded in -> followings + messages tab - done, even added msging for them✅
+// - let users upload posts with pictures -> upload picture under some folder named "posts" -> add handler for it and repo methods {updateUrlOfPostsImg} <- no need to store in db then fetch posts images excluisvely with feed data
+

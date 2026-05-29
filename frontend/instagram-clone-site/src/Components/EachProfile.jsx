@@ -24,6 +24,7 @@ export default function EachProfile() {
   const [dmText, setDmText] = useState("");
   const [dmStatus, setDmStatus] = useState("");
   const [dmMessages, setDmMessages] = useState([]);
+  const [profileAvatarSrc, setProfileAvatarSrc] = useState("");
   const dmListRef = useRef(null);
 
   //   utils
@@ -78,6 +79,32 @@ export default function EachProfile() {
     fetchProfileDataByID();
   }, [token, hasFollowed]); //mount again if these dependency elements changes
 
+  useEffect(() => {
+    async function fetchProfilePictureByID() {
+      if (!token || !userid) return;
+
+      try {
+        const req = await fetch(apiUrl(`/api/s3/pfp?userid=${userid}`), {
+          method: "GET",
+          headers: {
+            Authorization: token,
+            "Content-Type": "application/json",
+          },
+        });
+
+        const res = await req.json();
+
+        if (req.ok && res.Ok && res.ImageURL) {
+          setProfileAvatarSrc(res.ImageURL);
+        }
+      } catch (err) {
+        console.log("failed to fetch profile picture", err);
+      }
+    }
+
+    fetchProfilePictureByID();
+  }, [token, userid]);
+
   const followers = `${profileData?.followers_count ?? profileData?.followers ?? 0} followers`;
   const followings = `${profileData?.following_count ?? profileData?.following ?? 0} following`;
 
@@ -91,6 +118,7 @@ export default function EachProfile() {
   const Bio = profileData?.bio || profileData?.description || "";
 
   const avatarImg =
+    profileAvatarSrc ||
     profileData?.avatar ||
     profileData?.avatar_url ||
     profileData?.pfp ||
@@ -285,11 +313,7 @@ export default function EachProfile() {
   return (
     <div className="profile_outer">
       <div className="profile_header_row">
-        <img
-          src={highlightImg}
-          alt="Profile avatar"
-          className="profile_avatar"
-        />
+        <img src={avatarImg} alt="Profile avatar" className="profile_avatar" />
         <div className="profile_header_info">
           <div className="profile_username">
             {Username} <span>⚙️</span>
