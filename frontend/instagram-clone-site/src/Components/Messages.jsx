@@ -25,6 +25,27 @@ export default function Messages() {
   const [messagesErr, setMessagesErr] = useState(null);
   const messagesListRef = useRef(null);
   const [threadHasMessages, setThreadHasMessages] = useState({});
+  const [threadActivity, setThreadActivity] = useState({});
+
+  function updateThreadActivity(peerId, senderId) {
+    const key = Number(peerId);
+    if (!key) return;
+
+    const sentByMe = Number(senderId) === Number(currentUserId);
+    const sentByPeer = Number(senderId) === key;
+    if (!sentByMe && !sentByPeer) return;
+
+    setThreadActivity((prev) => {
+      const existing = prev[key] || { sentByMe: false, sentByPeer: false };
+      return {
+        ...prev,
+        [key]: {
+          sentByMe: existing.sentByMe || sentByMe,
+          sentByPeer: existing.sentByPeer || sentByPeer,
+        },
+      };
+    });
+  }
 
   useEffect(() => {
     async function loadFollowings() {
@@ -125,9 +146,22 @@ export default function Messages() {
         const items = Array.isArray(data.Data) ? data.Data : [];
         if (!cancelled) {
           const hasMessages = items.length > 0;
+          const activity = items.reduce(
+            (acc, it) => {
+              const senderId = Number(it.sender_id || it.SenderID);
+              if (senderId === Number(currentUserId)) acc.sentByMe = true;
+              if (senderId === Number(activePeer)) acc.sentByPeer = true;
+              return acc;
+            },
+            { sentByMe: false, sentByPeer: false },
+          );
           setThreadHasMessages((prev) => ({
             ...prev,
             [activePeer]: hasMessages,
+          }));
+          setThreadActivity((prev) => ({
+            ...prev,
+            [activePeer]: activity,
           }));
           setMessages(
             items.slice(-20).map((it) => ({
@@ -173,6 +207,10 @@ export default function Messages() {
             content: incoming.content || incoming.Content || "",
             created_at: incoming.created_at || incoming.CreatedAt,
           };
+          updateThreadActivity(
+            Number(s) === Number(currentUserId) ? Number(r) : Number(s),
+            s,
+          );
           setThreadHasMessages((prev) => ({
             ...prev,
             [Number(s) === Number(currentUserId) ? Number(r) : Number(s)]: true,
@@ -201,6 +239,7 @@ export default function Messages() {
     };
 
     // optimistic UI append
+    updateThreadActivity(activePeer, currentUserId);
     setThreadHasMessages((prev) => ({ ...prev, [activePeer]: true }));
     setMessages((prev) => [...prev, outgoing].slice(-20));
     setDraft("");
@@ -419,7 +458,10 @@ export default function Messages() {
                     {profiles.find((p) => p.id === activePeer)?.name}
                   </div>
                   <div style={{ fontSize: "0.85rem", color: "#94a3b8" }}>
-                    Active now
+                    {threadActivity[activePeer]?.sentByMe &&
+                    threadActivity[activePeer]?.sentByPeer
+                      ? "🟢 Active now"
+                      : "offline"}
                   </div>
                 </div>
               </>
