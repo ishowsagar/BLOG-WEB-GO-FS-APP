@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, useRef } from "react";
 import { apiUrl } from "../Services/apiConfig";
 import { RealtimeContext } from "../Layout/MainLayout";
 
@@ -23,6 +23,8 @@ export default function Messages() {
   const [messages, setMessages] = useState([]);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [messagesErr, setMessagesErr] = useState(null);
+  const messagesListRef = useRef(null);
+  const [threadHasMessages, setThreadHasMessages] = useState({});
 
   useEffect(() => {
     async function loadFollowings() {
@@ -84,7 +86,17 @@ export default function Messages() {
   }, []);
 
   function avatarUrl(id) {
-    return `https://i.pravatar.cc/seed/${id}/128`;
+    return `https://i.pravatar.cc/128?u=${id}`;
+  }
+
+  function fallbackAvatar(id) {
+    const n = Number(id) || 0;
+    const gender = n % 2 === 0 ? "men" : "women";
+    return `https://randomuser.me/api/portraits/${gender}/${n % 100}.jpg`;
+  }
+
+  function resolveAvatar(p) {
+    return p.pfp || avatarUrl(p.id) || fallbackAvatar(p.id);
   }
 
   // load messages for a peer when activePeer changes
@@ -112,8 +124,13 @@ export default function Messages() {
         if (!res.ok) throw new Error(data.Status || "failed to fetch messages");
         const items = Array.isArray(data.Data) ? data.Data : [];
         if (!cancelled) {
+          const hasMessages = items.length > 0;
+          setThreadHasMessages((prev) => ({
+            ...prev,
+            [activePeer]: hasMessages,
+          }));
           setMessages(
-            items.map((it) => ({
+            items.slice(-20).map((it) => ({
               id: it.id || it.ID,
               sender_id: it.sender_id || it.SenderID,
               reciever_id: it.reciever_id || it.RecieverID,
@@ -156,7 +173,11 @@ export default function Messages() {
             content: incoming.content || incoming.Content || "",
             created_at: incoming.created_at || incoming.CreatedAt,
           };
-          setMessages((prev) => [...prev, msg]);
+          setThreadHasMessages((prev) => ({
+            ...prev,
+            [Number(s) === Number(currentUserId) ? Number(r) : Number(s)]: true,
+          }));
+          setMessages((prev) => [...prev, msg].slice(-20));
         }
       } catch (e) {
         console.error("Failed to process incoming dm", e);
@@ -180,7 +201,8 @@ export default function Messages() {
     };
 
     // optimistic UI append
-    setMessages((prev) => [...prev, outgoing]);
+    setThreadHasMessages((prev) => ({ ...prev, [activePeer]: true }));
+    setMessages((prev) => [...prev, outgoing].slice(-20));
     setDraft("");
 
     try {
@@ -201,6 +223,11 @@ export default function Messages() {
       console.warn("failed to send message", e);
     }
   }
+
+  useEffect(() => {
+    if (!messagesListRef.current) return;
+    messagesListRef.current.scrollTop = messagesListRef.current.scrollHeight;
+  }, [messages, activePeer]);
 
   return (
     <section
@@ -266,8 +293,25 @@ export default function Messages() {
               }}
             >
               <img
-                src={p.pfp ? p.pfp : avatarUrl(p.id)}
+                src={resolveAvatar(p)}
                 alt={p.name}
+                onError={(e) => {
+                  const currentSrc = e.currentTarget.dataset.fallbackStage || "0";
+                  if (currentSrc === "0") {
+                    e.currentTarget.dataset.fallbackStage = "1";
+                    e.currentTarget.src = avatarUrl(p.id);
+                    return;
+                  }
+                  if (currentSrc === "1") {
+                    e.currentTarget.dataset.fallbackStage = "2";
+                    e.currentTarget.src = fallbackAvatar(p.id);
+                    return;
+                  }
+                  e.currentTarget.src =
+                    "https://ui-avatars.com/api/?name=" +
+                    encodeURIComponent(p.name || "User") +
+                    "&background=EEF2FF&color=0F172A&size=128";
+                }}
                 style={{
                   width: 48,
                   height: 48,
@@ -300,13 +344,16 @@ export default function Messages() {
                 <div
                   style={{
                     fontSize: "0.86rem",
-                    color: "#64748b",
+                    color: threadHasMessages[p.id] ? "#0f172a" : "#64748b",
+                    fontWeight: threadHasMessages[p.id] ? 700 : 400,
                     whiteSpace: "nowrap",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                   }}
                 >
-                  {"No messages yet — say hello!"}
+                  {threadHasMessages[p.id]
+                    ? "New message"
+                    : "No messages yet — say hello!"}
                 </div>
               </div>
             </button>
@@ -341,9 +388,36 @@ export default function Messages() {
               <>
                 <img
                   src={
-                    profiles.find((x) => x.id === activePeer)?.pfp ||
-                    avatarUrl(activePeer)
+                    resolveAvatar(
+                      profiles.find((x) => x.id === activePeer) || {
+                        id: activePeer,
+                        pfp: null,
+                      },
+                    )
                   }
+                  onError={(e) => {
+                    const activeProfile =
+                      profiles.find((x) => x.id === activePeer) || {
+                        id: activePeer,
+                        name: "User",
+                      };
+                    const currentSrc =
+                      e.currentTarget.dataset.fallbackStage || "0";
+                    if (currentSrc === "0") {
+                      e.currentTarget.dataset.fallbackStage = "1";
+                      e.currentTarget.src = avatarUrl(activeProfile.id);
+                      return;
+                    }
+                    if (currentSrc === "1") {
+                      e.currentTarget.dataset.fallbackStage = "2";
+                      e.currentTarget.src = fallbackAvatar(activeProfile.id);
+                      return;
+                    }
+                    e.currentTarget.src =
+                      "https://ui-avatars.com/api/?name=" +
+                      encodeURIComponent(activeProfile.name || "User") +
+                      "&background=EEF2FF&color=0F172A&size=128";
+                  }}
                   style={{
                     width: 44,
                     height: 44,
@@ -368,7 +442,10 @@ export default function Messages() {
             )}
           </div>
 
-          <div style={{ padding: "1rem", overflowY: "auto", minHeight: 0 }}>
+          <div
+            ref={messagesListRef}
+            style={{ padding: "1rem", overflowY: "auto", minHeight: 0 }}
+          >
             {activePeer ? (
               <div style={{ display: "grid", gap: 12 }}>
                 {loadingMessages ? (
