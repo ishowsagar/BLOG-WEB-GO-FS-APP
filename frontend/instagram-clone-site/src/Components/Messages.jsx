@@ -401,19 +401,6 @@ export default function Messages() {
                         }}
                       >
                         <div style={{ fontSize: "0.95rem" }}>{m.content}</div>
-                        <div
-                          style={{
-                            fontSize: "0.72rem",
-                            color: isOutgoing
-                              ? "rgba(255,255,255,0.85)"
-                              : "#64748b",
-                            marginTop: 6,
-                          }}
-                        >
-                          {m.created_at
-                            ? new Date(m.created_at).toLocaleString()
-                            : ""}
-                        </div>
                       </div>
                     );
                   })
@@ -482,13 +469,6 @@ export default function Messages() {
             </button>
           </div>
         </div>
-      </div>
-
-      <div
-        style={{ marginTop: "0.9rem", color: "#64748b", fontSize: "0.92rem" }}
-      >
-        Note: profiles are placeholders. We'll hook the API to fetch real DMs
-        later.
       </div>
     </section>
   );

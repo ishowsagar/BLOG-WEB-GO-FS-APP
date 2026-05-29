@@ -90,3 +90,10 @@ IDEA - instead of deploying here and manually doing the code pushing, by using g
 
 1.  Commit wrong changes? need way to get back them unstashed and uncommited :-
     `  git reset HEAD~{no. of commits you wanna go back}`
+
+<!-- * connecting to service inside of the ec2 container -->
+
+- like if i wanna connect to the psql
+  " i would have to follow same command with some changes that - runs instance of container"
+  `docker exec -it container_name -U config -d config`
+  > in this same way you can make a container running instance of another container and passing env to access them
