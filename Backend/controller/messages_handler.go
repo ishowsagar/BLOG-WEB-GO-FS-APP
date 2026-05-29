@@ -6,8 +6,11 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/ishowsagar/go-blog-web-application/services"
 	"github.com/ishowsagar/go-blog-web-application/utils"
 )
+
+
 
 type DirectMessageRecord struct {
 	ID uint `json:"id"`
@@ -90,4 +93,35 @@ func (ws *WSController) LoadMessages(c *gin.Context) {
 		Status: "messages loaded",
 		Data: messages,
 	})
+}
+
+
+
+//@ types
+
+// controller type that stores -> messageDbModel which stores methods on it
+type MessagesController struct {
+	MessagesDbModel *services.MessagesDBModel
+}
+
+// func that returns instance of type -> MessagesController
+func NewMessagesController(messagesDbModel *services.MessagesDBModel) *MessagesController {
+	return &MessagesController{
+		MessagesDbModel: messagesDbModel,
+	}
+}
+
+func StoreDmMessages(c *gin.Context) {
+	
+	// validate req has userID attached to it by <= Auth middleware
+	activeClientID := c.GetUint("user_id")
+	if activeClientID == 0 {
+		c.AbortWithStatusJSON(http.StatusUnauthorized,utils.ErrResponse{
+			Ok: false,
+			Status: "login expired or invalid token",
+		})
+		return
+	}
+
+	// store dm
 }

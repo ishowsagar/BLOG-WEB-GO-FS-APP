@@ -353,3 +353,49 @@ func(u *UserDBModel) FetchFullProfileData(userID uint)(*ProfileData,error) {
 	// return it
 	return &userData,nil
 }
+
+
+// goal - fetch all users which active user has followed and fetch their full profiles
+func(u *UserDBModel) FetchAllFollowingUsers(clientID uint)([]*models.User,error) {
+	ctx,timeout := context.WithTimeout(context.Background(),utils.DbTimeoutDuration)
+	defer timeout()
+
+	query := `
+		Select
+			f.followee_id,
+			u.name,
+			u.username
+		from 
+			follows f
+		left join 
+			users u
+		on
+			u.id = f.followee_id
+		where
+			follower_id=$1
+	`
+
+	resRows,err := u.db.QueryContext(ctx,query,clientID)
+	if err != nil {
+		return nil,err
+	}
+	defer resRows.Close()
+
+	var profiles []*models.User
+	// iterating through each row
+	for resRows.Next() {
+		var user models.User
+		// scanning each current iteration and populating into the var
+		err = resRows.Scan(
+			&user.ID,
+			&user.Name,
+			&user.Username,
+		)
+		if err != nil {
+			return nil,err
+		}
+		// if got one successfull row, append to the profiles slice
+		profiles = append(profiles, &user)
+	}
+	return profiles,nil
+}

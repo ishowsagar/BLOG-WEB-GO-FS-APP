@@ -21,6 +21,7 @@ type ENVConfig struct {
 	RedisDB int
 	RedisDBPassword string
 	RedisHost string 
+	RabbitMQURL string
 	S3AccessKeyID string
 	S3SecretKey string
 	S3BucketName string
@@ -49,6 +50,7 @@ func LoadConfig() (*ENVConfig,error) {
 	redisDbPass := os.Getenv("REDIS_DB_PASSWORD")
 	redisDbStr := os.Getenv("REDIS_DB")
 	redisDbHost := os.Getenv("REDIS_HOST_ADDR")
+	rabbitmqURL := os.Getenv("RABBITMQ_URL")
 
 	// * since we stored aws s3 important keys in env, container would look for them in its space <- must define there too
 	s3AccessKeyID := os.Getenv("S3AccessKeyID")
@@ -96,6 +98,7 @@ func LoadConfig() (*ENVConfig,error) {
 		RedisDB: redisDb,
 		RedisDBPassword: redisDbPass,
 		RedisHost: redisDbHost,
+		RabbitMQURL: rabbitmqURL,
 		S3AccessKeyID: s3AccessKeyID,
 		S3SecretKey: s3SecretKey,
 		S3BucketName: s3BucketName,

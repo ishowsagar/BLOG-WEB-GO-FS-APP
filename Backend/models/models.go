@@ -187,3 +187,20 @@ type FollowPayload struct {
 	FollowSenderID uint `json:"follow_sender_id"`
 	FollowRecieverID uint `json:"follow_reciever_id"`
 }
+
+// type struct for dm type message
+type DirectMessage struct {
+	ID uint `json:"id" gorm:"primaryKey"`
+	SenderID uint `json:"sender_id"`
+	RecieverID uint `json:"reciever_id"`
+	Message string `json:"message"`
+}
+
+// type struct for the room type messages
+type RoomMessages struct {
+	ID uint  `json:"id" gorm:"primaryKey"`
+	RoomID uint `json:"room_id"`
+	// todo - later if needed you can map messages to the clientID
+	Messages []string `json:"messages"` // contains all the messages
+}
+

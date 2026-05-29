@@ -141,7 +141,14 @@ func main() {
 
 	// **  Stack verification  health check firstly before running main app  **//
 
-	initializers.VerifyInfraStack(baseDbModel.DB,redisClient.Client,"amqp://guest:guest@instagram_rabbitmq_container:5672/")
+	// use configured RabbitMQ URL if present, otherwise fall back to the original default
+	rabbitURL := config.RabbitMQURL
+	if rabbitURL == "" {
+		rabbitURL = "amqp://guest:guest@instagram_rabbitmq_container:5672/"
+	}
+
+	// verify infra stack using configured RabbitMQ URL (or fallback)
+	initializers.VerifyInfraStack(baseDbModel.DB, redisClient.Client, rabbitURL)
 
 	// ** ....END... **//
 
@@ -156,7 +163,7 @@ func main() {
 	broker := events.NewPubSubBroker(hub) // intializes an instance with hub
 	// start connection
 	// testing - since composed services depends on each other so mapping to service from where it will pull via internal networking
-	err = broker.Connect("amqp://guest:guest@instagram_rabbitmq_container:5672/") //& initializes rabbit connection and exchange and queues and stores in this instance on which <- this being called on
+	err = broker.Connect(rabbitURL) // initializes rabbit connection using configured URL (or fallback)
 	if err != nil {
 		slog.Info("failed to open rabbit connection to declare exchanges and all","error",err)
 		return

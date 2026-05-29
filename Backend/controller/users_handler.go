@@ -602,6 +602,43 @@ func(u *UserController) FetchFullProfileData(c *gin.Context) {
 
 }
 
+// controller method which -> retrieves all the profiles of what users would have followed
+func(u *UserController) GetFollowedUserProfiles(c *gin.Context) {
+	activeClientUserID := c.GetUint("user_id")
+	if activeClientUserID  == 0 {
+		c.AbortWithStatusJSON(http.StatusUnauthorized,utils.ErrResponse{
+			Ok: false,
+			Status: "Login expired or invalid token",
+		})
+		return
+	}
+
+	profilesData,err := u.UserDbModel.FetchAllFollowingUsers(activeClientUserID)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusServiceUnavailable,utils.ErrResponse{
+			Ok: false,
+			Status: "failed to fetch followed profiles data",
+		})
+		return 
+	}
+
+	//  if query was successfull , but no profileData were retrieved
+	if profilesData == nil {
+		c.AbortWithStatusJSON(http.StatusNotFound,utils.ErrResponse{
+			Ok: false,
+			Status: "no profiles data has found",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK,utils.SuccessResponse{
+		Ok: true,
+		Status: "successfully retrieved profile data for the active client",
+		Data: profilesData,
+	})
+
+}
+
 // @ next Implementation
 // - add tx atomic method to fetch user to follow -> render everything related to him, => done with fetching data of that user from users from its id ✅
 //  - when a comment is posted -> fetch user_id and from there user data  -> display commentor name => done by learning and implementing joining c with user as same id so from one big joined table -> fetch name ✅
@@ -614,3 +651,4 @@ func(u *UserController) FetchFullProfileData(c *gin.Context) {
 // - follow unfollow -> by adding a seperate nested injected page - when searched - clicked - load page of his info and follow unfollow there - Done ✅
 // - for upper thing need single atomic transaction if needed  - done with multi staged events✅
 // - fetch posts associated with active client ID and also for profile -> fetching for eachProfile -> redirected url where data is loaded -> fetch for that userID
+// - fetch users profiles which active client has followed to be loaded in -> followings + messages tab

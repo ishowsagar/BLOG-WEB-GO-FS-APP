@@ -96,6 +96,7 @@ func ServeRoutes(router *gin.Engine,masterController *controller.MasterControlle
 
 		// profile
 		api.GET("/profile",masterController.UserController.FetchFullProfileData)
+		api.GET("/followings",masterController.UserController.GetFollowedUserProfiles)
 		
 		// s3Bucket
 		api.POST("/user/pfp/upload",masterController.S3Controller.HandleUploadImageStream)

@@ -625,10 +625,14 @@ func(c *Client) MessageReader(db *gorm.DB) {
 		// & mark delivery in "notifications" exchange for this userID when its not nil
 		if msg.RecieverID != 0 && payload.RoomID == 0 {
 			//* checked by consumer which -> redirects to targetted chan of hub -> which sends to targetted client only for reciever send chan
-			c.Hub.Publish(msg.RecieverID, payload)
+			c.Hub.Publish(msg.RecieverID, payload) //payload of type being "dm" publishes to the exchange
+			// todo - when successfully published also store in the db - dm message
+			// fix - already storing above
+			// need repo query method + handler for it + much needed table migration and routing ofc 
 		} else {
 			//$ for broadcasting to all except the sender
 			c.Hub.Broadcast <-payload // send payload to broadcast chan of hub which sends to all client's send chan to send response to all
+			
 		}
 
 	}

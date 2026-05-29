@@ -93,10 +93,11 @@ func(pns *PushNotificationService) StartService() {
 				CreatedAt: time.Now(),
 			}
 
-			
+			// directly broadcast
 			if pns.Hub != nil {
 				pns.Hub.Broadcast <- payload
 			}
+			
 		// todo - add a redirection method to redirect Like output so this chan can read
 		// fixed - added method which invokes this method through the corresponding handler
 		case likedata := <- pns.LikeNotification :

@@ -196,7 +196,7 @@ func (p *PubSubBroker) StartConsumingDeliveries() error {
 				default:
 					slog.Error("CONSUMER unable to send to RoomClientsPayloads", "error", "channel full or blocked", "room_id", payload.RoomID)
 				}
-			} else if payload.RecieverID == 0 && payload.RoomID == 0  {
+			} else if payload.RecieverID == 0 && payload.RoomID == 0 && payload.Type == "all_notify"  {
 				//& each recieved delivery from publisher get decoded here and set to hub for delivery to the client
 				slog.Info("CONSUMER routing to Broadcast (RecieverID=0)")
 				select {
