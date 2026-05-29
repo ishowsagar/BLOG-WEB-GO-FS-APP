@@ -13,6 +13,7 @@ export default function Profile() {
   const [selectedPfpPreview, setSelectedPfpPreview] = useState("");
   const [isUploadingPfp, setIsUploadingPfp] = useState(false);
   const [pfpMessage, setPfpMessage] = useState("");
+  const [profileAvatarSrc, setProfileAvatarSrc] = useState(pfp);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
   // Free online images for demo
@@ -39,6 +40,10 @@ export default function Profile() {
       pfp,
     [profileData],
   );
+
+  useEffect(() => {
+    setProfileAvatarSrc(profileAvatar);
+  }, [profileAvatar]);
 
   useEffect(() => {
     async function fetchProfile() {
@@ -110,9 +115,19 @@ export default function Profile() {
       }
 
       const uploadedUrl =
-        data.ImageURl || data.ImageUrl || data.imageUrl || data.URL || "";
+        data.ImageURL || data.ImageUrl || data.imageUrl || data.URL || "";
 
       if (uploadedUrl) {
+        try {
+          const imageResponse = await fetch(uploadedUrl, { method: "GET" });
+          if (!imageResponse.ok) {
+            throw new Error("uploaded image could not be loaded");
+          }
+          setProfileAvatarSrc(uploadedUrl);
+        } catch {
+          setProfileAvatarSrc(uploadedUrl);
+        }
+
         setProfileData((prev) => ({
           ...prev,
           avatar: uploadedUrl,
@@ -162,7 +177,7 @@ export default function Profile() {
       <div className="profile_header_row">
         <div className="profile_avatar_shell">
           <img
-            src={profileAvatar}
+            src={profileAvatarSrc || profileAvatar}
             alt="Profile avatar"
             className="profile_avatar"
           />
@@ -249,7 +264,7 @@ export default function Profile() {
               <div className="profile_pfp_preview_wrap">
                 <img
                   className="profile_pfp_preview"
-                  src={selectedPfpPreview || profileAvatar}
+                  src={selectedPfpPreview || profileAvatarSrc || profileAvatar}
                   alt="Selected preview"
                 />
                 <div className="profile_pfp_preview_hint">
