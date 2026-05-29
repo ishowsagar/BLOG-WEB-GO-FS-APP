@@ -118,15 +118,7 @@ export default function Profile() {
         data.ImageURL || data.ImageUrl || data.imageUrl || data.URL || "";
 
       if (uploadedUrl) {
-        try {
-          const imageResponse = await fetch(uploadedUrl, { method: "GET" });
-          if (!imageResponse.ok) {
-            throw new Error("uploaded image could not be loaded");
-          }
-          setProfileAvatarSrc(uploadedUrl);
-        } catch {
-          setProfileAvatarSrc(uploadedUrl);
-        }
+        setProfileAvatarSrc(uploadedUrl);
 
         setProfileData((prev) => ({
           ...prev,
