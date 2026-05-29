@@ -100,3 +100,28 @@ func(s *S3BucketModel) InsertImage(userID uint,uploadedPictureCloudURL string) (
 	// if successfully inserted data into the db✅✅
 	return nil
 }
+
+// get stored profile picture for a user by providing its userID
+func(s *S3BucketModel) GetStoredPFPImageURL(clientID uint)(profilePicURL *string,err error) {
+	ctx,timeout := context.WithTimeout(context.Background(),utils.DbTimeoutDuration)
+	defer timeout()
+
+	query := `
+		Select
+			profile_picture_url
+		from 
+			profile_picture_storages
+		where
+			user_id =$1;
+	`
+	resRow := s.DB.QueryRowContext(ctx,query,clientID)
+	var pfpUrl string
+	if err := resRow.Scan(&pfpUrl); err != nil {
+		if err == sql.ErrNoRows {
+			return nil,sql.ErrNoRows
+		}
+		return nil,err
+	}
+	return &pfpUrl,nil
+
+}

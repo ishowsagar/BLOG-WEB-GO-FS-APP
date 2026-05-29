@@ -126,7 +126,46 @@ func(s *S3Controller) HandleUploadImageStream(c *gin.Context) {
 	c.JSON(http.StatusOK,utils.S3UploadSuccessResponse{
 		Ok: true,
 		Status: "profile picture uploaded successfully🚀",
-		ImageURl:retrievedUploadedImageURL,
+		ImageURL:retrievedUploadedImageURL,
 	})
 
+}
+
+// handler method to fetch pfp exclusively
+func(s *S3Controller) GetProfilePictureBucketURl(c *gin.Context) {
+
+	// fetch active clientID -> whose pfp has to be fetched
+	userID := c.GetUint("user_id")
+	if userID == 0 {
+		c.AbortWithStatusJSON(http.StatusUnauthorized,utils.S3UploadErr{
+			Ok: false,
+			Error: "user not found",
+		})
+		return
+	}
+
+	//  fetch url stored in db for that userDI in db through db call
+	pfpURL,err := s.S3BucketModel.GetStoredPFPImageURL(userID)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusServiceUnavailable,utils.S3UploadErr{
+			Ok: false,
+			Error: "failed to get pfp",
+		})
+		return
+	}
+
+	if pfpURL == nil {
+		c.AbortWithStatusJSON(http.StatusNotFound,utils.S3UploadErr{
+			Ok: false,
+			Error: "pfp not found",
+		})
+		return
+	}
+
+	// if successfully retrieved stored s3url for this user, send to the client
+	resolvedURL := *pfpURL
+	c.JSON(http.StatusOK,gin.H{
+		"Ok" : true,
+		"ImageURL" : resolvedURL,
+	})
 }

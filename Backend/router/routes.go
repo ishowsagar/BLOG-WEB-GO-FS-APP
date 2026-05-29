@@ -100,6 +100,7 @@ func ServeRoutes(router *gin.Engine,masterController *controller.MasterControlle
 		
 		// s3Bucket
 		api.POST("/user/pfp/upload",masterController.S3Controller.HandleUploadImageStream)
+		api.GET("/s3/pfp",masterController.S3Controller.GetProfilePictureBucketURl)
 
 		// like
 		api.POST("/like",masterController.LikeController.UpdateLike)

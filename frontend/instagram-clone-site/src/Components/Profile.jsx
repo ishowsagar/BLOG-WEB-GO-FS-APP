@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, Outlet, useNavigate, Link } from "react-router-dom";
-import pfp from "../assets/pfp.jpg";
 import ProfileNav from "./ProfileNav";
 import WebSocketDebug from "./WebSocketDebug";
 import { apiUrl } from "../Services/apiConfig";
@@ -13,7 +12,7 @@ export default function Profile() {
   const [selectedPfpPreview, setSelectedPfpPreview] = useState("");
   const [isUploadingPfp, setIsUploadingPfp] = useState(false);
   const [pfpMessage, setPfpMessage] = useState("");
-  const [profileAvatarSrc, setProfileAvatarSrc] = useState(pfp);
+  const [profileAvatarSrc, setProfileAvatarSrc] = useState("");
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
   // Free online images for demo
@@ -37,12 +36,37 @@ export default function Profile() {
       profileData?.avatar_url ||
       profileData?.profile_picture ||
       profileData?.pfp ||
-      pfp,
+      "",
     [profileData],
   );
 
   useEffect(() => {
-    setProfileAvatarSrc(profileAvatar);
+    async function loadProfilePicture() {
+      if (!token) return;
+
+      try {
+        const response = await fetch(apiUrl("/api/s3/pfp"), {
+          method: "GET",
+          headers: {
+            Authorization: token,
+            "Content-Type": "application/json",
+          },
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.Ok && data.ImageURL) {
+          setProfileAvatarSrc(data.ImageURL);
+          return;
+        }
+      } catch {
+        // keep the profile data avatar or empty state below
+      }
+
+      setProfileAvatarSrc(profileAvatar);
+    }
+
+    loadProfilePicture();
   }, [profileAvatar]);
 
   useEffect(() => {
@@ -114,8 +138,28 @@ export default function Profile() {
         throw new Error(data.Error || data.Status || "failed to upload photo");
       }
 
+      const pfpResponse = await fetch(apiUrl("/api/s3/pfp"), {
+        method: "GET",
+        headers: {
+          Authorization: token,
+          "Content-Type": "application/json",
+        },
+      });
+
+      const pfpData = await pfpResponse.json();
+
+      if (!pfpResponse.ok || !pfpData.Ok) {
+        throw new Error(
+          pfpData.Error || pfpData.Status || "failed to fetch uploaded photo",
+        );
+      }
+
       const uploadedUrl =
-        data.ImageURL || data.ImageUrl || data.imageUrl || data.URL || "";
+        pfpData.ImageURL ||
+        pfpData.ImageUrl ||
+        pfpData.imageUrl ||
+        pfpData.URL ||
+        "";
 
       if (uploadedUrl) {
         setProfileAvatarSrc(uploadedUrl);

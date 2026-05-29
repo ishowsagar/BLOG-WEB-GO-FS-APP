@@ -90,5 +90,5 @@ type S3UploadErr struct {
 type S3UploadSuccessResponse struct{
 	Ok bool
 	Status string
-	ImageURl string
+	ImageURL string
 }
