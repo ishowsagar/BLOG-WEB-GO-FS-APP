@@ -7,10 +7,10 @@ import { apiUrl } from "../Services/apiConfig";
 export default function EachProfile() {
   console.log("/eachProfile");
   // states
-  // Free online images for demo
-  const avatarImg =
+  // fallback images for demo
+  const FALLBACK_AVATAR =
     "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=facearea&w=256&h=256&facepad=2";
-  const highlightImg =
+  const FALLBACK_HIGHLIGHT =
     "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=128&q=80";
 
   // & fetch profile data
@@ -78,14 +78,28 @@ export default function EachProfile() {
     fetchProfileDataByID();
   }, [token, hasFollowed]); //mount again if these dependency elements changes
 
-  const followers = `${profileData?.followers_count} followers`;
-  const followings = `${profileData?.following_count} following`;
+  const followers = `${profileData?.followers_count ?? profileData?.followers ?? 0} followers`;
+  const followings = `${profileData?.following_count ?? profileData?.following ?? 0} following`;
 
-  // resp is undefined -> handler must return these fetched from repo corres method
-  //  fixed - now controller method on this route is returning those fields too
-  const Username = `${profileData?.username}`;
-  const Nickname = `${profileData?.nickname}`;
-  const Bio = `${profileData?.bio}`;
+  // Use profile data fields with sensible fallbacks
+  const Username = profileData?.username || profileData?.user_name || "user";
+  const Nickname =
+    profileData?.nickname ||
+    profileData?.display_name ||
+    profileData?.name ||
+    Username;
+  const Bio = profileData?.bio || profileData?.description || "";
+
+  const avatarImg =
+    profileData?.avatar ||
+    profileData?.avatar_url ||
+    profileData?.pfp ||
+    profileData?.profile_picture ||
+    FALLBACK_AVATAR;
+  const highlightImg =
+    profileData?.cover_photo ||
+    profileData?.highlight_image ||
+    FALLBACK_HIGHLIGHT;
   const receiverId = Number(userid);
 
   function getCurrentUserIdFromToken() {
@@ -285,7 +299,13 @@ export default function EachProfile() {
             <span>♪</span>
           </div>
           <div className="profile_stats profile_stats_row">
-            <span>2 posts</span>
+            <span>
+              {profileData?.post_count ??
+                profileData?.posts_count ??
+                profileData?.postCount ??
+                0}{" "}
+              posts
+            </span>
             <span>{followers}</span>
             <span>{followings}</span>
           </div>

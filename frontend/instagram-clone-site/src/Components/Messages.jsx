@@ -60,6 +60,16 @@ export default function Messages() {
           const mapped = items.map((it) => ({
             id: it.ID || it.id || it.user_id || it.UserID || 0,
             name: it.Name || it.name || it.username || it.Username || "Unknown",
+            // possible avatar fields from API: avatar, avatar_url, profile_picture, pfp
+            pfp:
+              it.avatar ||
+              it.avatar_url ||
+              it.profile_picture ||
+              it.pfp ||
+              it.profile_pic ||
+              it.ProfilePic ||
+              it.Avatar ||
+              null,
           }));
           setProfiles(mapped.filter((p) => p.id));
         }
@@ -256,7 +266,7 @@ export default function Messages() {
               }}
             >
               <img
-                src={avatarUrl(p.id)}
+                src={p.pfp ? p.pfp : avatarUrl(p.id)}
                 alt={p.name}
                 style={{
                   width: 48,
@@ -330,7 +340,10 @@ export default function Messages() {
             {activePeer ? (
               <>
                 <img
-                  src={avatarUrl(activePeer)}
+                  src={
+                    profiles.find((x) => x.id === activePeer)?.pfp ||
+                    avatarUrl(activePeer)
+                  }
                   style={{
                     width: 44,
                     height: 44,
