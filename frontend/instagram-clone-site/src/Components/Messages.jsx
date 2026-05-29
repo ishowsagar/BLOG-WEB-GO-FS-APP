@@ -262,18 +262,6 @@ export default function Messages() {
               key={p.id}
               onClick={() => {
                 setActivePeer(p.id);
-                // send a dm-type payload to the DM websocket to start/activate the thread
-                try {
-                  const payload = {
-                    sender_id: currentUserId,
-                    reciever_id: p.id,
-                    type: "dm",
-                    content: "",
-                  };
-                  if (sendDm) sendDm(payload);
-                } catch (e) {
-                  console.warn("Failed to send initial DM payload:", e);
-                }
               }}
               style={{
                 width: "100%",
@@ -442,10 +430,7 @@ export default function Messages() {
             )}
           </div>
 
-          <div
-            ref={messagesListRef}
-            style={{ padding: "1rem", overflowY: "auto", minHeight: 0 }}
-          >
+          <div style={{ padding: "1rem", overflowY: "auto", minHeight: 0 }}>
             {activePeer ? (
               <div style={{ display: "grid", gap: 12 }}>
                 {loadingMessages ? (
@@ -457,30 +442,32 @@ export default function Messages() {
                     No messages yet. Start the conversation.
                   </div>
                 ) : (
-                  messages.map((m, idx) => {
-                    const isOutgoing =
-                      Number(m.sender_id) === Number(currentUserId);
-                    return (
-                      <div
-                        key={`${m.id || idx}-${m.created_at || idx}-${m.content?.slice(0, 8)}`}
-                        style={{
-                          justifySelf: isOutgoing ? "end" : "start",
-                          maxWidth: "72%",
-                          padding: "0.6rem 0.8rem",
-                          borderRadius: 12,
-                          background: isOutgoing
-                            ? "linear-gradient(135deg,#ff8a5b,#ff4d9d)"
-                            : "#eef3ff",
-                          color: isOutgoing ? "#fff" : "#0f172a",
-                          boxShadow: isOutgoing
-                            ? "0 6px 18px rgba(255,77,157,0.12)"
-                            : "0 2px 6px rgba(15,23,42,0.03)",
-                        }}
-                      >
-                        <div style={{ fontSize: "0.95rem" }}>{m.content}</div>
-                      </div>
-                    );
-                  })
+                  messages
+                    .filter((m) => String(m.content || "").trim())
+                    .map((m, idx) => {
+                      const isOutgoing =
+                        Number(m.sender_id) === Number(currentUserId);
+                      return (
+                        <div
+                          key={`${m.id || idx}-${m.created_at || idx}-${m.content?.slice(0, 8)}`}
+                          style={{
+                            justifySelf: isOutgoing ? "end" : "start",
+                            maxWidth: "72%",
+                            padding: "0.6rem 0.8rem",
+                            borderRadius: 12,
+                            background: isOutgoing
+                              ? "linear-gradient(135deg,#ff8a5b,#ff4d9d)"
+                              : "#eef3ff",
+                            color: isOutgoing ? "#fff" : "#0f172a",
+                            boxShadow: isOutgoing
+                              ? "0 6px 18px rgba(255,77,157,0.12)"
+                              : "0 2px 6px rgba(15,23,42,0.03)",
+                          }}
+                        >
+                          <div style={{ fontSize: "0.95rem" }}>{m.content}</div>
+                        </div>
+                      );
+                    })
                 )}
               </div>
             ) : (
