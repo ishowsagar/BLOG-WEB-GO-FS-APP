@@ -19,6 +19,7 @@ import Search from "./Components/search";
 import EachProfile from "./Components/EachProfile";
 import DenverAI from "./Components/DenverAI";
 import About from "./Components/About";
+import Messages from "./Components/Messages";
 
 createRoot(document.getElementById("root")).render(
   // ! Main layout - shared header and footer, everything else will be rendered as,
@@ -44,6 +45,7 @@ createRoot(document.getElementById("root")).render(
           <Route path="reels" element={<Reels />} />
           <Route path="denAI" element={<DenverAI />} />
           <Route path="about" element={<About />} />
+          <Route path="messages" element={<Messages />} />
           {/*//**  Render profile in outlet area of clicked user from search**/}
           {/* client redirected on this url will be redirected with a userID attached, fetch and do the data fetch and ofc display */}
           <Route path="users/profile/:userid" element={<EachProfile />} />

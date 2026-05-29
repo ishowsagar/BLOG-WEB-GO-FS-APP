@@ -1,0 +1,12 @@
+# simple air config for local development
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  cmd = "CGO_ENABLED=0 GOOS=linux go build -o ./tmp/main ./cmd/server"
+  bin = "./tmp/main"
+  include_ext = ["go","tpl","tmpl","html"]
+  exclude_dir = ["assets","tmp","vendor"]
+
+[log]
+  time = true

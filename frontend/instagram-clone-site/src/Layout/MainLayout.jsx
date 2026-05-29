@@ -417,6 +417,7 @@ export default function MainLayout() {
         >
           <section className="Site_wrapper">
             <button
+              className="floating_action_button floating_action_button_room"
               onClick={() => {
                 const willShow = !showRoomInbox;
                 setShowRoomInbox(willShow);
@@ -447,6 +448,7 @@ export default function MainLayout() {
             </button>
 
             <button
+              className="floating_action_button floating_action_button_dm"
               onClick={() => setShowDmInbox((prev) => !prev)}
               style={{
                 position: "fixed",

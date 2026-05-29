@@ -1,0 +1,26 @@
+FROM golang:1.25-alpine
+
+RUN apk add --no-cache git bash ca-certificates
+
+# ensure go bin is in PATH so `air` is runnable after `go install`
+ENV PATH=/go/bin:$PATH
+
+WORKDIR /app
+
+# cache deps
+COPY go.mod go.sum ./
+RUN go mod download
+
+# NOTE: air live-reload installation caused CI/build failures on some hosts.
+# For a simple, reliable dev experience we run `go run` here. If you want
+# file-watching live reload later, we can add a tested watcher (air/CompileDaemon)
+# that matches your host architecture.
+
+# copy rest
+COPY . .
+
+EXPOSE 8080
+
+# Start the app directly for development. This is reliable and removes the
+# need to download external prebuilt binaries during image build.
+CMD ["sh", "-c", "go run ./cmd/server"]

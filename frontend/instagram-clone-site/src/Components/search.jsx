@@ -219,6 +219,12 @@ export default function Search() {
               type="text"
               value={query}
               onChange={handleSearchQuery}
+              onKeyDown={(e) => {
+                // prevent Enter from automatically triggering a search; require clicking Search
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                }
+              }}
               placeholder="Search people, reels, hashtags..."
               className="search_page_input"
             />

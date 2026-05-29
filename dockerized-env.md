@@ -85,3 +85,8 @@ IDEA - instead of deploying here and manually doing the code pushing, by using g
 
 1 - since ec2 is still exposing ports like 8080/5173 for local development testing,it is still exposing application to old ports
 2 - once fully upgraded to domain, safely remove those if needed
+
+<!-- ! fixing git related issues -->
+
+1.  Commit wrong changes? need way to get back them unstashed and uncommited :-
+    `  git reset HEAD~{no. of commits you wanna go back}`

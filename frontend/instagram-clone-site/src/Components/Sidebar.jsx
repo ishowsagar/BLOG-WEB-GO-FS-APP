@@ -47,9 +47,9 @@ export default function Sidebar() {
           </li>
           <li>
             <img className="sidebar_icon" src={MessagesIcon} />
-            <a className="sidebar_link" href="#">
+            <Link className="sidebar_link" to="/messages">
               Messages
-            </a>
+            </Link>
           </li>
           <li>
             <img className="sidebar_icon" src={NotificationsIcon} />

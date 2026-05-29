@@ -1,0 +1,75 @@
+services:
+  frontend:
+    build:
+      context: ./frontend/instagram-clone-site
+      dockerfile: Dockerfile.dev
+    container_name: local_frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    # optional: mount nginx config override if you have one locally
+    volumes:
+      - ./frontend/instagram-clone-site:/app:cached
+      - /app/node_modules
+
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile.dev
+    container_name: local_backend
+    env_file:
+      - ./Backend/.env
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_HOST=psql
+      - REDIS_HOST_ADDR=redis:6379
+      - RABBITMQ_URL=amqp://guest:guest@instagram_rabbitmq_container:5672/
+    depends_on:
+      - psql
+      - rabbitmq
+      - redis
+    # bind-mount source for fast local iteration (optional - uncomment if you want hot-edit inside container)
+    volumes:
+      - ./Backend:/app:cached
+      - /go/pkg/mod
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: instagram_rabbitmq_container
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_local_data:/var/lib/rabbitmq
+
+  psql:
+    image: postgres:15-alpine
+    container_name: local_postgres
+    ports:
+      - "5432:5432"
+    env_file:
+      - ./Backend/.env
+    environment:
+      - POSTGRES_USER=${DB_USER:-blog_admin}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-blog}
+      - POSTGRES_DB=${DB_DBASE_NAME:-instagramdb}
+    volumes:
+      - postgres_local_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: local_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_local_data:/data
+
+volumes:
+  rabbitmq_local_data:
+  postgres_local_data:
+  redis_local_data:
+
+# network left as default bridge; services can refer to each other by service name
+
