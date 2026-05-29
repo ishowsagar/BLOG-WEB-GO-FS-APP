@@ -296,7 +296,8 @@ export default function Messages() {
                 src={resolveAvatar(p)}
                 alt={p.name}
                 onError={(e) => {
-                  const currentSrc = e.currentTarget.dataset.fallbackStage || "0";
+                  const currentSrc =
+                    e.currentTarget.dataset.fallbackStage || "0";
                   if (currentSrc === "0") {
                     e.currentTarget.dataset.fallbackStage = "1";
                     e.currentTarget.src = avatarUrl(p.id);
@@ -387,20 +388,19 @@ export default function Messages() {
             {activePeer ? (
               <>
                 <img
-                  src={
-                    resolveAvatar(
-                      profiles.find((x) => x.id === activePeer) || {
-                        id: activePeer,
-                        pfp: null,
-                      },
-                    )
-                  }
+                  src={resolveAvatar(
+                    profiles.find((x) => x.id === activePeer) || {
+                      id: activePeer,
+                      pfp: null,
+                    },
+                  )}
                   onError={(e) => {
-                    const activeProfile =
-                      profiles.find((x) => x.id === activePeer) || {
-                        id: activePeer,
-                        name: "User",
-                      };
+                    const activeProfile = profiles.find(
+                      (x) => x.id === activePeer,
+                    ) || {
+                      id: activePeer,
+                      name: "User",
+                    };
                     const currentSrc =
                       e.currentTarget.dataset.fallbackStage || "0";
                     if (currentSrc === "0") {
