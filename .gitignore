@@ -25,3 +25,4 @@
 .vscode/
 .idea/
 .DS_Store
+Backend/server_logs

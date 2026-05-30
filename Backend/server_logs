@@ -32,10 +32,17 @@
 [GIN-debug] GET    /api/messages             --> github.com/ishowsagar/go-blog-web-application/controller.(*WSController).LoadMessages-fm (7 handlers)
 [GIN-debug] GET    /api/profile              --> github.com/ishowsagar/go-blog-web-application/controller.(*UserController).FetchFullProfileData-fm (7 handlers)
 [GIN-debug] GET    /api/followings           --> github.com/ishowsagar/go-blog-web-application/controller.(*UserController).GetFollowedUserProfiles-fm (7 handlers)
+[GIN-debug] GET    /api/s3/pfp               --> github.com/ishowsagar/go-blog-web-application/controller.(*S3Controller).GetProfilePictureBucketURl-fm (7 handlers)
+[GIN-debug] POST   /api/user/upload/post/image --> github.com/ishowsagar/go-blog-web-application/controller.(*S3Controller).HandlePostsImageStream-fm (7 handlers)
 [GIN-debug] POST   /api/user/pfp/upload      --> github.com/ishowsagar/go-blog-web-application/controller.(*S3Controller).HandleUploadImageStream-fm (7 handlers)
 [GIN-debug] POST   /api/like                 --> github.com/ishowsagar/go-blog-web-application/controller.(*LikeController).UpdateLike-fm (7 handlers)
 [GIN-debug] POST   /api/users/follow/:followeeID --> github.com/ishowsagar/go-blog-web-application/controller.(*FollowController).FollowUser-fm (7 handlers)
 [GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
 Please check https://github.com/gin-gonic/gin/blob/master/docs/doc.md#dont-trust-all-proxies for details.
 [GIN-debug] Listening and serving HTTP on :8080
-[GIN] 2026/05/29 - 12:23:02 |[97;42m 200 [0m|[90;47m 247.425µs [0m|      172.22.0.1 |[97;44m GET     [0m "/health/"
+[GIN] 2026/05/30 - 07:04:35 |[97;41m 500 [0m|[90;47m   1.81ms [0m|      172.22.0.1 |[97;46m POST    [0m "/api/user/upload/post/image"
+[GIN] 2026/05/30 - 07:05:01 |[97;41m 500 [0m|[90;47m 595.148µs [0m|      172.22.0.1 |[97;46m POST    [0m "/api/user/upload/post/image"
+[GIN] 2026/05/30 - 07:05:02 |[97;41m 500 [0m|[90;47m 557.645µs [0m|      172.22.0.1 |[97;46m POST    [0m "/api/user/upload/post/image"
+[GIN] 2026/05/30 - 07:05:25 |[97;41m 500 [0m|[90;47m 656.533µs [0m|      172.22.0.1 |[97;44m GET     [0m "/api/feed/batch?limit=4&nextCursor=50"
+[GIN] 2026/05/30 - 07:05:33 |[97;41m 500 [0m|[90;47m  10.74ms [0m|      172.22.0.1 |[97;46m POST    [0m "/form/login"
+[GIN] 2026/05/30 - 07:05:36 |[97;41m 500 [0m|[90;47m   2.55ms [0m|      172.22.0.1 |[97;46m POST    [0m "/form/login"
