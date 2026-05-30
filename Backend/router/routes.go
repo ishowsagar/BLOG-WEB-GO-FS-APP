@@ -99,8 +99,9 @@ func ServeRoutes(router *gin.Engine,masterController *controller.MasterControlle
 		api.GET("/followings",masterController.UserController.GetFollowedUserProfiles)
 		
 		// s3Bucket
-		api.POST("/user/pfp/upload",masterController.S3Controller.HandleUploadImageStream)
 		api.GET("/s3/pfp",masterController.S3Controller.GetProfilePictureBucketURl)
+		api.POST("/user/upload/post/image",masterController.S3Controller.HandlePostsImageStream) // for posts image only
+		api.POST("/user/pfp/upload",masterController.S3Controller.HandleUploadImageStream)
 
 		// like
 		api.POST("/like",masterController.LikeController.UpdateLike)

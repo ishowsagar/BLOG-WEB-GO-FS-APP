@@ -1,8 +1,10 @@
 package controller
 
 import (
+	"bytes"
 	"database/sql"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 
@@ -183,3 +185,127 @@ func(s *S3Controller) GetProfilePictureBucketURl(c *gin.Context) {
 	})
 }
 
+
+// ** POSTS **//
+
+// handler method that uploads fileImage to the bucket via bucketInsertor method call
+func(s *S3Controller) HandlePostsImageStream(c *gin.Context) {
+
+
+	// client needs a i/o - reader for uploading multi-parted file to the bucket
+	// io.Reader gives a small container which loads data into it and send to bucket and get back tells how much it poured into to the bucket...keep going unitll it does not hit EOF
+	// once data emptied -> closes stream
+	// this is how large data files are uploaded by sending chunks of data in containers in stream by the reader and keeps doing untill done
+
+	
+	// fetching userId from the request's token via auth middleware
+	clientID := c.GetUint("user_id")
+	if clientID == 0 {
+		c.AbortWithStatusJSON(http.StatusUnauthorized,utils.ErrResponse{
+			Ok: false,
+			Status: "Access denied - login expired or invalid token",
+		})
+		return
+	}
+
+	// str formatter to convert it into str for obj key
+	clientIDStr:=fmt.Sprintf("%v",clientID) // must pass val via %v val placeholder
+
+	
+	
+	//stream of type io.Reader -> bears a small container ->for sending data in chunks
+	unhandledChunkStream := c.Request.Body // later we will develop own reader stream
+	// -f files data are recieved in parts/chunks, not in single atomic load
+	defer unhandledChunkStream.Close()
+	dataLength := c.Request.ContentLength
+	
+	//! incoming data validation - using multireader to check if incoming data is only images
+	initialBuffer := make([]byte,512) // initial buffer of size 512bytes
+	
+	const maxSizeAllowed = 2*1024*1024 //2mb
+	// assigning max byte to be read
+	unhandledChunkStream = http.MaxBytesReader(c.Writer,unhandledChunkStream,maxSizeAllowed)
+
+	// if data length is more than maxallowed size,send client err status
+	if dataLength > maxSizeAllowed {
+		slog.Error("failed to read incoming data","error","file size too large")
+		c.AbortWithStatusJSON(http.StatusBadRequest,utils.ErrResponse{
+			Ok: false,
+			Status: "file too large, it should not exceed => size > 2mb",
+		})
+		return	
+	}
+
+	// if content length validated and passed size limit ✅ send to client
+
+	// read atleast data it could read but under iB size
+	chunkLength,err :=io.ReadAtLeast(unhandledChunkStream,initialBuffer,1) // read from body but upto first buffer limit, whatever read -> store in the buffer
+	// it returns n~cL as till what byte number data is successfully read
+	if err!= nil && err != io.EOF && err != io.ErrUnexpectedEOF {
+		// handeling read err of the buffer,//! but it was eof or like normal err but could not read this file
+		slog.Error("failed to read incoming data stream","error",err)
+		c.AbortWithStatusJSON(http.StatusBadRequest,utils.ErrResponse{
+			Ok: false,
+			Status: "failed to read incoming data stream",
+		})
+		return	
+	} 
+
+	// checking upto what length of buffer data which was filled has what "content-type"
+	incomingDataType := http.DetectContentType(initialBuffer[:chunkLength]) //* checking what type of data is coming till this buffer limit
+	allowedDataTYPES := map[string]bool {
+		"image/jpeg" :true,
+		"image/png" :true,
+		"image/webp" :true,
+	}
+
+	// if incoming data type could not be validated 
+	if !allowedDataTYPES[incomingDataType] {
+		// if val of this passed data type is false or does exists as false, then not allowed
+		c.AbortWithStatusJSON(http.StatusNotAcceptable,utils.ErrResponse{
+			Ok: false,
+			Status: "Invalid file type",
+		})
+		return
+	}
+
+
+	// attach buffer to the newly created stream if passed validation check
+	handledMutatedStream := io.MultiReader(bytes.NewReader(initialBuffer[:chunkLength]),unhandledChunkStream)
+
+	// calling method to put data into the bucket - body as io.Reader -> bears a small container to load and send chunks of file data into bucket untill not fully sent the file
+ 	resolvedPostImageURL,bucketErr := s.S3BucketModel.UploadPostImageStream(
+		c.Request.Context(),
+		handledMutatedStream,
+		clientIDStr,
+		dataLength,
+	)
+	if bucketErr != nil {
+		slog.Error("failed to upload post's image into the bucket❌","error",bucketErr)
+		c.AbortWithStatusJSON(http.StatusInternalServerError,utils.S3UploadErr{
+			Ok: false,
+			Error: "failed to upload post's image into the bucket",
+		})
+		return
+	}
+
+	slog.Info("Post image is uploaded successfully to the bucket✅","url",resolvedPostImageURL)
+
+	// if successfully uploaded file and resolved url, send to the client
+	c.JSON(http.StatusOK,utils.S3UploadSuccessResponse{
+		Ok: true,
+		Status: "successfully uploded post's image📤",
+		ImageURL: resolvedPostImageURL,
+	})
+
+
+}
+
+
+// flow
+// 1. We need io reader stream pipeline which bears container to load and send data in chunks
+// 2. body satisfies that but validation and handeling is utterly poorly managed
+// 3. We need a multi-readers attached reader, where first reader for validation and rest prev body
+// 4. We create a intialBuffer of size 512bytes which checks incoming data, and checks its content data type and validates it
+// 5. If validated, we took initial buffer and attach to the body which has the remaining buffer
+// 6. This creates a strealined multi reader where readers are consecutively attached and serves the data in the chunks as before

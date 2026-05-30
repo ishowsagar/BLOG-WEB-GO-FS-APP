@@ -61,6 +61,32 @@ func(s *S3BucketModel) UploadImageStream(ctx context.Context,subFolder string,un
 	return fileURL,nil
 }
 
+// * Method that would store posts's images in the bucket
+func(s *S3BucketModel) UploadPostImageStream(ctx context.Context,inputReaderStream io.Reader,clientIDStr string,contentLength int64) (string,error){
+
+	// key under which file is saved, "/" are treated as folder heirarchy - "Posts" imaginary folder like structure
+	objectKey := fmt.Sprintf("Posts/%s-%d.png",clientIDStr,time.Now().Unix()) // key would be something like - "Posts/{userID}-time.ext"
+
+	_,err :=s.BucketManager.S3Client.PutObject(ctx,&s3.PutObjectInput{
+		//& putting object with these input
+		Bucket: aws.String(s.BucketManager.S3BucketName),
+		Key: aws.String(objectKey) ,
+		Body: inputReaderStream, //* gives a small container which loads and sends data, tells how much sent in one...keep untill incoming data is not emptied out
+		ContentLength: aws.Int64(contentLength), 
+	})
+
+	if err != nil {
+		return "",fmt.Errorf("failed to upload post image to the bucket :%w",err)
+	}
+
+	// if successfully uploaded image,form url where image is stored to access it
+	
+	// * This standard url pattern is followed by the image, where image is stored on aws -> "https://bucketName.s3.amazonaws.com/objKey"
+	resolvedS3BucketImageUrl := fmt.Sprintf("https://%s.s3.amazonaws.com/%s",s.BucketManager.S3BucketName,objectKey)
+	return resolvedS3BucketImageUrl,nil
+
+}
+
 
 func(s *S3BucketModel) InsertImage(userID uint,uploadedPictureCloudURL string) (error) {
 
