@@ -2,12 +2,18 @@ package controller
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
+	"strconv"
+	"strings"
+	"time"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/gin-gonic/gin"
 	"github.com/ishowsagar/go-blog-web-application/services"
 	"github.com/ishowsagar/go-blog-web-application/utils"
@@ -18,12 +24,14 @@ import (
 // type that stores s3BucketModel which -> stores methods which called by client to do the s3 bucket operations like api service
 type S3Controller struct {
 	S3BucketModel *services.S3BucketModel
+	PostDbModel *services.PostDBModel
 }
 
 // func that returns the instace of type S3Controlle which > stores Controller method for serving uploads n whatnot
-func NewS3Controller(s3BucketModel *services.S3BucketModel) *S3Controller {
+func NewS3Controller(s3BucketModel *services.S3BucketModel,postDbModel *services.PostDBModel) *S3Controller {
 	return &S3Controller{
 		S3BucketModel: s3BucketModel,
+		PostDbModel: postDbModel,
 	}
 }
 
@@ -208,10 +216,56 @@ func(s *S3Controller) HandlePostsImageStream(c *gin.Context) {
 		return
 	}
 
+
+	// * fetching postID from the query -> so it frontend will call on passing postID in the url
+	postIDStr := c.Query("postid")
+	if postIDStr == "" {
+		// tell client to must include postID in the url else it will not able to store url mapped to the post
+		c.AbortWithStatusJSON(http.StatusBadRequest,utils.ErrResponse{
+			Ok: false,
+			Status: "post id not found in the query,must sent with key being 'postid'",
+		})
+		return
+
+	}
+
+	postIDInt,err := strconv.Atoi(postIDStr)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest,utils.ErrResponse{
+			Ok: false,
+			Status: "wrong post id,please pass correct 'postid' in the query",
+		})
+		return
+	}
+	postID := uint(postIDInt)
 	// str formatter to convert it into str for obj key
 	clientIDStr:=fmt.Sprintf("%v",clientID) // must pass val via %v val placeholder
 
 	
+	// before upload,must check if active clients own the post
+	createdPost,err :=s.PostDbModel.GetPostbyID(postIDInt)
+	if err!= nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError,utils.ErrResponse{
+			Ok: false,
+			Status: "failed to get post",
+		})
+		return
+	}
+	if createdPost == nil {
+		c.AbortWithStatusJSON(http.StatusNotFound,utils.ErrResponse{
+			Ok: false,
+			Status: "post not found;rolled back uploaded image and removed from the bucket🚨",
+		})
+		return
+	}
+
+	// & if post exists but checking is active is the owner
+	if clientID != createdPost.UserID {
+		c.AbortWithStatusJSON(http.StatusForbidden, utils.ErrResponse{Ok:false, Status:"client is not post owner🚨🚨"})
+   		 return
+	}
+
+	oldImageURL := createdPost.ImageSource // old could either be "default.png or ''"
 	
 	//stream of type io.Reader -> bears a small container ->for sending data in chunks
 	unhandledChunkStream := c.Request.Body // later we will develop own reader stream
@@ -251,6 +305,16 @@ func(s *S3Controller) HandlePostsImageStream(c *gin.Context) {
 		return	
 	} 
 
+	// checking if initial buffer read empty bytes as client uploaded nothing
+	if chunkLength == 0 {
+		slog.Error("client sent empty file to upload","error","no data recieved in the stream")
+		c.AbortWithStatusJSON(http.StatusBadRequest,utils.ErrResponse{
+			Ok: false,
+			Status: "file cannot be empty",
+		})
+		return
+	}
+
 	// checking upto what length of buffer data which was filled has what "content-type"
 	incomingDataType := http.DetectContentType(initialBuffer[:chunkLength]) //* checking what type of data is coming till this buffer limit
 	slog.Info("successfully recieved file initial buffer's content type","contentType:",incomingDataType)
@@ -275,16 +339,54 @@ func(s *S3Controller) HandlePostsImageStream(c *gin.Context) {
 	// attach buffer to the newly created stream if passed validation check
 	handledMutatedStream := io.MultiReader(bytes.NewReader(initialBuffer[:chunkLength]),unhandledChunkStream)
 
+
+	// bug - if by chance file is not uploaded the correct way, it would prints out "-1" data length from content length which could entirely crash our sdk
+	// fix - Read at once from the mutated reader total length it has sent in containers as its what it all about-> sending chunk in smal container giving the metrics
+
+	var verdictedDataLength int64 = c.Request.ContentLength
+	if verdictedDataLength <= 0 {
+		// if content length less than 0 
+		slog.Info("Content-Length is unknown (-1) or 0. Computing actual size safely in memory...")
+		actualBytesOFData,readErr :=io.ReadAll(handledMutatedStream)
+		if readErr != nil {
+			slog.Error("count not able to read total byte size of the uploaded content","error",readErr)
+			c.AbortWithStatusJSON(http.StatusBadRequest,utils.ErrResponse{
+				Ok: false,
+				Status: "failed to get stream data length",
+			})
+			return 
+		}
+
+		// since bytes data are in [], we can retrieve length from it
+		n := len(actualBytesOFData)
+		// setting it to be the final content length
+		verdictedDataLength = int64(n)
+
+		// redefining stream reader with this byte of data
+		handledMutatedStream = bytes.NewReader(actualBytesOFData)
+
+	}
+
+	// validating content length -> not allowing it to be execeeded than allowed
+	if verdictedDataLength > maxSizeAllowed {
+		slog.Error("failed to read incoming data","error","file size too large")
+		c.AbortWithStatusJSON(http.StatusRequestEntityTooLarge, utils.ErrResponse{
+			Ok: false,
+			Status:"file size is too large,only allowed file size of max 2mb",
+		})
+		return
+	} 
+
 	// calling method to put data into the bucket - body as io.Reader -> bears a small container to load and send chunks of file data into bucket untill not fully sent the file
  	resolvedPostImageURL,bucketErr := s.S3BucketModel.UploadPostImageStream(
 		c.Request.Context(),
 		handledMutatedStream,
 		clientIDStr,
-		dataLength,
+		verdictedDataLength,
 	)
 	if bucketErr != nil {
 		slog.Error("failed to upload post's image into the bucket❌","error",bucketErr)
-		c.AbortWithStatusJSON(http.StatusInternalServerError,utils.S3UploadErr{
+		c.AbortWithStatusJSON(http.StatusBadRequest,utils.S3UploadErr{
 			Ok: false,
 			Error: "failed to upload post's image into the bucket",
 		})
@@ -293,7 +395,73 @@ func(s *S3Controller) HandlePostsImageStream(c *gin.Context) {
 
 	slog.Info("Post image is uploaded successfully to the bucket✅","url",resolvedPostImageURL)
 
-	// if successfully uploaded file and resolved url, send to the client
+	// context for cleanup func
+	cleanupCtx,timeout := context.WithTimeout(context.Background(),time.Second * 10 ) // max 10 sec alloted for req cancellation
+	defer timeout()
+	// todo - need a way to store this file url into the "posts" table -> need Image field
+	err = s.PostDbModel.UpdatePostToStoreImageUrlByPostID(resolvedPostImageURL,postID)
+	if err != nil {
+		slog.Error("failed to store post image url in the db","error",err)
+		slog.Info("attempting to delete uploaded image from the bucket...")
+		// ! if err occured, we need to delete stored image from the bucket
+		urlParts := strings.Split(resolvedPostImageURL,".amazonaws.com/") // splits the desired string from the given pattern
+		if len(urlParts) < 2 {
+        slog.Error("failed to parse S3 URL for cleanup", "url", resolvedPostImageURL)
+        c.AbortWithStatusJSON(http.StatusInternalServerError, utils.ErrResponse{
+            Ok:     false,
+            Status: "database failure, and failed to parse cloud storage key for cleanup",
+        })
+        return
+    	}
+
+		// as we recieves two splits,posts...,http,taking first
+		objKey := urlParts[1]
+		slog.Info("extracted key...trying to delete object from the bucket","key",objKey)
+		if _,err = s.S3BucketModel.BucketManager.S3Client.DeleteObject(cleanupCtx,&s3.DeleteObjectInput{
+			Key: aws.String(objKey),
+			Bucket: aws.String(s.S3BucketModel.BucketManager.S3BucketName),
+		}); err != nil {
+			slog.Error("failed to delete post image from the bucket","error",err)
+			c.AbortWithStatusJSON(http.StatusInternalServerError,utils.ErrResponse{
+				Ok: false,
+				Status: "failed to delete post image from the bucket",
+			})
+			return
+		}
+		
+		slog.Info("successfully deleted uploaded image of the post from the bucket.")
+		c.AbortWithStatusJSON(http.StatusInternalServerError,utils.ErrResponse{
+			Ok: false,
+			Status: "failed to store image of the post in db; successfully deleted from the bucket for cleanup",
+		})
+		return
+	}
+
+	var defaultImageSrc string = "default.png"
+	// if update is a success, cleaning up old stored image
+	if oldImageURL != nil && *oldImageURL != defaultImageSrc && *oldImageURL != "" {
+		go func(oldImageURL string) {
+			// Run this in a background goroutine so the client doesn't have to wait for the old deletion!
+			oldImgCleanupCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+
+			splitedURl := strings.Split(oldImageURL,".amazonaws.com/")
+			// gives us two splitted parts
+			if len(splitedURl) >=2 {
+				_,err := s.S3BucketModel.BucketManager.S3Client.DeleteObject(oldImgCleanupCtx,&s3.DeleteObjectInput{
+					Bucket: aws.String(s.S3BucketModel.BucketManager.S3BucketName),
+					Key: aws.String(splitedURl[1]), // as first splitted part is what splitted after from the operation
+				})
+				if err != nil {
+					slog.Error("failed to remove stored old post image from the bucket","error",err)
+					return
+				}
+
+			} 
+		}(*oldImageURL)
+	}
+
+	// if successfully uploaded file and stored the resolved url in the db by updating post url, send to the client
 	c.JSON(http.StatusOK,utils.S3UploadSuccessResponse{
 		Ok: true,
 		Status: "successfully uploded post's image📤",

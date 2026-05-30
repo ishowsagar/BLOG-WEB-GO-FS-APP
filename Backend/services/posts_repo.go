@@ -384,3 +384,36 @@ func(p *PostDBModel) GetPostsOfAnyUserByUserID(userID uint) ([]*BatchPost,error)
 
 	return associatedPosts,nil
 }
+
+
+
+func(p *PostDBModel) UpdatePostToStoreImageUrlByPostID(imageSrcUrl string,postID uint)(error) {
+
+	ctx,timeout := context.WithTimeout(context.Background(),utils.DbTimeoutDuration)
+	defer timeout()
+
+
+	query := `
+		Update
+			posts
+		set
+			image_source=$1
+		where
+			id=$2
+	`
+
+	updatedRow,err := p.db.ExecContext(ctx,query,imageSrcUrl,postID)
+	if err != nil {
+		return err
+	}
+
+	n,err := updatedRow.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return sql.ErrNoRows
+	}
+
+	return nil
+}

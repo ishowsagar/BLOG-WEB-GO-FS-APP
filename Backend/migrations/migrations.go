@@ -16,6 +16,9 @@ func AutoMigrate(db *gorm.DB) error {
 		return err
 	}
 
+
+    // & checking on post and updating old fields to include this "default.png"
+    db.Model(&models.Post{}).Where("image_source is null or image_source is ?","").Update("image_source","default.png")
 	// err = EnsureCascadeConstraints(db)
 	// if err != nil {
 	// 	return err

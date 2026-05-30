@@ -41,6 +41,9 @@ type Post struct {
 	UserID uint `json:"user_id" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:UserID;references:ID"`
 	Title string `json:"title" binding:"required"`
 	Content string `json:"content" binding:"required"`
+	// todo - add image field to store post image,uploaded in the bucket
+	// fixed - added all
+	ImageSource *string `json:"image_source" gorm:"default:'default.png'"`
 	LikeCount uint `json:"like_count" gorm:"-"`
 	CreatedAt time.Time `json:"created_at" time_format="2006-01-02"`
 	UpdatedAt time.Time `json:"updated_at" time_format="2006-01-02"`	

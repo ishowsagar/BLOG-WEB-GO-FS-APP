@@ -13,6 +13,7 @@ import (
 	"github.com/ishowsagar/go-blog-web-application/database"
 	"github.com/ishowsagar/go-blog-web-application/events"
 	"github.com/ishowsagar/go-blog-web-application/initializers"
+	"github.com/ishowsagar/go-blog-web-application/migrations"
 	routes "github.com/ishowsagar/go-blog-web-application/router"
 	"github.com/ishowsagar/go-blog-web-application/services"
 	_ "github.com/ishowsagar/go-blog-web-application/store"
@@ -88,11 +89,11 @@ func main() {
 	}
 
 	// migrations
-	// err = migrations.AutoMigrate(baseDbModel.DB)
-	// if err != nil {
-	// 	slog.Warn("failed to migrate models","error",err)
-	// 	return	
-	// }
+	err = migrations.AutoMigrate(baseDbModel.DB)
+	if err != nil {
+		slog.Warn("failed to migrate models","error",err)
+		return	
+	}
 
 	//  for constraints
 	// err = migrations.EnsureCascadeConstraints(baseDbModel.DB)
@@ -206,7 +207,7 @@ func main() {
 	}
 
 	s3bucketModel := services.NewS3BucketModel(bucketManager,sqlDB)
-	s3Controller := controller.NewS3Controller(s3bucketModel)
+	s3Controller := controller.NewS3Controller(s3bucketModel,postDbModel)
 	
 	// master controller -> stores all corresponding controllers
 	masterController := controller.NewMasterController(userController,postController,commentController,likeController,followController,s3Controller)

@@ -81,7 +81,7 @@ func(pC *PostController) CreatePost(c *gin.Context) {
 		})
 		return
 	}
-
+	
 	// * if post is created - redirect post to send post to chan
 	// todo - add more methods for redirection of created input to channalize them and add readers for them in service reader service which has dedicated case blocks for them
 	pC.PushNotificationService.NotifiesPostCreation(*createdPost)
@@ -91,7 +91,7 @@ func(pC *PostController) CreatePost(c *gin.Context) {
 		Ok: true,
 		Status: "post created successfully ✅",
 		Code: http.StatusOK,
-		Post: *createdPost,
+		Post: *createdPost, //* must send id for updating url
 	})
 
 	
