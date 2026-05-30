@@ -253,6 +253,7 @@ func(s *S3Controller) HandlePostsImageStream(c *gin.Context) {
 
 	// checking upto what length of buffer data which was filled has what "content-type"
 	incomingDataType := http.DetectContentType(initialBuffer[:chunkLength]) //* checking what type of data is coming till this buffer limit
+	slog.Info("successfully recieved file initial buffer's content type","contentType:",incomingDataType)
 	allowedDataTYPES := map[string]bool {
 		"image/jpeg" :true,
 		"image/png" :true,
