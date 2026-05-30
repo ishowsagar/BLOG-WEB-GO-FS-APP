@@ -255,6 +255,7 @@ func(s *S3Controller) HandlePostsImageStream(c *gin.Context) {
 	incomingDataType := http.DetectContentType(initialBuffer[:chunkLength]) //* checking what type of data is coming till this buffer limit
 	slog.Info("successfully recieved file initial buffer's content type","contentType:",incomingDataType)
 	allowedDataTYPES := map[string]bool {
+		// ! bug - if file is sent via multlipart it gives err, but if sent via file in body, it will success as then it attached file content tyoe automaticaly which then here is what we are validating
 		"image/jpeg" :true,
 		"image/png" :true,
 		"image/webp" :true,
