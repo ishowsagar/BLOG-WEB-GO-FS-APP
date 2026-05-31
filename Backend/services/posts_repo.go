@@ -24,6 +24,7 @@ type BatchPost struct {
 	UserID uint `json:"user_id" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;foreignKey:UserID;references:ID"`
 	Title string `json:"title" binding:"required"`
 	Content string `json:"content" binding:"required"`
+	ImageSource *string `json:"image_source" gorm:"default:'default.png'"`
 	LikeCount uint `json:"like_count" gorm:"-"`
 	CreatedAt time.Time `json:"created_at" time_format="2006-01-02"`
 	UpdatedAt time.Time `json:"updated_at" time_format="2006-01-02"`
@@ -128,7 +129,7 @@ func(p *PostDBModel) LoadFeed() ([]*models.Post,error) {
 	// * returning cause we are inserting, insert does not returm res by default
 	query := `
 		select 
-			p.id,p.user_id,p.title,p.content,p.created_at,p.updated_at,
+			p.id,p.user_id,p.title,p.content,p.image_source,p.created_at,p.updated_at,
 			COALESCE(l.like_count, 0)
 		from
 			posts p
@@ -153,6 +154,7 @@ func(p *PostDBModel) LoadFeed() ([]*models.Post,error) {
 		&postVar.UserID,
 		&postVar.Title,
 		&postVar.Content,
+		&postVar.ImageSource,
 		&postVar.CreatedAt,
 		&postVar.UpdatedAt,
 		&postVar.LikeCount,
@@ -185,7 +187,7 @@ func(p *PostDBModel) GetPostbyID(postID int)(*models.Post,error) {
 
 	query := `
 		select
-			p.id,p.user_id,p.title,p.content,p.created_at,p.updated_at,
+			p.id,p.user_id,p.title,p.content,p.image_source,p.created_at,p.updated_at,
 			COALESCE(l.like_count, 0)
 		from
 			posts p
@@ -205,6 +207,7 @@ func(p *PostDBModel) GetPostbyID(postID int)(*models.Post,error) {
 		&post.UserID,
 		&post.Title,
 		&post.Content,
+		&post.ImageSource,
 		&post.CreatedAt,
 		&post.UpdatedAt,
 		&post.LikeCount,
@@ -265,7 +268,7 @@ func(p *PostDBModel) GetFeedByBatches(limit int,nextCursor string) (posts []*Bat
 	}
 	query := `
 	Select 
-	 	p.id,p.user_id,p.title,p.content,p.created_at,p.updated_at,coalesce(l.like_count,0) as like_count,coalesce(u.name,'instaPowerUser')
+	 	p.id,p.user_id,p.title,p.content,p.image_source,p.created_at,p.updated_at,coalesce(l.like_count,0) as like_count,coalesce(u.name,'instaPowerUser')
 	from
 		posts p
 	left join
@@ -305,6 +308,7 @@ func(p *PostDBModel) GetFeedByBatches(limit int,nextCursor string) (posts []*Bat
 		&post.UserID,
 		&post.Title,
 		&post.Content,
+		&post.ImageSource,
 		&post.CreatedAt,
 		&post.UpdatedAt,
 		&post.LikeCount,
@@ -331,7 +335,7 @@ func(p *PostDBModel) GetPostsOfAnyUserByUserID(userID uint) ([]*BatchPost,error)
 
 	query := `
 		SELECT
-			p.id,p.user_id,p.title,p.content,p.created_at,p.updated_at,
+			p.id,p.user_id,p.title,p.content,p.image_source,p.created_at,p.updated_at,
 			u.name,
 			coalesce(l.like_count, 0) as like_count
 		FROM
@@ -370,6 +374,7 @@ func(p *PostDBModel) GetPostsOfAnyUserByUserID(userID uint) ([]*BatchPost,error)
 			&post.UserID,
 			&post.Title,
 			&post.Content,
+			&post.ImageSource,
 			&post.CreatedAt,
 			&post.UpdatedAt,
 			&post.Name,

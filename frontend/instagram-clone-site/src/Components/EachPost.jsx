@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { apiUrl } from "../Services/apiConfig";
+import { resolvePostImage } from "../Services/postImage";
 
 function formatRelativeTime(timestamp) {
   if (!timestamp) return "just now";
@@ -235,7 +236,7 @@ export default function EachPost() {
   }
 
   const displayUsername = eachPost.user_id && `insta-user-${eachPost.user_id}`;
-  const displayImage = `https://picsum.photos/seed/${post.id}/500/350`;
+  const displayImage = resolvePostImage(post);
   const avatarImg = eachPost.user_id
     ? `https://i.pravatar.cc/150?img=${eachPost.user_id}`
     : `https://i.pravatar.cc/150?u=${eachPost.id}`;

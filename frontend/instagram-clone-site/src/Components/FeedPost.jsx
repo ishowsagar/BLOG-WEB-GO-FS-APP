@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { usePostContext } from "../Layout/MainLayout";
+import { resolvePostImage } from "../Services/postImage";
 
 export default function FeedPost() {
   console.log("/feedpost");
@@ -34,7 +35,7 @@ export default function FeedPost() {
             <h2 className="feedpost_title">Title - {post.title}</h2>
             <img
               className="feedpost_image"
-              src={`https://picsum.photos/seed/${post.id}/500/350`}
+              src={resolvePostImage(post)}
               alt="post"
             />
             <div className="feedpost_caption">

@@ -450,7 +450,7 @@ func(s *S3Controller) HandlePostsImageStream(c *gin.Context) {
 			if len(splitedURl) >=2 {
 				_,err := s.S3BucketModel.BucketManager.S3Client.DeleteObject(oldImgCleanupCtx,&s3.DeleteObjectInput{
 					Bucket: aws.String(s.S3BucketModel.BucketManager.S3BucketName),
-					Key: aws.String(splitedURl[1]), // as first splitted part is what splitted after from the operation
+				Key: aws.String(splitedURl[1]), // as first splitted part is what splitted after from the operation
 				})
 				if err != nil {
 					slog.Error("failed to remove stored old post image from the bucket","error",err)

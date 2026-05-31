@@ -1254,6 +1254,30 @@
     gap: 2.2rem;
     border: 1px solid rgba(0, 153, 255, 0.1);
   }
+  .createpost_hero {
+    padding: 0.35rem 0 0.75rem;
+  }
+  .createpost_hero h1 {
+    margin: 0.25rem 0 0.45rem;
+    color: #001a4d;
+    font-size: clamp(1.7rem, 3vw, 2.35rem);
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+  }
+  .createpost_hero p {
+    margin: 0;
+    color: rgba(0, 61, 153, 0.82);
+    line-height: 1.65;
+    font-size: 0.98rem;
+  }
+  .createpost_kicker {
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: #0066cc;
+    margin-bottom: 0.2rem !important;
+  }
   .createpost_label {
     font-weight: 600;
     background: linear-gradient(90deg, #003d99, #0066cc);
@@ -1264,6 +1288,9 @@
     display: block;
     font-size: 1.08rem;
     letter-spacing: 0.01em;
+  }
+  .createpost_label-inline {
+    margin-bottom: 0.25rem;
   }
   .createpost_input {
     width: 100%;
@@ -1359,15 +1386,107 @@
     color: rgba(0, 61, 153, 0.48);
   }
   .createpost_image-preview {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 1.2rem;
-    background: rgba(230, 245, 255, 0.5);
-    border-radius: 16px;
+    display: grid;
+    gap: 0.85rem;
+    margin-top: 1rem;
+    background: rgba(230, 245, 255, 0.58);
+    border-radius: 18px;
     padding: 1rem;
-    box-shadow: 0 2px 12px rgba(0, 102, 204, 0.06);
+    box-shadow: 0 2px 12px rgba(0, 102, 204, 0.08);
     border: 1.5px dashed rgba(0, 102, 204, 0.14);
+  }
+  .createpost_image-preview img {
+    display: block;
+    width: 100%;
+    max-height: 280px;
+    object-fit: cover;
+    border-radius: 14px;
+    box-shadow: 0 10px 28px rgba(0, 61, 153, 0.12);
+  }
+  .createpost_clear-image {
+    justify-self: start;
+    border: none;
+    background: rgba(0, 61, 153, 0.1);
+    color: #003d99;
+    border-radius: 999px;
+    padding: 0.7rem 1rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .createpost_clear-image:hover {
+    background: rgba(0, 61, 153, 0.16);
+  }
+  .createpost_image-card {
+    padding: 1rem;
+    border-radius: 22px;
+    background: rgba(230, 245, 255, 0.42);
+    border: 1px solid rgba(0, 102, 204, 0.08);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  }
+  .createpost_image-copy {
+    margin-bottom: 0.75rem;
+  }
+  .createpost_helper-text {
+    margin: 0;
+    color: rgba(0, 61, 153, 0.74);
+    font-size: 0.92rem;
+    line-height: 1.55;
+  }
+  .createpost_upload-zone {
+    position: relative;
+    display: grid;
+    gap: 0.35rem;
+    min-height: 138px;
+    padding: 1.15rem 1.1rem;
+    border-radius: 18px;
+    border: 1.5px dashed rgba(0, 102, 204, 0.24);
+    background:
+      radial-gradient(
+        circle at top left,
+        rgba(0, 153, 255, 0.14),
+        transparent 42%
+      ),
+      linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.96),
+        rgba(230, 245, 255, 0.92)
+      );
+    cursor: pointer;
+    transition:
+      transform 0.2s,
+      box-shadow 0.2s,
+      border-color 0.2s;
+    box-shadow: 0 10px 24px rgba(0, 102, 204, 0.06);
+  }
+  .createpost_upload-zone:hover {
+    transform: translateY(-1px);
+    border-color: rgba(0, 102, 204, 0.38);
+    box-shadow: 0 14px 28px rgba(0, 102, 204, 0.12);
+  }
+  .createpost_file-input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+  .createpost_upload-title {
+    font-size: 1.02rem;
+    font-weight: 800;
+    color: #001a4d;
+  }
+  .createpost_upload-subtitle {
+    color: rgba(0, 61, 153, 0.76);
+    font-size: 0.92rem;
+    line-height: 1.5;
+  }
+  .createpost_error {
+    color: #a80018;
+    padding: 0.8rem 1rem;
+    border-radius: 14px;
+    background: rgba(255, 231, 232, 0.92);
+    border: 1px solid rgba(168, 0, 24, 0.14);
+    text-align: center;
+    font-size: 0.94rem;
   }
 }
 @layer Stories-Styles {

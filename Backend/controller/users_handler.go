@@ -654,3 +654,8 @@ func(u *UserController) GetFollowedUserProfiles(c *gin.Context) {
 // - fetch users profiles which active client has followed to be loaded in -> followings + messages tab - done, even added msging for them✅
 // - let users upload posts with pictures -> upload picture under some folder named "posts" -> add handler for it and repo methods {updateUrlOfPostsImg} <- no need to store in db then fetch posts images excluisvely with feed data
 
+// done 
+// - backend login, enabled handler at - api/user/upload/post/image - recieves file, streams to bucket,stores retrieved url in the db for post
+
+// left 
+//  - need frontend to let now users upload images and sync back feed with those images attached to the feed

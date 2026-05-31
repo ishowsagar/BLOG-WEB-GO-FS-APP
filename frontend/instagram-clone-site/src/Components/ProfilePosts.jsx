@@ -1,6 +1,7 @@
 import { use, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { apiUrl } from "../Services/apiConfig";
+import { resolvePostImage } from "../Services/postImage";
 
 const postImg1 =
   "https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=400&q=80";
@@ -77,7 +78,7 @@ export default function ProfilePosts() {
               <h2 className="feedpost_title">Title - {post.title}</h2>
               <img
                 className="feedpost_image"
-                src={`https://picsum.photos/seed/${post.id}/500/350`}
+                src={resolvePostImage(post)}
                 alt="post"
               />
               <div className="feedpost_caption">
