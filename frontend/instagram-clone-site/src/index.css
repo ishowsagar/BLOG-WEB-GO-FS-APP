@@ -1253,6 +1253,7 @@
     flex-direction: column;
     gap: 2.2rem;
     border: 1px solid rgba(0, 153, 255, 0.1);
+    color: #022347; /* darker base text color for the form */
   }
   .createpost_hero {
     padding: 0.35rem 0 0.75rem;
@@ -1266,7 +1267,7 @@
   }
   .createpost_hero p {
     margin: 0;
-    color: rgba(0, 61, 153, 0.82);
+    color: #022347;
     line-height: 1.65;
     font-size: 0.98rem;
   }
@@ -1300,7 +1301,7 @@
     font-size: 1.08rem;
     margin-bottom: 0.8rem;
     background: rgba(230, 245, 255, 0.6);
-    color: #003d99;
+    color: #022347;
     font-weight: 500;
     transition:
       border 0.2s,
@@ -1367,7 +1368,7 @@
     padding: 1rem 1.2rem;
     background: rgba(230, 245, 255, 0.6);
     border: 1.5px solid rgba(0, 102, 204, 0.12);
-    color: #003d99;
+    color: #022347;
     font-weight: 500;
     box-shadow: 0 2px 8px rgba(0, 102, 204, 0.04);
     margin-bottom: 0.8rem;
@@ -1428,7 +1429,7 @@
   }
   .createpost_helper-text {
     margin: 0;
-    color: rgba(0, 61, 153, 0.74);
+    color: #022347;
     font-size: 0.92rem;
     line-height: 1.55;
   }
@@ -1475,7 +1476,7 @@
     color: #001a4d;
   }
   .createpost_upload-subtitle {
-    color: rgba(0, 61, 153, 0.76);
+    color: #022347;
     font-size: 0.92rem;
     line-height: 1.5;
   }

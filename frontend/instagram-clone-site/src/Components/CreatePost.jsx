@@ -182,8 +182,7 @@ export default function CreatePost() {
           <p className="createpost_kicker">New post</p>
           <h1>Share a moment with an image-first post</h1>
           <p>
-            Write the caption, pick your image, and the app will create the post
-            first, then upload the file using the returned post id.
+            Write the caption, pick your image, and see the magic🪄🎩
           </p>
         </div>
 
@@ -228,8 +227,7 @@ export default function CreatePost() {
               Cover image
             </label>
             <p className="createpost_helper-text">
-              Add a JPEG, PNG, or WEBP image up to 2 MB. The image uploads after
-              the post is created.
+              Add a JPEG, PNG, or WEBP image up to 2 MB.
             </p>
           </div>
 
