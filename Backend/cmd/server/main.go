@@ -5,6 +5,7 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	s3bucket "github.com/ishowsagar/go-blog-web-application/Aws-S3"
@@ -24,6 +25,9 @@ import (
 
 
 func main() {
+
+	// tracking time when it fired main
+	mainFiresAt := time.Now()
 
 	// slog logger for entire application
 	logger := slog.New(slog.NewJSONHandler(os.Stdout,nil))
@@ -139,12 +143,24 @@ func main() {
 	postController := controller.NewPostController(postDbModel,pushNotificationService)
 	likeController := controller.NewLikeController(likeDbModel,pushNotificationService)
 	followController := controller.NewFollowController(followDbModel,pushNotificationService)
-
+	slog.Info("Scanning and analysing server controllers...",
+	slog.Group("./main",
+		slog.Group("Controllers",
+		slog.String("user","up✅"),
+		slog.String("post","up✅"),
+		slog.String("like","up✅"),
+		slog.String("follow","up✅"),
+		slog.String("comment","up✅"),
+		),
+		slog.Duration("duration",time.Since(mainFiresAt)),
+	),
+)
 	// **  Stack verification  health check firstly before running main app  **//
 
 	// use configured RabbitMQ URL if present, otherwise fall back to the original default
 	rabbitURL := config.RabbitMQURL
 	if rabbitURL == "" {
+		slog.Info("could not find rabbitMq connection url in the config,switching to default...")
 		rabbitURL = "amqp://guest:guest@instagram_rabbitmq_container:5672/"
 	}
 
@@ -177,6 +193,7 @@ func main() {
 		slog.Error("failed to start subs service which consumes incoming data to subscribers","error",err.Error())
 		return
 	}
+	slog.Info("consumer is ready to recieve payload deliveries on the 'notifications_topic' exchange and delivering to the hub🚀")
 	defer broker.Close() // closing connection once it is done
 	
 	// inject broker into hub so clients can publish delivery messages
@@ -184,7 +201,7 @@ func main() {
 
 	// ws controller
 	wsController := controller.NewWsController(baseDbModel.DB,hub,config.JwtSecret,broker)
-
+	
 
 	// connect notification service to hub for broadcasting
 	pushNotificationService.SetHub(hub)
@@ -216,5 +233,5 @@ func main() {
 
 	router := gin.Default()
 	routes.ServeRoutes(router,masterController,config,wsController) // serving controller to router to route methods on them routes
-	router.Run(fmt.Sprintf(":%s",config.ServerPort))
+	router.Run(fmt.Sprintf(":%s",config.ServerPort)) // port 8080
 }

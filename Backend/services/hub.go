@@ -116,13 +116,40 @@ func(h *Hub) RunService() {
 			h.Clients[incomingclient] = true // making it true -> saved it for ws conn
 			// * also setting that client in the ALLClients type store -> which tracks incoming client but with userID
 			h.ClientStore[incomingclient.ID] = incomingclient  //map key being client's UserID and val being client itself
+			slog.Info("request arrived at the central 'hub'🏢",
+				slog.Group("hub",
+					slog.String("station","h.ActiveClients")),
+				slog.Group("client",
+					slog.String("status","active🟢"),
+					slog.Uint64("clientID",uint64(incomingclient.ID)),
+					slog.String("Writer","active⚡"),
+				),
+				slog.Group("setting client active and storing in active h.Clients map",
+			 	slog.Time("added_at",time.Now()),
+			),
+		)
 
+			// todo - add client count 
 		case readdisconnectedclient := <- h.DisconnectedClients :
 			// first validate if it exists or not with _,ok idiomatic way
 			_,ok := h.Clients[readdisconnectedclient]
+
 			if ok {
 					// if disconnected remove from clients map [key is client itself]
 					delete(h.Clients,readdisconnectedclient)
+					
+					slog.Info("request arrived at the central 'hub'🏢",
+						slog.Group("hub",
+							slog.String("station","h.DisconnectedClients")),
+						slog.Group("client",
+							slog.String("status","disconnected🔴"),
+							slog.Uint64("clientID",uint64(readdisconnectedclient.ID)),
+							slog.String("Writer","shutdowned❌"),
+						),
+						slog.Group("gracefully removing this client from active h.Clients map",
+							slog.Time("removed_at",time.Now()),
+					),
+				)
 				}
 				
 			// * deleting from client store too
@@ -131,6 +158,18 @@ func(h *Hub) RunService() {
 				// if exists delete and close connection
 				delete(h.ClientStore,readdisconnectedclient.ID) // passing ID as id is the key for that key-var to be removed
 				slog.Info("client gracefully shutdowned from system","userID",readdisconnectedclient.ID)
+				slog.Info("request arrived at the central 'hub'🏢",
+					slog.Group("hub",
+							slog.String("station","h.DisconnectedClients")),
+					slog.Group("client",
+						slog.String("status","disconnected🔴"),
+						slog.Uint64("clientID",uint64(readdisconnectedclient.ID)),
+						slog.String("Writer","shutdowned❌"),
+					),
+					slog.Group("gracefully removing this client from h.ClientStore map",
+						slog.Time("removed_at",time.Now()),
+						),
+					)
 			}
 				
 			//&deleting client from the room too
@@ -149,7 +188,19 @@ func(h *Hub) RunService() {
 		
 			 // if payload is redirected to chan <- which has client data
 			case msg := <- h.Broadcast : // if something is redirected to this chan
-				// then we check who send and where to and got -> redirect there to its send chan
+				slog.Info("request arrived at the central 'hub'🏢",
+						slog.Group("hub",
+							slog.String("station","h.Broadcast")),
+						slog.Group("payload",
+							slog.String("Goal","Broadcast to all"),
+							slog.Uint64("hasSenderID",uint64(msg.SenderID)),
+							slog.Uint64("hasRecieverID",uint64(msg.RecieverID)),
+						),
+						slog.Group("payload ready to be sent to all client",
+						slog.Time("requested_at",time.Now()),
+					),	
+					)
+			// then we check who send and where to and got -> redirect there to its send chan
 
 				// if no id provided broadcast to all clients 
 				if  msg.RecieverID  == 0 {
@@ -158,9 +209,35 @@ func(h *Hub) RunService() {
 						go func(cl *Client, payload *ClientNotifyPayload) {
 							select {
 							case cl.Send <- payload:
+						slog.Info("request arrived at the central 'hub'🏢",
+							slog.Group("Send",
+								slog.String("Via","h.Broadcast")),
+							slog.Group("payload",
+								slog.String("Broadcast_type","global"),
+								slog.Uint64("SenderID",uint64(msg.SenderID)),
+								slog.String("Reciever","all clients"),
+							),
+							slog.Group("payload ready to be sent to all client's writer for response",
+							slog.Time("requested_at",time.Now()),
+						),)	
 								// sent
 							case <-time.After(time.Second):
 								slog.Warn("HUB broadcast timeout sending to client", "client_id", cl.ID)
+							slog.Info("request arrived at the central 'hub'🏢",
+							slog.Group("Send",
+								slog.String("Via","h.Broadcast")),
+							slog.Group("payload",
+								slog.String("Broadcast_type","global"),
+								slog.Uint64("SenderID",uint64(msg.SenderID)),
+								slog.String("Reciever","all clients"),
+								
+							),
+							slog.Group("payload could not be sent",
+							// grouped logging must start with slog.Type,not directly
+								slog.Time("requested_at",time.Now()),
+								slog.String("status","request timed out"),
+							),
+							)
 							}
 						}(eachClient, msg)
 					}
@@ -172,8 +249,33 @@ func(h *Hub) RunService() {
 							go func(cl *Client, payload *ClientNotifyPayload) {
 								select {
 								case cl.Send <- payload:
+							slog.Info("request arrived at the central 'hub'🏢",
+							slog.Group("Send",
+								slog.String("Via","h.Broadcast")),
+							slog.Group("payload",
+								slog.String("Broadcast_type","p2p"),
+								slog.Uint64("SenderID",uint64(msg.SenderID)),
+								slog.Uint64("RecieverID",uint64(msg.RecieverID)),
+							),
+							slog.Group("payload ready to be sent to the reciever client's writer for response","requested_at",time.Now()),
+							)	
 								case <-time.After(time.Second):
 									slog.Warn("HUB targeted broadcast timeout", "client_id", cl.ID)
+									
+									slog.Info("request arrived at the central 'hub'🏢",
+									slog.Group("Send",
+										slog.String("Via","h.Broadcast")),
+									slog.Group("payload",
+										slog.String("Broadcast_type","p2p"),
+										slog.Uint64("SenderID",uint64(msg.SenderID)),
+										slog.Uint64("RecieverID",uint64(msg.RecieverID)),
+									),
+									slog.Group("payload could not be sent",
+										slog.Time("requested_at",time.Now()),
+										slog.String("status","request timed out"),
+									),
+									)
+
 								}
 							}(client, msg)
 						}
@@ -184,7 +286,20 @@ func(h *Hub) RunService() {
 			case targttedMsg := <- h.TargettedBrokerMessages :
 			slog.Info("HUB received TargettedBrokerMessages", "receiverID", targttedMsg.RecieverID, "senderID", targttedMsg.SenderID, "clients_count", len(h.Clients))
 			// check for target client and redirect to its ws writer for response
-			 connectedClientsForMessagging := make(map[*Client]bool)
+			slog.Info("request arrived at the central 'hub'🏢",
+									slog.Group("Send",
+										slog.String("Via","h.TargettedBrokerMessages")),
+									slog.Group("payload",
+										slog.String("Broadcast_type","p2p"),
+										slog.Uint64("SenderID",uint64(targttedMsg.SenderID)),
+										slog.Uint64("RecieverID",uint64(targttedMsg.RecieverID)),
+									),
+									slog.Group("meta",
+										slog.Time("requested_at",time.Now()),
+										slog.String("status","request recieved successfully"),
+									),
+									)
+			connectedClientsForMessagging := make(map[*Client]bool)
 			for activeStoredClient := range h.Clients {
 				if activeStoredClient.ID == targttedMsg.RecieverID {
 					// * save reciever in map
@@ -201,22 +316,73 @@ func(h *Hub) RunService() {
 				select {
 				case reciever.Send <- targttedMsg :
 					slog.Info("successfully sent message to reciever client writer")
+					slog.Info("request arrived at the central 'hub'🏢",
+									slog.Group("Send",
+										slog.String("Via","h.TargettedBrokerMessages")),
+									slog.Group("payload",
+										slog.String("Broadcast_type","p2p"),
+										slog.Uint64("SenderID",uint64(targttedMsg.SenderID)),
+										slog.Uint64("RecieverID",uint64(targttedMsg.RecieverID)),
+									),
+									slog.Group("meta",
+										slog.Time("requested_at",time.Now()),
+										slog.String("status","ready to dispatch to the client's writer✅"),
+									),
+					)
 				default :
 				slog.Warn("client send blocked", "clientID", reciever.ID)
+				slog.Info("request arrived at the central 'hub'🏢",
+									slog.Group("Send",
+										slog.String("Via","h.Broadcast")),
+									slog.Group("payload",
+										slog.String("Broadcast_type","p2p"),
+										slog.Uint64("SenderID",uint64(targttedMsg.SenderID)),
+										slog.Uint64("RecieverID",uint64(targttedMsg.RecieverID)),
+									),
+									slog.Group("payload could not be sent",
+										slog.Time("requested_at",time.Now()),
+										slog.String("status","request timed out❌"),
+									),
+									)
     
 				}
 			}
 			
 			//@ Recieves room client and set them in desired room
 			case client := <- h.RegisterRoomClient :
-				// set in the room
+				// set in the room	
 			slog.Info("client is ready to hop into the room...","ClientID :",client.ID)
-				
+			slog.Info("request arrived at the central 'hub'🏢",
+									slog.Group("Room registration",
+										slog.String("Via","h.RegisterRoomClient")),
+									slog.Group("payload",
+										slog.String("Broadcast_type","room"),
+										slog.Uint64("clientID",uint64(client.ID)),
+										slog.String("writer","active🟢"),
+									),
+									slog.Group("meta",
+										slog.Time("requested_at",time.Now()),
+										slog.String("status","client is recieved successfully and ready for the room registration"),
+									),
+								)
 			
 			// & Rooms - if being able to read payload from hub's roomClienttPayload chan
 			case roomMsgPayload := <-h.RoomClientsPayloads:
 				slog.Info("roomMsg payload received in hub RoomClientsPayloads", "room_id", roomMsgPayload.RoomID, "sender_id", roomMsgPayload.SenderID, "room_status", roomMsgPayload.RoomStatus)
 
+				slog.Info("request arrived at the central 'hub'🏢",
+									slog.Group("Room registration",
+										slog.String("Via","h.RoomClientsPayloads")),
+									slog.Group("payload",
+										slog.String("Broadcast_type","room"),
+										slog.Uint64("roomID",uint64(roomMsgPayload.RoomID)),
+										slog.Uint64("senderID",uint64(roomMsgPayload.SenderID)),
+									),
+									slog.Group("meta",
+										slog.Time("requested_at",time.Now()),
+										slog.String("status","room msg payload is recieved successfully and ready for the sending message to roon clients"),
+									),
+								)
 
 				// bug - payload is successfully recieved, only thing it is doing wrong is sending only to other and itself is excluded
 				// for ex => if payload has room.1 and two clients are active 1,41, if payload coming from 41, will goes to 1 but not himself,like if 1 sends room msg, it will sent to room but exluding him
@@ -229,6 +395,20 @@ func(h *Hub) RunService() {
 						roomClients = make(map[*Client]bool)
 						h.ChatRoomClients[roomMsgPayload.RoomID] = roomClients
 						slog.Info("HUB created room map", "room_id", roomMsgPayload.RoomID)
+						slog.Info("request arrived at the central 'hub'🏢",
+									slog.Group("New Room registration",
+										slog.String("room_status","new room created"),
+										slog.String("Via","h.RoomClientsPayloads")),
+									slog.Group("payload",
+										slog.String("Broadcast_type","room"),
+										slog.Uint64("roomID",uint64(roomMsgPayload.RoomID)),
+										slog.String("joined_by","existing room clients who were registered to the room"),
+									),
+									slog.Group("meta",
+										slog.Time("requested_at",time.Now()),
+										slog.String("status","empty room created with existing members;could be null"),
+									),
+								)
 					}
 
 					// add sender if active
@@ -236,6 +416,20 @@ func(h *Hub) RunService() {
 					for ac := range h.Clients {
 						if ac.ID == roomMsgPayload.SenderID {
 							senderClient = ac
+							slog.Info("request arrived at the central 'hub'🏢",
+									slog.Group("Room's membership",
+										slog.String("membership_status","subscribed📤"),
+										slog.String("Via","h.RoomClientsPayloads")),
+									slog.Group("payload",
+										slog.String("Broadcast_type","room"),
+										slog.Uint64("roomID",uint64(roomMsgPayload.RoomID)),
+										slog.Uint64("clientID",uint64(roomMsgPayload.SenderID)),
+									),
+									slog.Group("meta",
+										slog.Time("requested_at",time.Now()),
+										slog.String("status","client has been added to the room"),
+									),
+								)
 							break
 						}
 					}
@@ -252,6 +446,20 @@ func(h *Hub) RunService() {
 							if ac.ID == roomMsgPayload.RecieverID {
 								roomClients[ac] = true //* stores reciever //! btw why we need reciever we can flow all in room
 								slog.Info("HUB: added receiver to room", "room_id", roomMsgPayload.RoomID, "client_id", ac.ID)
+								slog.Info("request arrived at the central 'hub'🏢",
+									slog.Group("Room's membership",
+										slog.String("membership_status","subscribed📤"),	
+										slog.String("Via","h.RoomClientsPayloads")),
+									slog.Group("payload",
+										slog.String("Broadcast_type","room"),
+										slog.Uint64("roomID",uint64(roomMsgPayload.RoomID)),
+										slog.Uint64("clientID",uint64(roomMsgPayload.SenderID)),
+									),
+									slog.Group("meta",
+										slog.Time("requested_at",time.Now()),
+										slog.String("status","client has been added to the room"),
+									),
+								)
 								break
 							}
 						}
@@ -263,17 +471,58 @@ func(h *Hub) RunService() {
 				if roomMsgPayload.Content == "" {
 					if !roomExists {
 						slog.Warn("HUB room leave for non-existent room", "room_id", roomMsgPayload.RoomID)
+						slog.Info("request arrived at the central 'hub'🏢",
+									slog.Group("forbidden room payload",
+										slog.String("Via","h.RoomClientsPayloads")),
+									slog.Group("payload",
+										slog.String("Broadcast_type","room"),
+										slog.Uint64("roomID",uint64(roomMsgPayload.RoomID)),
+										slog.Uint64("senderID",uint64(roomMsgPayload.SenderID)),
+									),
+									slog.Group("meta",
+										slog.Time("requested_at",time.Now()),
+										slog.String("status","client tried to send empty message to the non-existent room; operation forbidden❌"),
+									),
+								)
 						continue
 					}
 					for rc := range roomClients {
 						if rc.ID == roomMsgPayload.SenderID {
 							delete(roomClients, rc)
 							slog.Info("HUB removed client from room", "room_id", roomMsgPayload.RoomID, "client_id", rc.ID)
+							slog.Info("request arrived at the central 'hub'🏢",
+									slog.Group("Room's membership",
+									slog.String("membership_status","unsubscribed📩"),
+									slog.String("Via","h.RoomClientsPayloads")),
+									slog.Group("payload",
+										slog.String("Broadcast_type","room"),
+										slog.Uint64("roomID",uint64(roomMsgPayload.RoomID)),
+										slog.Uint64("clientID",uint64(roomMsgPayload.SenderID)),
+									),
+									slog.Group("meta",
+										slog.Time("requested_at",time.Now()),
+										slog.String("status","gracefully removed client from the room🗑️"),
+									),
+								)
 							break
 						}
 					}
 					if len(roomClients) == 0 {
 						delete(h.ChatRoomClients, roomMsgPayload.RoomID)
+						slog.Info("request arrived at the central 'hub'🏢",
+									slog.Group("Room Deletion",
+										slog.String("room_status","room deleted"),
+										slog.String("Via","h.RoomClientsPayloads")),
+									slog.Group("payload",
+										slog.String("Broadcast_type","room"),
+										slog.Uint64("roomID",uint64(roomMsgPayload.RoomID)),
+										slog.String("joined_by","empty room;0 clients"),
+									),
+									slog.Group("meta",
+										slog.Time("requested_at",time.Now()),
+										slog.String("status","room has been successfully deleted✅"),
+									),
+								)
 						slog.Info("HUB: room deleted (empty)", "room_id", roomMsgPayload.RoomID)
 					}
 					continue
@@ -282,8 +531,24 @@ func(h *Hub) RunService() {
 				// regular room message -> ensure room exists locally
 				if !roomExists {
 					slog.Warn("HUB room message received but room does not exist locally", "room_id", roomMsgPayload.RoomID)
-					continue
-				}
+					slog.Info("request arrived at the central 'hub'🏢",
+									slog.Group("Room existence",
+										slog.String("room_status","room does not exists"),
+										slog.String("Via","h.RoomClientsPayloads")),
+									slog.Group("payload",
+										slog.String("Broadcast_type","room"),
+										slog.Uint64("roomID",uint64(roomMsgPayload.RoomID)),
+										slog.String("joined_by","empty room;0 clients "),
+									),
+									slog.Group("meta",
+										slog.Time("requested_at",time.Now()),
+										slog.String("status","room does not exists already❌"),
+									),
+								)
+						slog.Info("HUB: room deleted (empty)", "room_id", roomMsgPayload.RoomID)
+						continue
+					}
+				
 
 				// fan-out to all room members non-blocking
 				for roomClient := range h.ChatRoomClients[roomMsgPayload.RoomID] {
@@ -291,11 +556,41 @@ func(h *Hub) RunService() {
 					select {
 					case roomClient.Send <- roomMsgPayload:
 						slog.Info("HUB: message sent to room client", "room_id", roomMsgPayload.RoomID, "client_id", roomClient.ID)
+						slog.Info("request arrived at the central 'hub'🏢",
+									slog.Group("Room Texting",
+										slog.String("room_status","room active"),
+										slog.String("Via","h.RoomClientsPayloads")),
+									slog.Group("payload",
+										slog.String("Broadcast_type","room"),
+										slog.Uint64("roomID",uint64(roomMsgPayload.RoomID)),
+										slog.String("joined_by","active room clients"),
+									),
+									slog.Group("meta",
+										slog.Time("requested_at",time.Now()),
+										slog.String("status","room msg is ready to be sent to the each room's client writer"),
+									),
+								)
 					default:
 						slog.Warn("HUB failed to send room message, client.Send full", "client_id", roomClient.ID, "room_id", roomMsgPayload.RoomID)
+							slog.Info("request arrived at the central 'hub'🏢",
+									slog.Group("Room Texting",
+										slog.String("room_status","room timed out"),
+										slog.String("Via","h.RoomClientsPayloads")),
+									slog.Group("payload",
+										slog.String("Broadcast_type","room"),
+										slog.Uint64("roomID",uint64(roomMsgPayload.RoomID)),
+										slog.String("joined_by","active room clients"),
+									),
+									slog.Group("meta",
+										slog.Time("requested_at",time.Now()),
+										slog.String("status","could not send room msg;request's timed out"),
+									),
+								)
 					}
-				}
-				slog.Debug("HUB room fanout summary", "room_id", roomMsgPayload.RoomID,)
+				
+				
+		}
+				// slog.Debug("HUB room fanout summary", "room_id", roomMsgPayload.RoomID,)
 
 				// for activeClient := range h.Clients {
 				// 	if activeClient.ID == roomPayload.RecieverID || activeClient.ID == roomPayload.SenderID {
@@ -344,6 +639,17 @@ func(h *Hub) RunService() {
 						UserID: currentClient.ID, // passing id of current client which is active
 					}
 					slog.Info("user activity status", "status", statusPayload.Status, "userID", currentClient.ID)
+					slog.Info("request arrived at the central 'hub'🏢",
+									slog.Group("Client Activity Status",
+										slog.String("Via","h.Online")),
+									slog.Group("payload",
+										slog.String("status","online🟢"),
+										slog.Uint64("clientID",uint64(currentClient.ID)),
+									),
+									slog.Group("meta",
+										slog.Time("last_seen",time.Now()),
+									),
+								)
 
 					// broadcast to all other connected clients
 					for eachClient := range h.Clients {
@@ -353,8 +659,30 @@ func(h *Hub) RunService() {
 						
 						select {
 						case eachClient.BroadcastStatus <- &statusPayload:
+							slog.Info("request arrived at the central 'hub'🏢",
+									slog.Group("Client Activity Status",
+										slog.String("Via","h.Online")),
+									slog.Group("payload",
+										slog.String("status","redirecting payload to the broadcast;so to fan-out status to all clients"),
+										slog.Uint64("clientID",uint64(currentClient.ID)),
+									),
+									slog.Group("meta",
+										slog.Time("requested_at",time.Now()),
+									),
+								)
 						default:
 							slog.Warn("HUB failed to broadcast online status, BroadcastStatus channel full", "client_id", eachClient.ID)
+							slog.Info("request arrived at the central 'hub'🏢",
+									slog.Group("Client Activity Status",
+										slog.String("Via","h.Online")),
+									slog.Group("payload",
+										slog.String("status","could not fan-out activity status to broadcast chan;chan is full"),
+										slog.Uint64("clientID",uint64(currentClient.ID)),
+									),
+									slog.Group("meta",
+										slog.Time("requested_at",time.Now()),
+									),
+								)
 						}
 					}
 					
@@ -367,7 +695,20 @@ func(h *Hub) RunService() {
 			// this chan is dedicated to type related notifications only which check for type exclusively
 			case notifyPayload := <- h.TargettedClientNotificationTypeOnly :
 				slog.Info("notification payload is successfully recieved in hub's TargettedClientNotificationTypeOnly chan")
-				
+				slog.Info("request arrived at the central 'hub'🏢",
+									slog.Group("P2P Notification",
+										slog.String("status","recieved payload successfully"),
+										slog.String("Via","h.TargettedClientNotificationTypeOnly")),
+									slog.Group("payload",
+										slog.String("Broadcast_type","p2p"),
+										slog.Uint64("senderID",uint64(notifyPayload.SenderID)),
+										slog.Uint64("recieverID",uint64(notifyPayload.SenderID)),
+										slog.String("type",notifyPayload.Type),
+									),
+									slog.Group("meta",
+										slog.Time("requested_at",time.Now())),
+										slog.String("status","recieved notification payload successfully,yet to dispatch⏳"),
+									)
 				var targettedActiveClient *Client 
 				// ! Optimization issues -> had to check all client from active clients []
 				// fix - just check if that specific client is in the [] of active clients
@@ -387,19 +728,75 @@ func(h *Hub) RunService() {
 						// ticker sends when done ticked
 						targettedActiveClient.Send <- notifyPayload
 						slog.Info("successfully sent notification payload to the targetted client")
+						slog.Info("request arrived at the central 'hub'🏢",
+									slog.Group("P2P Notification",
+										slog.String("status","notification payload sent successfully"),
+										slog.String("Via","h.TargettedClientNotificationTypeOnly")),
+									slog.Group("payload",
+										slog.String("Broadcast_type","p2p"),
+										slog.Uint64("senderID",uint64(notifyPayload.SenderID)),
+										slog.Uint64("recieverID",uint64(notifyPayload.SenderID)),
+										slog.String("type",notifyPayload.Type),
+									),
+									slog.Group("meta",
+										slog.Time("requested_at",time.Now())),
+										slog.String("status","successfully dispatched notification payload to the targetted client's writer"),
+									)
 					case "comment_posted" :
 						slog.Info("successfully recieved payload of type Comment")
 						// ticker sends when done ticked
 						targettedActiveClient.Send <- notifyPayload
 						slog.Info("successfully sent notification payload to the targetted client")
+						slog.Info("request arrived at the central 'hub'🏢",
+									slog.Group("P2P Notification",
+										slog.String("status","notification payload sent successfully"),
+										slog.String("Via","h.TargettedClientNotificationTypeOnly")),
+									slog.Group("payload",
+										slog.String("Broadcast_type","p2p"),
+										slog.Uint64("senderID",uint64(notifyPayload.SenderID)),
+										slog.Uint64("recieverID",uint64(notifyPayload.SenderID)),
+										slog.String("type",notifyPayload.Type),
+									),
+									slog.Group("meta",
+										slog.Time("requested_at",time.Now())),
+										slog.String("status","successfully dispatched notification payload to the targetted client's writer"),
+									)
 					case "follow_posted" :
 						slog.Info("successfully recieved payload of type follow")
 						// if upon recieving send to that targtted client chan where writer responds to that client with payload info 
 						targettedActiveClient.Send <- notifyPayload
 						slog.Info("successfully sent notification payload to the targetted client")
+						slog.Info("request arrived at the central 'hub'🏢",
+									slog.Group("P2P Notification",
+										slog.String("status","notification payload sent successfully"),
+										slog.String("Via","h.TargettedClientNotificationTypeOnly")),
+									slog.Group("payload",
+										slog.String("Broadcast_type","p2p"),
+										slog.Uint64("senderID",uint64(notifyPayload.SenderID)),
+										slog.Uint64("recieverID",uint64(notifyPayload.SenderID)),
+										slog.String("type",notifyPayload.Type),
+									),
+									slog.Group("meta",
+										slog.Time("requested_at",time.Now())),
+										slog.String("status","successfully dispatched notification payload to the targetted client's writer"),
+									)
 						// must have default for fallback if nothing meets the conditions declared above
 					default : 
 						slog.Info("unknown notificaiton payload","notification_type",notifyPayload.Type)
+						slog.Info("request arrived at the central 'hub'🏢",
+									slog.Group("P2P Notification",
+										slog.String("status","notification payload dipatch blocked"),
+										slog.String("Via","h.TargettedClientNotificationTypeOnly")),
+									slog.Group("payload",
+										slog.String("Broadcast_type","p2p"),
+										slog.Uint64("senderID",uint64(notifyPayload.SenderID)),
+										slog.Uint64("recieverID",uint64(notifyPayload.SenderID)),
+										slog.String("type",notifyPayload.Type),
+									),
+									slog.Group("meta",
+										slog.Time("requested_at",time.Now())),
+										slog.String("status","could not dispatch notification payload; chan is full"),
+									)
 				}
 				// if found that client send it to client chan where writer recieves and send as a response
 				slog.Info("successfully sent notification to the client✅","recieverID",notifyPayload.RecieverID)
@@ -414,7 +811,17 @@ func(h *Hub) RunService() {
 						Status: "offline🔴",
 					}
 					slog.Info("user activity status", "status", statusPayload.Status, "userID", currentDisconnectedClient.ID)
-
+					slog.Info("request arrived at the central 'hub'🏢",
+									slog.Group("Client Activity Status",
+										slog.String("Via","h.Offline")),
+									slog.Group("payload",
+										slog.String("status","offline🔴"),
+										slog.Uint64("clientID",uint64(currentDisconnectedClient.ID)),
+									),
+									slog.Group("meta",
+										slog.Time("last_seen",time.Now()),
+									),
+								)
 					// sending this status payload to all other active clients
 					for eachClient := range h.Clients {
 						if eachClient.ID == currentDisconnectedClient.ID {
@@ -424,8 +831,30 @@ func(h *Hub) RunService() {
 						
 						select {
 						case eachClient.BroadcastStatus <- &statusPayload:
+							slog.Info("request arrived at the central 'hub'🏢",
+									slog.Group("Client Activity Status",
+										slog.String("Via","h.Offline")),
+									slog.Group("payload",
+										slog.String("status","redirecting payload to the broadcast;so to fan-out status to all clients"),
+										slog.Uint64("clientID",uint64(eachClient.ID)),
+									),
+									slog.Group("meta",
+										slog.Time("requested_at",time.Now()),
+									),
+								)
 						default:
 							slog.Warn("HUB failed to broadcast offline status, BroadcastStatus channel full", "client_id", eachClient.ID)
+							slog.Info("request arrived at the central 'hub'🏢",
+									slog.Group("Client Activity Status",
+										slog.String("Via","h.Offline")),
+									slog.Group("payload",
+										slog.String("status","could not fan-out activity status to broadcast chan;chan is full"),
+										slog.Uint64("clientID",uint64(eachClient.ID)),
+									),
+									slog.Group("meta",
+										slog.Time("requested_at",time.Now()),
+									),
+								)
 						}
 					}
 
@@ -438,8 +867,8 @@ func(h *Hub) RunService() {
 		}
 		
 	}
-}
 
+}
 
 
 // methods related to Client
@@ -689,13 +1118,40 @@ func(c *Client) MessageWriter() {
 			// todo - need to set waited interval so it reads pong 
 			// if that time of ticker is elasped and then this is invoked recieved the .C tick
 			slog.Info("ticker is finished and successfully ticked","pinging client with UserID :",c.ID)
-
 			// sending a ping to client <- automatically respond with pong inbuilt browser support
 			err := c.WebsocketConnection.WriteMessage(websocket.PingMessage,[]byte(""))
 			if err != nil {
 				slog.Error("failed to write messagr","error",err)
+				slog.Info("Client health check",
+									slog.Group("Client heartbeat check",
+										slog.String("Via","c.Writer")),
+									slog.Group("payload",
+										slog.String("Goal","sending 'ping' type message to check for pong response"),
+										slog.Uint64("clientID",uint64(c.ID)),
+									),
+									slog.Group("meta",
+										slog.Time("requested_at",time.Now()),
+										slog.String("ticker_status","ticker's ticking is finished,ready to ping client"),
+										slog.String("writer_status","broken"),
+										slog.String("ping_status","failed to ping client❌"),
+									),
+								)
 				break writerLoop
 			}
+			slog.Info("Client health check",
+									slog.Group("Client heartbeat check",
+										slog.String("Via","c.Writer")),
+									slog.Group("payload",
+										slog.String("Goal","sending 'ping' type message to check for pong response"),
+										slog.Uint64("clientID",uint64(c.ID)),
+									),
+									slog.Group("meta",
+										slog.Time("requested_at",time.Now()),
+										slog.String("ticker_status","ticker's ticking is finished,ready to ping client"),
+										slog.String("writer_status","active"),
+										slog.String("ping_status","sent ping message successfully✅"),
+									),
+								)
 			}// .. select end ..
 		}
 			

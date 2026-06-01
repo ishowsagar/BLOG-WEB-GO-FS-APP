@@ -92,11 +92,22 @@ func(pns *PushNotificationService) StartService() {
 				PostID: post.ID,
 				CreatedAt: time.Now(),
 			}
-
+			
 			// directly broadcast
 			if pns.Hub != nil {
 				pns.Hub.Broadcast <- payload
 			}
+
+			// standard structured logging of notifications
+			slog.Info("payload recieved in the pns service for publishing to the exchange",
+				slog.Group("post_notification",
+					slog.Uint64("senderID",uint64(payload.SenderID)),
+					slog.Uint64("recieverID",uint64(payload.RecieverID)),
+					slog.String("notification_type",payload.Type),
+				),
+				slog.Group("redirecting payload to the consumer",
+					slog.Time("requested_at",time.Now())),
+			)
 			
 		// todo - add a redirection method to redirect Like output so this chan can read
 		// fixed - added method which invokes this method through the corresponding handler
@@ -120,6 +131,15 @@ func(pns *PushNotificationService) StartService() {
 				if payload.RecieverID != 0 {
 					err := pns.Hub.BrokerInterface.PublishEvents(payload.RecieverID,payload)
 					slog.Info("successfully published event delivery to the exchange","like_recieverID :",payload.RecieverID)
+				
+					slog.Info("payload recieved in the pns service for publishing to the exchange",
+					slog.Group("like_notification",
+					slog.Uint64("senderID",uint64(payload.SenderID)),
+					slog.Uint64("recieverID",uint64(payload.RecieverID)),
+					slog.String("notification_type",payload.Type),
+				),
+				slog.Group("redirecting payload to the consumer",slog.Time("requested_at",time.Now())),
+			)
 					if err != nil {
 						// * also need consumer which checks for this event and sends to the targetted user
 						slog.Error("failed to publish and stamp like event delivery","error",err)
@@ -150,7 +170,14 @@ func(pns *PushNotificationService) StartService() {
 					break
 				}
 			slog.Info("successfully published the delivery of this followPayload & sent to the broker consumer","recieverID :",followPayload.FollowRecieverID)
-				
+			slog.Info("payload recieved in the pns service for publishing to the exchange",
+				slog.Group("follow_notification",
+					slog.Uint64("senderID",uint64(payload.SenderID)),
+					slog.Uint64("recieverID",uint64(payload.RecieverID)),
+					slog.String("notification_type",payload.Type),
+				),
+				slog.Group("redirecting payload to the consumer",slog.Time("requested_at",time.Now())),
+			)
 			}
 
 		// test - adding a reader select's case to read incoming comment chan val
@@ -178,6 +205,14 @@ func(pns *PushNotificationService) StartService() {
 					break
 				}
 			slog.Info("successfully published the delivery of this commentPayload & sent to the broker consumer","recieverID :",comment.RecieverID)
+			slog.Info("payload recieved in the pns service for publishing to the exchange",
+				slog.Group("comment_notification",
+					slog.Uint64("senderID",uint64(payload.SenderID)),
+					slog.Uint64("recieverID",uint64(payload.RecieverID)),
+					slog.String("notification_type",payload.Type),
+				), 
+				slog.Group("redirecting payload to the consumer",slog.Time("requested_at",time.Now())),
+			)
 		}
 	}
 
