@@ -93,11 +93,11 @@ func main() {
 	}
 
 	// migrations
-	err = migrations.AutoMigrate(baseDbModel.DB)
-	if err != nil {
-		slog.Warn("failed to migrate models","error",err)
-		return	
-	}
+	// err = migrations.AutoMigrate(baseDbModel.DB)
+	// if err != nil {
+	// 	slog.Warn("failed to migrate models","error",err)
+	// 	return	
+	// }
 
 	//  for constraints
 	// err = migrations.EnsureCascadeConstraints(baseDbModel.DB)
