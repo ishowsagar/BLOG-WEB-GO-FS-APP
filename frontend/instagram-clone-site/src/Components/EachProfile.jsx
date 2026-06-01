@@ -388,7 +388,7 @@ export default function EachProfile() {
               <span
                 style={{ color: "rgba(255,255,255,0.7)", fontSize: "0.88rem" }}
               >
-                Chat with {Nickname || Username}
+                Chat with {DisplayName || Username}
               </span>
             </div>
             <button

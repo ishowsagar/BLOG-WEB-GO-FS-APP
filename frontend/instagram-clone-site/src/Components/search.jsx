@@ -231,7 +231,7 @@ export default function Search() {
             {query && (
               <button
                 type="button"
-                className="search_page_clear"
+                className="search_page_submit"
                 onClick={SearchUsers}
               >
                 Search
@@ -338,50 +338,23 @@ export default function Search() {
                         </div>
 
                         {/*//* redirects to link which render EachProfile Data, and send id in url --> fetch data of that profile from id gotten from the url poram */}
-                        <Link to={`/users/profile/${user.id}`}>
-                          <button
-                            type="button"
-                            // onClick={() => handleFollow(user.id)}
-                            style={{
-                              border: "none",
-                              borderRadius: "999px",
-                              padding: "7px 14px",
-                              fontSize: "0.8rem",
-                              fontWeight: 700,
-                              color: "#fff",
-                              background:
-                                "linear-gradient(135deg, #3ec1fd, #082b95)",
-                              cursor: "pointer",
-                              boxShadow: "0 4px 12px rgba(255, 95, 109, 0.28)",
-                              flexShrink: 0,
-                              marginLeft: "auto",
-                            }}
+                        <div className="search_result_actions">
+                          <Link
+                            to={`/users/profile/${user.id}`}
+                            className="search_result_button search_result_button_link"
                           >
                             Profile
-                          </button>
-                        </Link>
+                          </Link>
 
-                        {/* follow button */}
-                        <button
-                          type="button"
-                          onClick={() => handleFollow(user.id)}
-                          style={{
-                            border: "none",
-                            borderRadius: "999px",
-                            padding: "7px 14px",
-                            fontSize: "0.8rem",
-                            fontWeight: 700,
-                            color: "#fff",
-                            background:
-                              "linear-gradient(135deg, #ff5f6d, #ff8c42)",
-                            cursor: "pointer",
-                            boxShadow: "0 4px 12px rgba(255, 95, 109, 0.28)",
-                            flexShrink: 0,
-                            marginLeft: "auto",
-                          }}
-                        >
-                          Follow
-                        </button>
+                          {/* follow button */}
+                          <button
+                            type="button"
+                            onClick={() => handleFollow(user.id)}
+                            className="search_result_button search_result_button_primary"
+                          >
+                            Follow
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );

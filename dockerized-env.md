@@ -114,3 +114,20 @@ IDEA - instead of deploying here and manually doing the code pushing, by using g
 3. Provide those configs as env
 4. to access them out of the container, you'd need to map them via ports to expose it
 5. adding depends on "service" requires internal networking with :networks
+
+<!-- & Grafana logging flow -->
+
+1. We setup 3 services in the compose (d.c)
+2. Each service is concrete (handled here, not seperately by its dockerfile)
+3. Each service has image, from where we access them
+4. Need to provide config in env and expose ports for them to work as intended ( see above guide for more clarification)
+5. Since we are running them in container and exposed outside via ports, we are accessing them directly through the d.c
+
+> so firstly loki spins up,as both depends on it
+> then both grafana and promtail, promtail sends logs from desired (e.g here 'backend') container by labeling all logs with tags and ships to loki
+> loki is logs accumulator or like exchange hub for the logs
+> grafana pulls up logs from loki and display in the dashboard ui beautifully
+
+**next Big implementation**
+
+- add full structured logging throughout the project for robust logging and metrics
