@@ -103,3 +103,11 @@ IDEA - instead of deploying here and manually doing the code pushing, by using g
   1. Adding observility - full structured json like logging first across the application
   2. Adding CDN
   3. Linux and netwroking ( misc)
+
+<!-- ! common pitfalls when connecting services to the docker -->
+
+1. yes you need container to run image
+2. that image expects you some default config like username,pass etc based on image source ctx
+3. Provide those configs as env
+4. to access them out of the container, you'd need to map them via ports to expose it
+5. adding depends on "service" requires internal networking with :networks
