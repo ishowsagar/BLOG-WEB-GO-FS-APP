@@ -96,4 +96,10 @@ IDEA - instead of deploying here and manually doing the code pushing, by using g
 - like if i wanna connect to the psql
   " i would have to follow same command with some changes that - runs instance of container"
   `docker exec -it container_name -U config -d config`
+
   > in this same way you can make a container running instance of another container and passing env to access them
+
+  <!-- & Next Goals -->
+  1. Adding observility - full structured json like logging first across the application
+  2. Adding CDN
+  3. Linux and netwroking ( misc)
