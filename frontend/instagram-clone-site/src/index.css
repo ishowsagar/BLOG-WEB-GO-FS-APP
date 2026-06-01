@@ -1940,51 +1940,51 @@
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.18);
     transition: all 0.3s ease;
   }
   .profile_button:focus-visible {
     outline: none;
     transform: translateY(-1px);
     box-shadow:
-      0 0 0 3px rgba(255, 255, 255, 0.16),
-      0 8px 18px rgba(0, 0, 0, 0.18);
+      0 0 0 3px rgba(255, 255, 255, 0.12),
+      0 10px 20px rgba(15, 23, 42, 0.22);
   }
   .profile_button:nth-child(1) {
-    background: linear-gradient(135deg, #4a90e2, #357abd);
+    background: linear-gradient(135deg, #172554, #1d4ed8 55%, #2563eb);
     color: white;
   }
   .profile_button:nth-child(1):hover {
-    background: linear-gradient(135deg, #357abd, #2d5fa3);
+    background: linear-gradient(135deg, #0f172a, #1e40af 55%, #1d4ed8);
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(74, 144, 226, 0.4);
+    box-shadow: 0 10px 22px rgba(29, 78, 216, 0.28);
   }
   .profile_button:nth-child(2) {
-    background: linear-gradient(135deg, #ff6b6b, #ff5252);
+    background: linear-gradient(135deg, #3f1d2f, #7f1d1d 55%, #b91c1c);
     color: white;
   }
   .profile_button:nth-child(2):hover {
-    background: linear-gradient(135deg, #ff5252, #ff4040);
+    background: linear-gradient(135deg, #2a1421, #701a1a 55%, #991b1b);
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(255, 107, 107, 0.4);
+    box-shadow: 0 10px 22px rgba(127, 29, 29, 0.24);
   }
   .profile_button:nth-child(n + 3) {
-    background: linear-gradient(135deg, #f0f0f0, #e0e0e0);
-    color: #333;
+    background: linear-gradient(135deg, #1f2937, #334155);
+    color: #f8fafc;
   }
   .profile_button:nth-child(n + 3):hover {
-    background: linear-gradient(135deg, #e0e0e0, #d0d0d0);
+    background: linear-gradient(135deg, #111827, #1f2937);
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.24);
   }
   .profile_button:nth-child(1):focus-visible,
   .profile_button:nth-child(2):focus-visible,
   .profile_button:nth-child(n + 3):focus-visible {
     outline: none;
     box-shadow:
-      0 0 0 3px rgba(255, 255, 255, 0.18),
-      0 0 0 6px rgba(59, 130, 246, 0.2),
-      0 10px 20px rgba(0, 0, 0, 0.16);
+      0 0 0 3px rgba(255, 255, 255, 0.14),
+      0 0 0 6px rgba(37, 99, 235, 0.18),
+      0 10px 20px rgba(15, 23, 42, 0.22);
   }
   .profile_highlights {
     display: flex;
