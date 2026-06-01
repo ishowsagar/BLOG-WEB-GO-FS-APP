@@ -18,7 +18,6 @@ export default function EachProfile() {
   const [followeeID, setFolloweeID] = useState(null); // storing in state id of loaded profile
   const [alreadyFollowedErr, setAlreadyFollowedErr] = useState("");
   const [hasFollowed, setHasFollowed] = useState(false);
-  const [followedLS, setFollowedLS] = useState(null);
   const [error, setError] = useState("");
   const [showDmBox, setShowDmBox] = useState(false);
   const [dmText, setDmText] = useState("");
@@ -39,6 +38,10 @@ export default function EachProfile() {
   const followedBoolean = followedKey
     ? localStorage.getItem(followedKey) === "true"
     : false; //* localStorage stores strings values,not boolean, s
+
+  useEffect(() => {
+    setHasFollowed(followedBoolean);
+  }, [followedBoolean]);
 
   //   on page mount,load profile data, api request on url with userid attached and fetched from current url, id passed from redirect
   useEffect(() => {
@@ -343,6 +346,7 @@ export default function EachProfile() {
         <button
           onClick={() => handleFollow(profileData.id)}
           className="profile_button"
+          disabled={hasFollowed}
         >
           {/* conditionally button text if followed from ls==*/}
           {hasFollowed ? `Followed` : `follow`}
