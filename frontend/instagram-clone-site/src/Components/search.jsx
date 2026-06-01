@@ -240,16 +240,12 @@ export default function Search() {
 
             {showOverlay && (
               <div
-                className="search_users_overlay"
+                className="search_users_overlay search_card search_card_secondary"
                 style={{
                   position: "absolute",
                   top: "calc(100% + 10px)",
                   left: 0,
                   right: 0,
-                  background: "#fff",
-                  borderRadius: "16px",
-                  border: "1px solid #e9e9e9",
-                  boxShadow: "0 12px 30px rgba(0, 0, 0, 0.12)",
                   maxHeight: "320px",
                   overflowY: "auto",
                   zIndex: 30,
@@ -267,75 +263,15 @@ export default function Search() {
                   return (
                     <div
                       key={user?.id || user?.email || `${handle}-${index}`}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "12px",
-                        padding: "12px 14px",
-                        justifyContent: "flex-start",
-                        borderBottom:
-                          index === searchedUsers.length - 1
-                            ? "none"
-                            : "1px solid #f0f0f0",
-                      }}
+                      className="search_person_item"
                     >
-                      <div
-                        style={{
-                          width: "40px",
-                          height: "40px",
-                          borderRadius: "50%",
-                          display: "grid",
-                          placeItems: "center",
-                          background:
-                            "linear-gradient(135deg, #ffe0b2, #ffcdd2)",
-                          fontWeight: 700,
-                          color: "#2a2a2a",
-                        }}
-                      >
-                        {avatarText}
-                      </div>
+                      <div className="search_person_avatar">{avatarText}</div>
 
-                      <div
-                        className="box"
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          width: "100%",
-                          gap: "12px",
-                          minWidth: 0,
-                        }}
-                      >
+                      <div>
                         {/* meta data of user */}
-                        <div style={{ minWidth: 0, flex: 1 }}>
-                          <p
-                            style={{
-                              margin: 0,
-                              fontWeight: 700,
-                              color: "#111",
-                            }}
-                          >
-                            {displayName}
-                          </p>
-                          <p
-                            style={{
-                              margin: "2px 0 0",
-                              fontSize: "0.86rem",
-                              color: "#555",
-                            }}
-                          >
-                            @{handle}
-                          </p>
-                          <p
-                            style={{
-                              margin: "2px 0 0",
-                              fontSize: "0.8rem",
-                              color: "#7a7a7a",
-                            }}
-                          >
-                            {subText}
-                          </p>
-                        </div>
+                        <h3>{displayName}</h3>
+                        <p>@{handle}</p>
+                        <p>{subText}</p>
 
                         {/*//* redirects to link which render EachProfile Data, and send id in url --> fetch data of that profile from id gotten from the url poram */}
                         <div className="search_result_actions">

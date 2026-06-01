@@ -944,13 +944,14 @@
     }
 
     .search_result_button_link {
-      background: linear-gradient(135deg, #eff6ff, #dbeafe);
-      color: #0f172a;
-      border-color: rgba(37, 99, 235, 0.12);
+      background: linear-gradient(135deg, #1e293b, #334155);
+      color: #f8fafc;
+      border-color: rgba(51, 65, 85, 0.18);
     }
 
     .search_result_button_link:hover {
-      filter: brightness(1.01);
+      filter: brightness(1.05);
+      background: linear-gradient(135deg, #111827, #1f2937);
     }
 
     .search_result_button_primary {
