@@ -91,6 +91,8 @@ IDEA - instead of deploying here and manually doing the code pushing, by using g
 
 1.  Commit wrong changes? need way to get back them unstashed and uncommited :-
     `  git reset HEAD~{no. of commits you wanna go back}`
+2.  Did manuall changes on the ec2 repo? -> then if you try to push code into ec2 dir, it will not git pull -> local does not match origin
+    `git checkout -- promtail-config.yaml` or whatever file to revert back changes then pull from origin
 
 <!-- * connecting to service inside of the ec2 container -->
 
