@@ -261,47 +261,57 @@ export default function Search() {
                   const avatarText = displayName.charAt(0).toUpperCase();
 
                   return (
-                    <div
-                      key={user?.id || user?.email || `${handle}-${index}`}
-                      className="search_person_item"
-                      style={{ alignItems: "flex-start" }}
-                    >
-                      <div className="search_person_avatar">{avatarText}</div>
+                    <div key={user?.id || user?.email || `${handle}-${index}`}>
+                      <div
+                        className="search_person_item"
+                        style={{ alignItems: "flex-start" }}
+                      >
+                        <div className="search_person_avatar">{avatarText}</div>
 
-                      <div style={{ minWidth: 0, flex: 1 }}>
-                        {/* meta data of user */}
-                        <h3>{displayName}</h3>
-                        <p>@{handle}</p>
-                        <p>{subText}</p>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          {/* meta data of user */}
+                          <h3>{displayName}</h3>
+                          <p>@{handle}</p>
+                          <p>{subText}</p>
 
-                        {/*//* redirects to link which render EachProfile Data, and send id in url --> fetch data of that profile from id gotten from the url poram */}
-                        <div
-                          className="search_result_actions"
-                          style={{
-                            marginLeft: 0,
-                            width: "fit-content",
-                            justifyContent: "flex-start",
-                            gap: "0.55rem",
-                            marginTop: "0.55rem",
-                          }}
-                        >
-                          <Link
-                            to={`/users/profile/${user.id}`}
-                            className="search_result_button search_result_button_link"
+                          {/*//* redirects to link which render EachProfile Data, and send id in url --> fetch data of that profile from id gotten from the url poram */}
+                          <div
+                            className="search_result_actions"
+                            style={{
+                              marginLeft: 0,
+                              width: "fit-content",
+                              justifyContent: "flex-start",
+                              gap: "0.55rem",
+                              marginTop: "0.55rem",
+                            }}
                           >
-                            Profile
-                          </Link>
+                            <Link
+                              to={`/users/profile/${user.id}`}
+                              className="search_result_button search_result_button_link"
+                            >
+                              Profile
+                            </Link>
 
-                          {/* follow button */}
-                          <button
-                            type="button"
-                            onClick={() => handleFollow(user.id)}
-                            className="search_result_button search_result_button_primary"
-                          >
-                            Follow
-                          </button>
+                            {/* follow button */}
+                            <button
+                              type="button"
+                              onClick={() => handleFollow(user.id)}
+                              className="search_result_button search_result_button_primary"
+                            >
+                              Follow
+                            </button>
+                          </div>
                         </div>
                       </div>
+                      {index !== searchedUsers.length - 1 && (
+                        <div
+                          style={{
+                            height: "1px",
+                            margin: "0 1rem",
+                            background: "rgba(15, 23, 42, 0.08)",
+                          }}
+                        />
+                      )}
                     </div>
                   );
                 })}
