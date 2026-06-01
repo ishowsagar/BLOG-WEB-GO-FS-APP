@@ -64,7 +64,25 @@ services:
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./promtail-config.yaml:/etc/promtail/config.yaml
-    command: -config.file=/etc/promtail/config.yaml
+    environment :   
+      PROMTAIL_CONFIG: |
+        server:
+          http_listen_port: 9080
+          grpc_listen_port: 0
+        positions:
+          filename: /tmp/positions.yaml
+        clients:
+          - url: http://loki:3100/loki/api/v1/push
+        scrape_configs:
+          - job_name: docker-logs
+            docker_sd_configs:
+              - host: unix:///var/run/docker.sock
+                refresh_interval: 5s
+            relabel_configs:
+              - source_labels: [__meta_docker_container_name]
+                regex: /.*(go_backend_server_container).*
+                target_label: container
+    command: -config.expand-env=true -config.string=$${PROMTAIL_CONFIG}
     depends_on:
       - loki
 
