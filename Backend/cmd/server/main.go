@@ -14,7 +14,6 @@ import (
 	"github.com/ishowsagar/go-blog-web-application/database"
 	"github.com/ishowsagar/go-blog-web-application/events"
 	"github.com/ishowsagar/go-blog-web-application/initializers"
-	"github.com/ishowsagar/go-blog-web-application/migrations"
 	routes "github.com/ishowsagar/go-blog-web-application/router"
 	"github.com/ishowsagar/go-blog-web-application/services"
 	_ "github.com/ishowsagar/go-blog-web-application/store"
