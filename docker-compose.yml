@@ -46,6 +46,38 @@ services:
       - fs-go-app-network
     restart: unless-stopped
 
+  # Loki for metrics/logs
+  loki:
+    image: grafana/loki:3.0.0
+    container_name: loki_service_container
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - default
+
+  # logging shipper
+  promtail:
+    image: grafana/promtail:3.0.0
+    container_name: promtail_service_container
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./promtail-config.yaml:/etc/promtail/config.yml
+    command: -config.file=/etc/promtail/config.yaml
+    depends_on:
+      - loki
+
+  # grafana for visual dashboard
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana_ui_container
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=somesecretpass
+    depends_on:
+      - loki
   backend:
     build:
       context: ./Backend
