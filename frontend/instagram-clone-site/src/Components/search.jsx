@@ -264,17 +264,27 @@ export default function Search() {
                     <div
                       key={user?.id || user?.email || `${handle}-${index}`}
                       className="search_person_item"
+                      style={{ alignItems: "flex-start" }}
                     >
                       <div className="search_person_avatar">{avatarText}</div>
 
-                      <div>
+                      <div style={{ minWidth: 0, flex: 1 }}>
                         {/* meta data of user */}
                         <h3>{displayName}</h3>
                         <p>@{handle}</p>
                         <p>{subText}</p>
 
                         {/*//* redirects to link which render EachProfile Data, and send id in url --> fetch data of that profile from id gotten from the url poram */}
-                        <div className="search_result_actions">
+                        <div
+                          className="search_result_actions"
+                          style={{
+                            marginLeft: 0,
+                            width: "fit-content",
+                            justifyContent: "flex-start",
+                            gap: "0.55rem",
+                            marginTop: "0.55rem",
+                          }}
+                        >
                           <Link
                             to={`/users/profile/${user.id}`}
                             className="search_result_button search_result_button_link"
