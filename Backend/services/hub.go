@@ -184,7 +184,7 @@ func(h *Hub) RunService() {
 					delete(h.ChatRoomClients, roomID)
 				}
 			}
-			metrics.ActiveConnections.Set(float64(len(h.ClientStore)))
+			metrics.ActiveConnections.Set(float64(len(h.ClientStore))) // setting in once all clients that has been disconnected - remaining only active
 			slog.Info("client removed from all rooms on disconnect", "client_id", readdisconnectedclient.ID)
 
 

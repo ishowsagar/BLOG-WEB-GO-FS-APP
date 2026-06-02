@@ -231,6 +231,14 @@ func main() {
 
 
 	router := gin.Default()
+
+	// ** CDN CONFIGURATION **//
+
+	router.TrustedPlatform = "X-Forwarded-For" // sends real ip in this header
+	router.SetTrustedProxies([]string{"0.0.0.0/0"})
+
+	// end //
+
 	routes.ServeRoutes(router,masterController,config,wsController) // serving controller to router to route methods on them routes
 	router.Run(fmt.Sprintf(":%s",config.ServerPort)) // port 8080
 }
