@@ -165,19 +165,7 @@ func(ws *WSController) ServeRealtimeNotification(c *gin.Context) {
 	// register it as active client -> redirect client there
 	ws.hub.ActiveClients <- client
 	ws.hub.Online <- client
-	go func() {
-		// keep working in bg forever
-		for {
-
-			// & goal -> increase http counter and gauage for active conn by +1 as one client when registered into the handler 
-			// label out endpoint with -> label values -> so it shows which handler sending info
-			metrics.HttpRequestsTotal.WithLabelValues("/ws","200").Inc() // increase http req by +1
-
-			// we use those registered variables to access gauge and counter to increment and decrement gracefully with .Inc/dec
-			metrics.ActiveConnections.Inc()
-
-		}
-	}()
+	metrics.HttpRequestsTotal.WithLabelValues("/api/ws","101").Inc() // websocket upgraded
 
 	// * reading and sending responses
 

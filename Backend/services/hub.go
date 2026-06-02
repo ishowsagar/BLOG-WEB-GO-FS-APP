@@ -117,6 +117,7 @@ func(h *Hub) RunService() {
 			h.Clients[incomingclient] = true // making it true -> saved it for ws conn
 			// * also setting that client in the ALLClients type store -> which tracks incoming client but with userID
 			h.ClientStore[incomingclient.ID] = incomingclient  //map key being client's UserID and val being client itself
+			metrics.ActiveConnections.Set(float64(len(h.ClientStore)))
 			slog.Info("request arrived at the central 'hub'🏢",
 				slog.Group("hub",
 					slog.String("station","h.ActiveClients")),
@@ -183,6 +184,7 @@ func(h *Hub) RunService() {
 					delete(h.ChatRoomClients, roomID)
 				}
 			}
+			metrics.ActiveConnections.Set(float64(len(h.ClientStore)))
 			slog.Info("client removed from all rooms on disconnect", "client_id", readdisconnectedclient.ID)
 
 
@@ -892,9 +894,6 @@ func(c *Client) MessageReader(db *gorm.DB) {
 		// since hub is centre of all things, redirecting client that would be disconnected to the disconnectedCLient chan -> rest is done by hub method RunService
 		c.Hub.DisconnectedClients <- c
 		
-		// & decrementing count for metrics
-		metrics.ActiveConnections.Dec() // decreasing when client gets disconnected
-
 		c.Hub.Offline <- c // redirecting disconnected client to offline chan which stores val of type client-> so client is stored which gets disconnected
 		// call optional OnDisconnect callback (set by controller) to allow unbind or cleanup
 		if c.OnDisconnect != nil {

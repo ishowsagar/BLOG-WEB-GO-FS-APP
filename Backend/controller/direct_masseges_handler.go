@@ -97,7 +97,7 @@ func (ws *WSController) HandleDMs(c *gin.Context) {
 		return
 	}
 
-	metrics.HttpRequestsTotal.WithLabelValues("/api/ws/dms","200").Inc() //& updating metrics
+	metrics.HttpRequestsTotal.WithLabelValues("/api/ws/dm","101").Inc() // websocket upgraded
 
 
 	ws.hub.ActiveClients <- activeClient
