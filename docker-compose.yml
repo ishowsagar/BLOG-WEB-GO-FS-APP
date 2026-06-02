@@ -78,7 +78,7 @@ services:
     networks:
       - fs-go-app-network
     depends_on: # depends on -> provide container of that program <- so once that spun up -> only then build this
-      - go_backend_server_container
+      - backend
   # grafana for visual dashboard
   grafana:
     image: grafana/grafana:latest
