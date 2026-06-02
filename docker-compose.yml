@@ -77,7 +77,7 @@ services:
       - "9090:9090"
     networks:
       - fs-go-app-network
-    depends_on: # depends on -> provide container of that program <- so once that spun up -> only then build this
+    depends_on: # depends on -> provide service name of that program <- so once that spun up -> only then build this
       - backend
   # grafana for visual dashboard
   grafana:
