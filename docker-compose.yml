@@ -72,7 +72,7 @@ services:
     image: prom/prometheus:v2.51.0
     container_name: prometheus_metrics_container
     volumes: # for persistent data
-      - ./prometheus.yaml:/etc/prometheus/prometheus.yml
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
       - "9090:9090"
     networks:
