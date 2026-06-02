@@ -1,0 +1,8 @@
+global:
+  scrape_interval: 7s # refresh metrics logs and pull from app -> set interval for it to invoke in loop
+
+scrape_configs:
+  - job_name: "go-backend-server-metrics"
+    static_configs:
+      # This uses your Go app's Docker container name and its internal port
+      - targets: ["go_backend_server_container:8000"]

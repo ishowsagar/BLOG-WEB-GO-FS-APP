@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/ishowsagar/go-blog-web-application/metrics"
 	"github.com/ishowsagar/go-blog-web-application/services"
 	"github.com/ishowsagar/go-blog-web-application/utils"
 )
@@ -87,6 +88,8 @@ func (ws *WSController) LoadMessages(c *gin.Context) {
 		})
 		return
 	}
+
+	metrics.HttpRequestsTotal.WithLabelValues("/api/messages","200").Inc() //& updating metrics
 
 	c.JSON(http.StatusOK, utils.SuccessResponse{
 		Ok: true,

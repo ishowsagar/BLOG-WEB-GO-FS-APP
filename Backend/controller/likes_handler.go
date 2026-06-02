@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/ishowsagar/go-blog-web-application/metrics"
 	"github.com/ishowsagar/go-blog-web-application/models"
 	"github.com/ishowsagar/go-blog-web-application/services"
 	"github.com/ishowsagar/go-blog-web-application/utils"
@@ -185,14 +186,16 @@ func(l *LikeController) UpdateLike(c *gin.Context) {
 	l.PushNotificationService.NotifiesLikePostedOnPost(&updatedPostDeets)
 
 
- 	slog.Info("status","errors","finally posted first like on the post")
+ 	slog.Info("status","like","finally posted first like on the post")
 
-		c.JSON(http.StatusOK,utils.LikeSuccessResponse{
-			Ok: true,
-			Status: "post liked👍",
-			Code: http.StatusOK,
-			Like: *firstLike,
-		})
+	// &adding metrics
+	metrics.HttpRequestsTotal.WithLabelValues("/api/like","200").Inc()
+	c.JSON(http.StatusOK,utils.LikeSuccessResponse{
+		Ok: true,
+		Status: "post liked👍",
+		Code: http.StatusOK,
+		Like: *firstLike,
+	})
 	}
 
 	// @ flow

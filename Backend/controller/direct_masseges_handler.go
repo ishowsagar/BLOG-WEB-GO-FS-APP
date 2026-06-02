@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
+	"github.com/ishowsagar/go-blog-web-application/metrics"
 	"github.com/ishowsagar/go-blog-web-application/services"
 	"github.com/ishowsagar/go-blog-web-application/utils"
 )
@@ -95,6 +96,8 @@ func (ws *WSController) HandleDMs(c *gin.Context) {
 		slog.Error("failed to bib=nd user in the rabbitMQ broker's declared exchange","error",err)
 		return
 	}
+
+	metrics.HttpRequestsTotal.WithLabelValues("/api/ws/dms","200").Inc() //& updating metrics
 
 
 	ws.hub.ActiveClients <- activeClient

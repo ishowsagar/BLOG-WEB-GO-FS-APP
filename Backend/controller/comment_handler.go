@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/ishowsagar/go-blog-web-application/metrics"
 	"github.com/ishowsagar/go-blog-web-application/models"
 	"github.com/ishowsagar/go-blog-web-application/services"
 	"github.com/ishowsagar/go-blog-web-application/utils"
@@ -132,6 +133,9 @@ func(cC *CommentController) PostComment(c *gin.Context) {
 
 	//  if posted comment successfully 🚀
 	// response that "comment" is posted
+
+	metrics.HttpRequestsTotal.WithLabelValues("/api/comment/:postid","200").Inc() //& updating metrics
+	
 	c.JSON(http.StatusOK,utils.CommentSuccessResponse{
 		Ok: true,
 		Status: "comment posted successfully",
@@ -169,6 +173,7 @@ func(cC *CommentController) LoadAllCommentsAssociatedWithPostAndUsers(c *gin.Con
 		return
 	}
 
+	metrics.HttpRequestsTotal.WithLabelValues("/api/feed/comment","200").Inc() //& updating metrics
 	// response that "post" is created - if query was successfull
 	c.JSON(http.StatusOK,gin.H{
 		"Status": "comments loaded",
@@ -235,6 +240,8 @@ func(cC *CommentController) DeleteCommentByUser(c *gin.Context) {
 		return
 	}
 
+	metrics.HttpRequestsTotal.WithLabelValues("/api/comment/delete","200").Inc() //& updating metrics
+	
 	// if found n deleted
 	c.JSON(http.StatusOK,utils.SuccessResponse{
 		Ok: true,
@@ -292,6 +299,7 @@ func(cC *CommentController) LoadPostComments(c *gin.Context) {
 		comments = []*services.CommentsData{} //empty on that post, not err
 	}
 
+	metrics.HttpRequestsTotal.WithLabelValues("/api/feed/comments/:postid","200").Inc() //& updating metrics
 	c.JSON(http.StatusOK,utils.CommentSuccessResponse{
 		Ok: true,
 		Status: "successfully loaded all comments of this post",

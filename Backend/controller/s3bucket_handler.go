@@ -15,6 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/gin-gonic/gin"
+	"github.com/ishowsagar/go-blog-web-application/metrics"
 	"github.com/ishowsagar/go-blog-web-application/services"
 	"github.com/ishowsagar/go-blog-web-application/utils"
 )
@@ -131,6 +132,7 @@ func(s *S3Controller) HandleUploadImageStream(c *gin.Context) {
 	slog.Info("successfully stored retrieved s3 image uploaded url in db","userID :",userID)
 
 	
+	metrics.HttpRequestsTotal.WithLabelValues("/api/user/pfp/upload","200").Inc() //& updating metrics
 	// if successfully uploaded and retrieved url ✅
 	// todo - store image url mapped to user in DB 
 	c.JSON(http.StatusOK,utils.S3UploadSuccessResponse{
@@ -184,6 +186,8 @@ func(s *S3Controller) GetProfilePictureBucketURl(c *gin.Context) {
 		})
 		return
 	}
+
+	metrics.HttpRequestsTotal.WithLabelValues("/api/s3/pfp","200").Inc() //& updating metrics
 
 	// if successfully retrieved stored s3url for this user, send to the client
 	resolvedURL := *pfpURL
@@ -460,6 +464,9 @@ func(s *S3Controller) HandlePostsImageStream(c *gin.Context) {
 			} 
 		}(*oldImageURL)
 	}
+
+
+	metrics.HttpRequestsTotal.WithLabelValues("/api/user/upload/post/image","200").Inc() //& updating metrics
 
 	// if successfully uploaded file and stored the resolved url in the db by updating post url, send to the client
 	c.JSON(http.StatusOK,utils.S3UploadSuccessResponse{

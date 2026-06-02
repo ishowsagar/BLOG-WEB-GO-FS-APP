@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/ishowsagar/go-blog-web-application/metrics"
 	"github.com/ishowsagar/go-blog-web-application/services"
 	"github.com/ishowsagar/go-blog-web-application/utils"
 )
@@ -98,6 +99,7 @@ func(f *FollowController) FollowUser(c *gin.Context) {
 	}
 	f.Pns.RetryFollowWithTimeout(f.Pns,100 * time.Millisecond,followNotificationPayload)
 
+	metrics.HttpRequestsTotal.WithLabelValues("/api/users/follow/:followeeID","200").Inc() //& updating metrics
 	//  if succesffully done its work
 	c.JSON(http.StatusOK,utils.SuccessResponse{
 		Ok: true,

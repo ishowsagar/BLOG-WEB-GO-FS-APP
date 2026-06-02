@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/ishowsagar/go-blog-web-application/metrics"
 	"github.com/ishowsagar/go-blog-web-application/models"
 	"gorm.io/gorm"
 )
@@ -890,6 +891,10 @@ func(c *Client) MessageReader(db *gorm.DB) {
 		// unregistering the channel on which this meth is defined on - after read
 		// since hub is centre of all things, redirecting client that would be disconnected to the disconnectedCLient chan -> rest is done by hub method RunService
 		c.Hub.DisconnectedClients <- c
+		
+		// & decrementing count for metrics
+		metrics.ActiveConnections.Dec() // decreasing when client gets disconnected
+
 		c.Hub.Offline <- c // redirecting disconnected client to offline chan which stores val of type client-> so client is stored which gets disconnected
 		// call optional OnDisconnect callback (set by controller) to allow unbind or cleanup
 		if c.OnDisconnect != nil {

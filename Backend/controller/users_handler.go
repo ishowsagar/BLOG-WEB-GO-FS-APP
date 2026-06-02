@@ -11,6 +11,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	cache "github.com/ishowsagar/go-blog-web-application/Cache"
+	"github.com/ishowsagar/go-blog-web-application/metrics"
 	"github.com/ishowsagar/go-blog-web-application/models"
 	"github.com/ishowsagar/go-blog-web-application/services"
 	"github.com/ishowsagar/go-blog-web-application/utils"
@@ -116,6 +117,9 @@ func(u *UserController) RegisterUser(c *gin.Context) {
 	//  sending response to client
 	dumper.DumpJSON("postgres entry :",createdUser)
 	dumper.DumpJSON("cachedUser :",cachedUser)
+
+	metrics.HttpRequestsTotal.WithLabelValues("/form/register","200").Inc() //& updating metrics
+
 	c.JSON(http.StatusOK,gin.H{
 		"Ok" : true,
 		"Code":http.StatusCreated,
@@ -265,6 +269,8 @@ func(u *UserController) LoginUser(c *gin.Context) {
 		}
 	}
 
+	metrics.HttpRequestsTotal.WithLabelValues("/form/login","200").Inc() //& updating metrics
+
 	//  send token response
 	c.JSON(http.StatusOK,gin.H{
 		"Ok" : true,
@@ -379,8 +385,11 @@ func(u *UserController) UpdateUserPassword(c *gin.Context) {
 		Status: "failed to wipe cached token",
 		Ok: false,
 	})
-return
+	return
 	}
+
+	metrics.HttpRequestsTotal.WithLabelValues("/form/password/reset","200").Inc() //& updating metrics
+
 	// if successfully updated password
 	c.JSON(http.StatusOK,utils.CommentSuccessResponse{
 		Status: "successfully resetted the password",
@@ -422,6 +431,8 @@ func(u *UserController) FetchProfileData(c *gin.Context) {
 		})
 		return	
 	}
+
+	metrics.HttpRequestsTotal.WithLabelValues("/api/users/profile","200").Inc() //& updating metrics
 
 
 	//  if userFound query was successfull and resulting struct also not nil
@@ -479,6 +490,7 @@ func(u *UserController) FetchProfileDataByURlParamID(c *gin.Context) {
 		return	
 	}
 
+	metrics.HttpRequestsTotal.WithLabelValues("/api/user/profile/:userid","200").Inc() //& updating metrics
 
 	//  if userFound query was successfull and resulting struct also not nil
 	c.JSON(http.StatusFound,utils.UserSuccessResponse{
@@ -516,6 +528,7 @@ func(u *UserController) WipeCachedToken(c *gin.Context) {
 
 }
 
+// todo - add more fields to consider when searches + case deducing for any
 
 // since it will be a search -> 'name' would be in qparamy
 func(u *UserController) FindUsersByNAME(c *gin.Context) {
@@ -554,6 +567,8 @@ func(u *UserController) FindUsersByNAME(c *gin.Context) {
 		})
 		return
 	}
+
+	metrics.HttpRequestsTotal.WithLabelValues("/api/users/search","200").Inc() //& updating metrics
 
 	// if successfully fetched all users
 	c.JSON(http.StatusOK,utils.SuccessResponse{
@@ -594,6 +609,8 @@ func(u *UserController) FetchFullProfileData(c *gin.Context) {
 		return
 	}
 
+	metrics.HttpRequestsTotal.WithLabelValues("/api/profile","200").Inc() //& updating metrics
+
 	c.JSON(http.StatusOK,utils.SuccessResponse{
 		Ok: true,
 		Status: "successfully retrieved profile data for the active client",
@@ -630,6 +647,8 @@ func(u *UserController) GetFollowedUserProfiles(c *gin.Context) {
 		})
 		return
 	}
+
+	metrics.HttpRequestsTotal.WithLabelValues("/api/followings","200").Inc() //& updating metrics
 
 	c.JSON(http.StatusOK,utils.SuccessResponse{
 		Ok: true,

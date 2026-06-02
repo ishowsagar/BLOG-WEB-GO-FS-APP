@@ -1,14 +1,17 @@
 package routes
 
 import (
+	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/ishowsagar/go-blog-web-application/controller"
+	"github.com/ishowsagar/go-blog-web-application/metrics"
 	"github.com/ishowsagar/go-blog-web-application/middleware"
 	"github.com/ishowsagar/go-blog-web-application/utils"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func ServeRoutes(router *gin.Engine,masterController *controller.MasterController,config *utils.ENVConfig,wsController *controller.WSController)  {
@@ -21,6 +24,7 @@ func ServeRoutes(router *gin.Engine,masterController *controller.MasterControlle
 	// health.Use(middleware.SlogLoggerMiddlewareFunction())
 		{
 			health.GET("/",func(c *gin.Context) {
+				metrics.HttpRequestsTotal.WithLabelValues("/health","200").Inc() //& updating metrics
 				c.JSON(http.StatusOK,gin.H{
 					"status":"OK",
 					"message":"API IS RUNNING FINE⚡...",
@@ -41,7 +45,7 @@ func ServeRoutes(router *gin.Engine,masterController *controller.MasterControlle
 	}))
 	router.Static("/static", "./static")
 
-	// * frontend Testing
+	// * frontend Testing ✅
 	client := router.Group("/form")
 	{
 		client.POST("/register",masterController.UserController.RegisterUser) // just in case - need binded req payload of type registerReq
@@ -62,28 +66,36 @@ func ServeRoutes(router *gin.Engine,masterController *controller.MasterControlle
 		ws.GET("", wsController.ServeRealtimeNotification)
 		ws.GET("/dm", wsController.HandleDMs)
 	}
-	
+
+	// * metrics with theus 🚀
+	metrics := router.Group("/metrics")
+	{
+		metrics.GET("/",func(ctx *gin.Context) {
+		slog.Info("/metrics")
+		promhttp.Handler()
+		})
+	}
 	api := router.Group("/api") 
 	api.Use(authMiddleware.AuthMiddlewareFunction(config.JwtSecret))
 	api.Use(middleware.RateLimiterFunction())
 	// api.Use(middleware.SlogLoggerMiddlewareFunction())
 	api.Use(middleware.LatencyCheckerMiddlewareFunction())
 	{
-		// user
+		// user ✅
 		api.GET("/users/profile",masterController.UserController.FetchProfileData)
 		api.GET("/users/search",masterController.UserController.FindUsersByNAME)
 		api.GET("/user/profile/:userid",masterController.UserController.FetchProfileDataByURlParamID) // client would have to request on this url passing last endPoint as the userID for query the res and returning it
 		
-		// comment
+		// comment ✅
 		api.GET("/feed/comments/:postid",masterController.CommentController.LoadPostComments)
 		api.GET("/feed/comment",masterController.CommentController.LoadAllCommentsAssociatedWithPostAndUsers)
 		api.GET("/feed/post/comments/:postid",masterController.CommentController.GetCommentsCountByPostID)
 		
-		// * changing to post comment on post - by postID in url path, instead of sending json embedded postID
+		// * ✅changing to post comment on post - by postID in url path, instead of sending json embedded postID
 		api.POST("/post/comment/:postid",masterController.CommentController.PostComment)
 		api.DELETE("/comment/delete",masterController.CommentController.DeleteCommentByUser)
 
-		// feed
+		// feed ✅
 		api.GET("/feed/full",masterController.PostController.LoadFeed)
 		api.GET("/feed/batch",masterController.PostController.FeedBatchRequest)
 		api.GET("/post/count",masterController.PostController.GetPostCountByUserID)
@@ -94,19 +106,19 @@ func ServeRoutes(router *gin.Engine,masterController *controller.MasterControlle
 		api.GET("/messages",wsController.LoadMessages)
 
 
-		// profile
+		// profile ✅
 		api.GET("/profile",masterController.UserController.FetchFullProfileData)
 		api.GET("/followings",masterController.UserController.GetFollowedUserProfiles)
 		
-		// s3Bucket
+		// s3Bucket✅
 		api.GET("/s3/pfp",masterController.S3Controller.GetProfilePictureBucketURl)
 		api.POST("/user/upload/post/image",masterController.S3Controller.HandlePostsImageStream) // for posts image only
 		api.POST("/user/pfp/upload",masterController.S3Controller.HandleUploadImageStream)
 
-		// like
+		// like✅
 		api.POST("/like",masterController.LikeController.UpdateLike)
 		
-		// follow
+		// follow ✅
 		api.POST("/users/follow/:followeeID",masterController.FollowController.FollowUser)
 	}
 }

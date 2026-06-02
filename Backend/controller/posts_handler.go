@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/ishowsagar/go-blog-web-application/metrics"
 	"github.com/ishowsagar/go-blog-web-application/models"
 	"github.com/ishowsagar/go-blog-web-application/services"
 	"github.com/ishowsagar/go-blog-web-application/utils"
@@ -86,6 +87,8 @@ func(pC *PostController) CreatePost(c *gin.Context) {
 	// todo - add more methods for redirection of created input to channalize them and add readers for them in service reader service which has dedicated case blocks for them
 	pC.PushNotificationService.NotifiesPostCreation(*createdPost)
 
+	metrics.HttpRequestsTotal.WithLabelValues("/api/post/create","200").Inc() //& updating metrics
+
 	// response that "post" is created - if query was successfull
 	c.JSON(http.StatusOK,utils.PostSuccessResponse{
 		Ok: true,
@@ -127,6 +130,8 @@ func(p *PostController) DeletePost(c *gin.Context) {
 		return
 	}
 
+	metrics.HttpRequestsTotal.WithLabelValues("/api/post/:id","delete").Inc() //& updating metrics
+
 	c.JSON(http.StatusNoContent,utils.SuccessResponse{
 		Status: "successfully deleted post",
 		Code: http.StatusNoContent,
@@ -163,6 +168,8 @@ func(pC *PostController) LoadFeed(c *gin.Context) {
 		})
 		return
 	}
+
+	metrics.HttpRequestsTotal.WithLabelValues("/api/feed/full","200").Inc() //& updating metrics
 
 	// response that "post" is created - if query was successfull
 	c.JSON(http.StatusOK,gin.H{
@@ -211,6 +218,8 @@ func(pC *PostController) GetPostByID(c *gin.Context) {
 		return
 	}
 
+	metrics.HttpRequestsTotal.WithLabelValues("/api/feed/post/:id","get").Inc() //& updating metrics
+	
 	// response that "post" is created - if query was successfull
 	c.JSON(http.StatusOK,gin.H{
 		"Ok": true,
@@ -263,6 +272,9 @@ func(p *PostController) GetPostCountByUserID(c *gin.Context) {
 		}
 		
 	slog.String("info :","req successfull")
+
+	metrics.HttpRequestsTotal.WithLabelValues("/api/post/count","200").Inc() //& updating metrics
+
 	c.JSON(http.StatusOK,utils.CommentSuccessResponse{
 		Ok: true,
 		Status: "successfully post count",
@@ -339,7 +351,7 @@ func(p *PostController) FeedBatchRequest(c *gin.Context) {
 		hasMore = len(batch) == limit // when no of current batch elements equals to 
 	}
 
-	
+	metrics.HttpRequestsTotal.WithLabelValues("/api/feed/batch","200").Inc() //& updating metrics
 
 	c.JSON(http.StatusOK,utils.BatchResponse{
 		Ok: true,
@@ -406,6 +418,8 @@ func(cC*CommentController) GetCommentsCountByPostID(c *gin.Context) {
 		return 
 	}
 
+	metrics.HttpRequestsTotal.WithLabelValues("/api/feed/post/comments/:postid","200").Inc() //& updating metrics
+
 	c.JSON(http.StatusFound,gin.H{
 		"CommentCount" : commentCount.Count,
 		"Ok" : true,
@@ -441,6 +455,8 @@ func(p *PostController) GetAllPostsOfClient(c *gin.Context) {
 		})
 		return
 	}
+
+	metrics.HttpRequestsTotal.WithLabelValues("/api/feed/client/posts","200").Inc() //& updating metrics
 
 	c.JSON(http.StatusOK,utils.SuccessResponse{
 		Ok: true,
