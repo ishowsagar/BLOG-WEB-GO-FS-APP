@@ -1,7 +1,6 @@
 package routes
 
 import (
-	"log/slog"
 	"net/http"
 	"time"
 
@@ -67,13 +66,11 @@ func ServeRoutes(router *gin.Engine,masterController *controller.MasterControlle
 		ws.GET("/dm", wsController.HandleDMs)
 	}
 
-	// * metrics with theus 🚀
+	// & metrics with theus 🚀
 	metrics := router.Group("/metrics")
+	// bug - Simply returning handler does nothing, we have to set it the concrete by wrapping so it acts like gin but metric prometheus handler
 	{
-		metrics.GET("/",func(ctx *gin.Context) {
-		slog.Info("/metrics")
-		promhttp.Handler()
-		})
+		metrics.GET("/",gin.WrapH(promhttp.Handler()))
 	}
 	api := router.Group("/api") 
 	api.Use(authMiddleware.AuthMiddlewareFunction(config.JwtSecret))

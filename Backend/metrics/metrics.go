@@ -6,7 +6,7 @@ import "github.com/prometheus/client_golang/prometheus"
 var HttpRequestsTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 	
 	// defining up counter -> with these options set on it
-	Name: "go_app_total_http_requests", // name for the counter in promthues
+	Name: "go_app_http_requests_total", // name for the counter in promthues
 	Help: "total number of http requests being handled by the Backend", //its desc
 	
 },
