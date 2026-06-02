@@ -4,5 +4,5 @@ global:
 scrape_configs:
   - job_name: "go-backend-server-metrics"
     static_configs:
-      # This uses your Go app's Docker container name and its internal port
-      - targets: ["go_backend_server_container:8000"]
+      # setr target being "service name" of the target -> This uses your Go app's Docker container name and its internal port
+      - targets: ["backend:8000"]
