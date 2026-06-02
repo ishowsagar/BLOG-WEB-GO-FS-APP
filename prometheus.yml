@@ -1,0 +1,9 @@
+global:
+  scrape_interval: 7s
+
+scrape_configs:
+  - job_name: "go-backend-server-metrics"
+    metrics_path: /metrics
+    static_configs:
+      # target should match the Docker Compose service name and the server port
+      - targets: ["backend:8080"]
