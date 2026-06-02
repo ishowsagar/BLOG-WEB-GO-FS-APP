@@ -54,7 +54,7 @@ services:
       - "3100:3100"
     command: -config.file=/etc/loki/local-config.yaml
     networks:
-      - default
+      - fs-go-app-network
 
   # logging shipper
   promtail:
@@ -65,6 +65,8 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./promtail-live-config.yaml:/etc/promtail/config.yaml
     command: -config.file=/etc/promtail/config.yaml
+    networks:
+      - fs-go-app-network
     depends_on:
       - loki
 
@@ -87,6 +89,8 @@ services:
       - "3000:3000"
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=somesecretpass
+    networks:
+      - fs-go-app-network
     depends_on:
       - loki
   backend:
@@ -125,7 +129,6 @@ services:
     container_name: react_frontend_container
     ports:
       - "80:80"
-      - "443:443"
     depends_on:
       - backend
     volumes:
