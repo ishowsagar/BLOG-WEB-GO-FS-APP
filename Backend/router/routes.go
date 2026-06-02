@@ -35,7 +35,7 @@ func ServeRoutes(router *gin.Engine,masterController *controller.MasterControlle
 	// * router Configuration
 	router.Use(cors.New(cors.Config{
 		// bug - since our app is running on the aws, need to specify ip address to make it bypass cors 
-		AllowOrigins: []string{"http://localhost:5173","http://3.84.111.249:5173"},
+		AllowOrigins: []string{"http://localhost:5173","http://3.84.111.249:5173","https://denvergram.me"},
 		AllowMethods: []string{"POST","GET","PUT","DELETE"},
 		AllowHeaders: []string{"Origin","Authorization","Content-type"},
 		AllowBrowserExtensions:false, //! don't let mess with site headers or anything by installing scripts or like we did with auth header with mod header
