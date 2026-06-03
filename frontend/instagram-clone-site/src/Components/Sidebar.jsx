@@ -53,7 +53,7 @@ export default function Sidebar() {
           </li>
           <li>
             <img className="sidebar_icon" src={NotificationsIcon} />
-            <Link className="sidebar_link" href="/notify">
+            <Link className="sidebar_link" to="/notify">
               Notifications
             </Link>
           </li>
