@@ -45,6 +45,7 @@ createRoot(document.getElementById("root")).render(
           <Route path="reels" element={<Reels />} />
           <Route path="denAI" element={<DenverAI />} />
           <Route path="about" element={<About />} />
+          <Route path="notifications" element={<Notification />} />
           <Route path="messages" element={<Messages />} />
           {/*//**  Render profile in outlet area of clicked user from search**/}
           {/* client redirected on this url will be redirected with a userID attached, fetch and do the data fetch and ofc display */}

@@ -41,11 +41,24 @@ func(u *UserController) RegisterUser(c *gin.Context) {
 	err := c.ShouldBindJSON(&registerReq)
 
 	if err != nil {
+		slog.Info("request arrived at the UserHandler",
+						slog.Group("meta",
+							slog.String("station","u.RegisterUser")),
+						slog.Group("payload",
+							slog.String("Block","Json binding"),
+							slog.String("Status","Invalid request payload"),
+							slog.String("User",registerReq.Name),
+						),
+						slog.Group("payload could not proceeded furthur",
+						slog.Time("requested_at",time.Now()),
+					),	
+					)
 		c.AbortWithError(http.StatusBadRequest,gin.Error{
 			Err: err,
 		})
 		return
 	}
+
 	
 	
 	//  todo - need to store hashed pass in User that we are registering
@@ -58,6 +71,18 @@ func(u *UserController) RegisterUser(c *gin.Context) {
 		if err == sql.ErrNoRows {
 			existingUser = nil // set it to nil as there was no user but query ran successfully
 			} else {
+				slog.Info("request arrived at the UserHandler",
+						slog.Group("meta",
+							slog.String("station","u.RegisterUser")),
+						slog.Group("payload",
+							slog.String("Block","DB failure"),
+							slog.String("Status","failed to retrieve user info"),
+							slog.String("User",registerReq.Name),
+						),
+						slog.Group("payload could not proceeded furthur",
+						slog.Time("requested_at",time.Now()),
+					),	
+					)
 				c.AbortWithStatusJSON(http.StatusInternalServerError,gin.H{
 					"error" : "lookup failed",
 				})
@@ -65,6 +90,18 @@ func(u *UserController) RegisterUser(c *gin.Context) {
 			}
 		}
 		if existingUser != nil {
+			slog.Info("request arrived at the UserHandler",
+						slog.Group("meta",
+							slog.String("station","u.RegisterUser")),
+						slog.Group("payload",
+							slog.String("Block","ExistingUser"),
+							slog.String("Status","Cannot re-register already registered user"),
+							slog.String("User",registerReq.Name),
+						),
+						slog.Group("payload could not proceeded furthur",
+						slog.Time("requested_at",time.Now()),
+					),	
+					)
 			c.AbortWithStatusJSON(http.StatusConflict,gin.H{
 				"error" : "user already exists",
 			})
@@ -91,6 +128,18 @@ func(u *UserController) RegisterUser(c *gin.Context) {
 	//  if req binds correct data ✅
 	createdUser,err := u.UserDbModel.CreateUser(&user)
 	if err!= nil {
+		slog.Info("request arrived at the UserHandler",
+						slog.Group("meta",
+							slog.String("station","u.RegisterUser")),
+						slog.Group("payload",
+							slog.String("Block","Create user"),
+							slog.String("Status","server error,failed to register user"),
+							slog.String("User",registerReq.Name),
+						),
+						slog.Group("payload could not proceeded furthur",
+						slog.Time("requested_at",time.Now()),
+					),	
+					)
 		c.AbortWithStatusJSON(http.StatusInternalServerError,utils.ErrResponse{
 			Status: "server error,failed to register user!.",
 		})
@@ -105,6 +154,18 @@ func(u *UserController) RegisterUser(c *gin.Context) {
 	// todo - cache user data into redis db for faster logins
 	err = u.RedisClient.SetCachedUser(c.Request.Context(),cachedUser.Email,cachedUser.Password)
 	if err != nil {
+		slog.Info("request arrived at the UserHandler",
+						slog.Group("meta",
+							slog.String("station","u.RegisterUser")),
+						slog.Group("payload",
+							slog.String("Block","Cache user"),
+							slog.String("Status","caching failure,failed to cache user data"),
+							slog.String("User",registerReq.Name),
+						),
+						slog.Group("payload could not proceeded furthur",
+						slog.Time("requested_at",time.Now()),
+					),	
+					)
 		c.AbortWithStatusJSON(http.StatusServiceUnavailable,utils.ErrResponse{
 			Ok: false,
 			Status: "failed to cache user data",
@@ -120,6 +181,18 @@ func(u *UserController) RegisterUser(c *gin.Context) {
 
 	metrics.HttpRequestsTotal.WithLabelValues("/form/register","200").Inc() //& updating metrics
 
+	slog.Info("request arrived at the UserHandler",
+						slog.Group("meta",
+							slog.String("station","u.RegisterUser")),
+						slog.Group("payload",
+							slog.String("Block","Final Response"),
+							slog.String("Status","User registration is successfull✅"),
+							slog.String("User",registerReq.Name),
+						),
+						slog.Group("Registered_at",
+						slog.Time("requested_at",time.Now()),
+					),	
+					)
 	c.JSON(http.StatusOK,gin.H{
 		"Ok" : true,
 		"Code":http.StatusCreated,
@@ -136,6 +209,18 @@ func(u *UserController) LoginUser(c *gin.Context) {
 
 	err := c.ShouldBindJSON(&loginRequest)
 	if err != nil {
+		slog.Info("request arrived at the UserHandler",
+						slog.Group("meta",
+							slog.String("station","u.LoginUser")),
+						slog.Group("payload",
+							slog.String("Block","Json binding"),
+							slog.String("Status","Invalid request payload"),
+							slog.String("Mail",loginRequest.Email),
+						),
+						slog.Group("payload could not proceeded furthur",
+						slog.Time("requested_at",time.Now()),
+					),	
+					)
 		c.AbortWithStatusJSON(http.StatusBadRequest,utils.ErrResponse{Status: "Invalid request payload."})
 		return 
 	}
@@ -143,11 +228,35 @@ func(u *UserController) LoginUser(c *gin.Context) {
 	userFound,err := u.UserDbModel.GetUserByEmail(loginRequest.Email)
 	if err != nil {
 		// todo - less verbose err responses
+		slog.Info("request arrived at the UserHandler",
+						slog.Group("meta",
+							slog.String("station","u.LoginUser")),
+						slog.Group("payload",
+							slog.String("Block","User check"),
+							slog.String("Status","Internal server error, failed to retrieve user details"),
+							slog.String("Mail",loginRequest.Email),
+						),
+						slog.Group("payload could not proceeded furthur",
+						slog.Time("requested_at",time.Now()),
+					),	
+					)
 		c.AbortWithStatusJSON(http.StatusInternalServerError,utils.ErrResponse{Status: "lookup failed"})
 		return 
 	}
 	// if no user data retrieved from query 
 	if userFound == nil {
+		slog.Info("request arrived at the UserHandler",
+						slog.Group("meta",
+							slog.String("station","u.LoginUser")),
+						slog.Group("payload",
+							slog.String("Block","UserFound"),
+							slog.String("Status","user not found"),
+							slog.String("Mail",loginRequest.Email),
+						),
+						slog.Group("payload could not proceeded furthur",
+						slog.Time("requested_at",time.Now()),
+					),	
+					)
 		c.AbortWithStatusJSON(http.StatusNotFound,utils.ErrResponse{Status: "user not found."})
 		return
 	}
@@ -176,6 +285,18 @@ func(u *UserController) LoginUser(c *gin.Context) {
 	// todo - check for hashedPass not just plain pass - cause now we are storing hash,not just plain text
 	authorized,err := utils.CheckHashedPass(loginRequest.Password,[]byte(userFound.Password))
 	if err != nil {
+		slog.Info("request arrived at the UserHandler",
+						slog.Group("meta",
+							slog.String("station","u.LoginUser")),
+						slog.Group("payload",
+							slog.String("Block","Password Hash Check"),
+							slog.String("Status","Invalid credentials"),
+							slog.String("Mail",loginRequest.Email),
+						),
+						slog.Group("payload could not proceeded furthur",
+						slog.Time("requested_at",time.Now()),
+					),	
+					)
 		c.AbortWithError(http.StatusUnauthorized,gin.Error{
 			Err: err,
 		})
@@ -188,6 +309,18 @@ func(u *UserController) LoginUser(c *gin.Context) {
 
 	//  if passes dont match
 	if !authorized  {
+		slog.Info("request arrived at the UserHandler",
+						slog.Group("meta",
+							slog.String("station","u.LoginUser")),
+						slog.Group("payload",
+							slog.String("Block","Unauthorized"),
+							slog.String("Status","Invalid credentials"),
+							slog.String("Mail",loginRequest.Email),
+						),
+						slog.Group("payload could not proceeded furthur",
+						slog.Time("requested_at",time.Now()),
+					),	
+					)
 		c.AbortWithStatusJSON(http.StatusUnauthorized,utils.ErrResponse{
 			//todo less verbose err response to the client
 			Status: "wrong password", // inentionally setting for verbose debugging
@@ -199,6 +332,18 @@ func(u *UserController) LoginUser(c *gin.Context) {
 	
 	plainTokenString,err := utils.GenerateToken(userFound.ID) // passing found user id to generate stateless token
 	if err != nil {
+		slog.Info("request arrived at the UserHandler",
+						slog.Group("meta",
+							slog.String("station","u.LoginUser")),
+						slog.Group("payload",
+							slog.String("Block","issuing token"),
+							slog.String("Status","could not created token; might be signing error"),
+							slog.String("Mail",loginRequest.Email),
+						),
+						slog.Group("payload could not proceeded furthur",
+						slog.Time("requested_at",time.Now()),
+					),	
+					)
 		c.AbortWithStatusJSON(http.StatusInternalServerError,utils.ErrResponse{Status: err.Error()})
 		return 
 	}
@@ -208,6 +353,18 @@ func(u *UserController) LoginUser(c *gin.Context) {
 	// todo - add seperate function for creating hashed token using seperate secret signing key 
 	hashedTokenByte,err := utils.HashToken(*plainTokenString)
 	if err != nil {
+		slog.Info("request arrived at the UserHandler",
+						slog.Group("meta",
+							slog.String("station","u.LoginUser")),
+						slog.Group("payload",
+							slog.String("Block","hashing token"),
+							slog.String("Status","could not hashed token"),
+							slog.String("Mail",loginRequest.Email),
+						),
+						slog.Group("payload could not proceeded furthur",
+						slog.Time("requested_at",time.Now()),
+					),	
+					)
 		c.AbortWithStatusJSON(http.StatusInternalServerError,utils.ErrResponse{Status: err.Error()})
 		return 
 	}
@@ -222,12 +379,25 @@ func(u *UserController) LoginUser(c *gin.Context) {
 	// first check if it is not already stored -> cause that would overide expiry time
 	existingToken,err := u.TokenDbModel.GetTokenByUserID(userFound.ID)
 	if err!= nil {
+
 		//! don't do statusInternalErr -> it will stop furthur execution cause err could be no rows
 		if err == sql.ErrNoRows {
 			// if query successfull --> but returned no token
 			existingToken = nil
 			//  no return -> must continue to insert
 			} else {
+				slog.Info("request arrived at the UserHandler",
+						slog.Group("meta",
+							slog.String("station","u.LoginUser")),
+						slog.Group("payload",
+							slog.String("Block","token lookup"),
+							slog.String("Status","failed to reitrieve token details from the db"),
+							slog.String("Mail",loginRequest.Email),
+						),
+						slog.Group("payload could not proceeded furthur",
+						slog.Time("requested_at",time.Now()),
+					),	
+					)
 				slog.Error("failed to lookup","error",err)
 				c.AbortWithStatusJSON(http.StatusInternalServerError,utils.ErrResponse{
 					Status : "lookup failed",
@@ -241,6 +411,18 @@ func(u *UserController) LoginUser(c *gin.Context) {
 		// normally adding token into the cache db -. layer the flow logic just lil after it
 		cachingTokenErr := u.RedisClient.SetCachedToken(token.UserID,token.Expiry,token.Hash)
 		if cachingTokenErr!= nil {
+			slog.Info("request arrived at the UserHandler",
+						slog.Group("meta",
+							slog.String("station","u.LoginUser")),
+						slog.Group("payload",
+							slog.String("Block","caching token"),
+							slog.String("Status","failed to cache user's token details"),
+							slog.String("Mail",loginRequest.Email),
+						),
+						slog.Group("payload could not proceeded furthur",
+						slog.Time("requested_at",time.Now()),
+					),	
+					)
 			c.AbortWithStatusJSON(http.StatusInternalServerError,utils.CacheErrResponse{
 				Ok: false,
 				Code: http.StatusInternalServerError,
@@ -257,6 +439,18 @@ func(u *UserController) LoginUser(c *gin.Context) {
 		// if already exists - update it
 		err = u.TokenDbModel.UpdateTokenIfExists(newExpiry,userFound.ID,string(hashedTokenByte))
 		if err != nil {
+			slog.Info("request arrived at the UserHandler",
+						slog.Group("meta",
+							slog.String("station","u.LoginUser")),
+						slog.Group("payload",
+							slog.String("Block","update token's expiry on new login"),
+							slog.String("Status","failed to update expiry of exisiting token; might be db failure"),
+							slog.String("Mail",loginRequest.Email),
+						),
+						slog.Group("payload could not proceeded furthur",
+						slog.Time("requested_at",time.Now()),
+					),	
+					)
 			c.AbortWithStatusJSON(http.StatusInternalServerError,utils.ErrResponse{Status: err.Error()})
 			return
 		}
@@ -264,6 +458,18 @@ func(u *UserController) LoginUser(c *gin.Context) {
 		// if not existed , create new and insert into the db
 		err = u.TokenDbModel.InsertToken(token)
 		if err!= nil {
+			slog.Info("request arrived at the UserHandler",
+						slog.Group("meta",
+							slog.String("station","u.LoginUser")),
+						slog.Group("payload",
+							slog.String("Block","login issued token insertion in db"),
+							slog.String("Status","failed to insert token details in the db"),
+							slog.String("Mail",loginRequest.Email),
+						),
+						slog.Group("payload could not proceeded furthur",
+						slog.Time("requested_at",time.Now()),
+					),	
+					)
 			c.AbortWithStatusJSON(http.StatusInternalServerError,utils.ErrResponse{Status: err.Error()})
 			return 
 		}
@@ -271,6 +477,18 @@ func(u *UserController) LoginUser(c *gin.Context) {
 
 	metrics.HttpRequestsTotal.WithLabelValues("/form/login","200").Inc() //& updating metrics
 
+	slog.Info("request arrived at the UserHandler",
+						slog.Group("meta",
+							slog.String("station","u.LoginUser")),
+						slog.Group("payload",
+							slog.String("Block","Final response"),
+							slog.String("Status","login successfull;token issued and stored successfully✅"),
+							slog.String("Mail",loginRequest.Email),
+						),
+						slog.Group("logged_in_at",
+						slog.Time("requested_at",time.Now()),
+					),	
+					)
 	//  send token response
 	c.JSON(http.StatusOK,gin.H{
 		"Ok" : true,
@@ -336,6 +554,18 @@ func(u *UserController) UpdateUserPassword(c *gin.Context) {
 
 	err := c.ShouldBindJSON(&updateRequest) 
 	if err != nil {
+		slog.Info("request arrived at the UserHandler",
+						slog.Group("meta",
+							slog.String("station","u.UpdateUserPassword")),
+						slog.Group("payload",
+							slog.String("Block","Json binding"),
+							slog.String("Status","Invalid request payload"),
+							slog.String("Mail",updateRequest.Email),
+						),
+						slog.Group("payload could not proceeded furthur",
+						slog.Time("requested_at",time.Now()),
+					),	
+					)
 		c.AbortWithStatusJSON(http.StatusBadRequest,utils.ErrResponse{
 			Status: "invalid payload request",
 			Ok: false,
@@ -350,6 +580,18 @@ func(u *UserController) UpdateUserPassword(c *gin.Context) {
 	//  first check if user exists for that mail
 	foundUser,err := u.UserDbModel.GetUserByEmail(updateRequest.Email)
 	if err != nil {
+		slog.Info("request arrived at the UserHandler",
+						slog.Group("meta",
+							slog.String("station","u.UpdateUserPassword")),
+						slog.Group("payload",
+							slog.String("Block","retrieve User from db for updating Pass"),
+							slog.String("Status","failed to check if user exists or not; potential db failure"),
+							slog.String("Mail",updateRequest.Email),
+						),
+						slog.Group("payload could not proceeded furthur",
+						slog.Time("requested_at",time.Now()),
+					),	
+					)
 		c.AbortWithStatusJSON(http.StatusServiceUnavailable,utils.ErrResponse{
 				Status: "failed to check if user exists or not",
 				Ok: false,
@@ -358,6 +600,18 @@ func(u *UserController) UpdateUserPassword(c *gin.Context) {
 	}
 
 	if foundUser == nil {
+		slog.Info("request arrived at the UserHandler",
+						slog.Group("meta",
+							slog.String("station","u.UpdateUserPassword")),
+						slog.Group("payload",
+							slog.String("Block","foundUser check"),
+							slog.String("Status","user not found;db query ran successfully"),
+							slog.String("Mail",updateRequest.Email),
+						),
+						slog.Group("payload could not proceeded furthur",
+						slog.Time("requested_at",time.Now()),
+					),	
+					)
 		c.AbortWithStatusJSON(http.StatusServiceUnavailable,utils.ErrResponse{
 				Status: "user not found",
 				Ok: false,
@@ -372,6 +626,18 @@ func(u *UserController) UpdateUserPassword(c *gin.Context) {
 	// and store in db to update pass
 	updated,err := u.UserDbModel.ResetUserPassword(string(updatedPasswordHash),updateRequest.Email)
 	if err != nil || !updated {
+		slog.Info("request arrived at the UserHandler",
+						slog.Group("meta",
+							slog.String("station","u.UpdateUserPassword")),
+						slog.Group("payload",
+							slog.String("Block","Reset password"),
+							slog.String("Status","failed to reset password; potential db failure"),
+							slog.String("Mail",updateRequest.Email),
+						),
+						slog.Group("payload could not proceeded furthur",
+						slog.Time("requested_at",time.Now()),
+					),	
+					)
 		c.AbortWithStatusJSON(http.StatusInternalServerError,utils.ErrResponse{
 		Status: "failed to reset password",
 		Ok: false,
@@ -381,6 +647,18 @@ func(u *UserController) UpdateUserPassword(c *gin.Context) {
 	// if resetted delete old data stored in cache related to the token of that user
 	err = u.RedisClient.DeleteCachedToken(foundUser.ID)
 	if err != nil  {
+				slog.Info("request arrived at the UserHandler",
+						slog.Group("meta",
+							slog.String("station","u.UpdateUserPassword")),
+						slog.Group("payload",
+							slog.String("Block","Deleted old cached token"),
+							slog.String("Status","failed to reset password; potential caching db failure;failed to wipe cached token"),
+							slog.String("Mail",updateRequest.Email),
+						),
+						slog.Group("payload could not proceeded furthur",
+						slog.Time("requested_at",time.Now()),
+					),	
+					)
 		c.AbortWithStatusJSON(http.StatusInternalServerError,utils.ErrResponse{
 		Status: "failed to wipe cached token",
 		Ok: false,
@@ -390,6 +668,18 @@ func(u *UserController) UpdateUserPassword(c *gin.Context) {
 
 	metrics.HttpRequestsTotal.WithLabelValues("/form/password/reset","200").Inc() //& updating metrics
 
+	slog.Info("request arrived at the UserHandler",
+						slog.Group("meta",
+							slog.String("station","u.UpdateUserPassword")),
+						slog.Group("payload",
+							slog.String("Block","final response"),
+							slog.String("Status","successfully resetted the password;cached newly hashed token ;wiped old token "),
+							slog.String("Mail",updateRequest.Email),
+						),
+						slog.Group("payload could not proceeded furthur",
+						slog.Time("requested_at",time.Now()),
+					),	
+					)
 	// if successfully updated password
 	c.JSON(http.StatusOK,utils.CommentSuccessResponse{
 		Status: "successfully resetted the password",
