@@ -1,3 +1,6 @@
+// ! goal - just change imports so fetch env val based on development,
+// VITE_API_PROD_BASE_URL -> production "same origin.only /api/*"
+// VITE_API__LOCAL_BASE_URL -> local development "http://l.h:8080" <- this where backend is listening and serving from
 const RAW_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 
 export const API_BASE_URL = RAW_API_BASE_URL.replace(/\/$/, "");
