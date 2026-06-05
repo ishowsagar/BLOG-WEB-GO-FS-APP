@@ -1116,6 +1116,20 @@ func(c *Client) MessageWriter() {
 				break writerLoop
 			}
 			slog.Info("WRITER successfully wrote message to WebSocket", "reciever_id", msg.RecieverID)
+			slog.Info("request arrived at the response 'writer'",
+									slog.Group("P2P Notification",
+										slog.String("status","notificatin response successfully written"),
+										slog.String("Via","c.MessageWriter")),
+									slog.Group("payload",
+										slog.String("Broadcast_type","p2p"),
+										slog.Uint64("senderID",uint64(msg.SenderID)),
+										slog.Uint64("recieverID",uint64(msg.SenderID)),
+										slog.String("type",msg.Type),
+									),
+									slog.Group("meta",
+										slog.Time("requested_at",time.Now())),
+										slog.String("status","successfully sent response"),
+									)
 		// todo - must redirect status to client when got info if user was offline or online
 		// checking if case is able to read from BroadcastStatus chan - payload of type statsuPayload consisting data who is active or not
 		case statusPayload := <- c.BroadcastStatus :

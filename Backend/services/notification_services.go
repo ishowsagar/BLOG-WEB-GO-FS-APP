@@ -117,7 +117,9 @@ func(pns *PushNotificationService) StartService() {
 			// Broadcast to connected WebSocket clients
 			payload := &ClientNotifyPayload{
 				SenderID: likedata.LikeData.UserID,
-				RecieverID: likedata.LikeData.UserID, // Broadcast to all
+				SenderName: likedata.LikeData.User.Name,
+				RecieverName: likedata.PostUserDetails.RecieverName,
+				RecieverID: likedata.PostUserDetails.RecieverID,
 				Type: "like_posted",
 				Content: "Someone liked your post",
 				PostID: likedata.LikeData.PostID,
