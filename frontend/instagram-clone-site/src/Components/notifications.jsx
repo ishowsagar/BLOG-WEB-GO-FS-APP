@@ -80,8 +80,8 @@ export default function NotificationComponent() {
 
   //  bug - have to strip out http:// <- this would crash app
   //   fixed - it mounts again only if connStr changes + clean url without 'http' marka
-  const cleanBaseURL = DEVELOPMENT_API_BASE_URL.replace(/^https?:\/\//, ""); // \ \ for espacing and using them nested inside
-  const wsConnURlString = `ws://${cleanBaseURL}/ws/dm?token=${encodeURIComponent(token)}`;
+  // const cleanBaseURL = DEVELOPMENT_API_BASE_URL.replace(/^https?:\/\//, ""); // \ \ for espacing and using them nested inside
+  const wsConnURlString = `ws://${DEVELOPMENT_API_BASE_URL}/ws/dm?token=${encodeURIComponent(token)}`;
 
   //* 1- mouting ws connection instance - handler expects conn on route path -"/api/ws/" , ~/dm for dms which gives pesrsistent messages
   useEffect(() => {
