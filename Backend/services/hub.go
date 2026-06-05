@@ -945,7 +945,7 @@ func(c *Client) MessageReader(db *gorm.DB) {
 		}
 
 		// & if payload has roomID -> publish in the exchange marked with room.ID -> consumer redirects to hub which sends response to the room clients
-		if msg.RoomID != 0 {
+		if msg.RoomID != 0 && msg.Type == "room_msg"{
 			var senderUser models.User
 			if senderResErr := db.Select("id", "username", "name").First(&senderUser, msg.SenderID).Error; senderResErr != nil {
 				if senderResErr == gorm.ErrRecordNotFound {
@@ -980,6 +980,8 @@ func(c *Client) MessageReader(db *gorm.DB) {
 			continue
 		} // ...room end...
 		
+		// ** Otherwise publish with "userID" as routing key and non-room ID payload **//
+		// todo - add explicit type block later
 		// fetch sender and receiver details
 		var senderUser models.User
 		var recieverUser models.User
@@ -1038,22 +1040,23 @@ func(c *Client) MessageReader(db *gorm.DB) {
 			RecieverName: recieverName,
 		}
 
-		// send ack back to the sender so frontend can update UI (delivery/persisted)
-		ack := &ClientNotifyPayload{
-			Type:      "ack",
-			SenderID:  msg.SenderID,
-			RecieverID: msg.RecieverID,
-			Content:   msg.Content,
-			CreatedAt: time.Now(),
-		}
-		// non-blocking ack send but attempt with small timeout to avoid blocking reader
-		go func() {
-			select {
-			case c.Send <- ack:
-			case <-time.After(time.Second):
-				slog.Warn("failed to send ack to sender, sender.Send busy", "sender_id", c.ID)
-			}
-		}()
+		// uncomment for prod ack if used
+		// // send ack back to the sender so frontend can update UI (delivery/persisted)
+		// ack := &ClientNotifyPayload{
+		// 	Type:      "ack",
+		// 	SenderID:  msg.SenderID,
+		// 	RecieverID: msg.RecieverID,
+		// 	Content:   msg.Content,
+		// 	CreatedAt: time.Now(),
+		// }
+		// // non-blocking ack send but attempt with small timeout to avoid blocking reader
+		// go func() {
+		// 	select {
+		// 	case c.Send <- ack:
+		// 	case <-time.After(time.Second):
+		// 		slog.Warn("failed to send ack to sender, sender.Send busy", "sender_id", c.ID)
+		// 	}
+		// }()
 
 		// & mark delivery in "notifications" exchange for this userID when its not nil
 		if msg.RecieverID != 0 && payload.RoomID == 0 {
@@ -1062,11 +1065,25 @@ func(c *Client) MessageReader(db *gorm.DB) {
 			// todo - when successfully published also store in the db - dm message
 			// fix - already storing above
 			// need repo query method + handler for it + much needed table migration and routing ofc 
-		} else {
-			//$ for broadcasting to all except the sender
-			c.Hub.Broadcast <-payload // send payload to broadcast chan of hub which sends to all client's send chan to send response to all
+		} 
+		// else {
+		// 	//$ for broadcasting to all except the sender
+		// 	c.Hub.Broadcast <-payload // send payload to broadcast chan of hub which sends to all client's send chan to send response to all
+		// 	slog.Info("request arrived at 'sent to all' else block in reader",
+		// 							slog.Group("Request information",
+		// 								slog.String("payload_type",msg.Type),
+		// 								slog.String("goal","broadcast' this notificaition to all clients")),
+		// 							slog.Group("payload",
+		// 								slog.String("target","sending payload to the h.Broadcast"),
+		// 								slog.Uint64("senderID",uint64(msg.SenderID)),
+		// 								slog.Uint64("recieverID",uint64(msg.RecieverID)),
+		// 							),
+		// 							slog.Group("meta",
+		// 								slog.Time("requested_at",time.Now()),
+		// 							),
+		// 						)
 			
-		}
+		// }
 
 	}
 }
@@ -1098,7 +1115,7 @@ func(c *Client) MessageWriter() {
 				// bug - you can't break out of infinite loop like that, u would need "label Blocking"
 				break writerLoop
 			}
-			slog.Info("WRITER successfully wrote message to WebSocket", "client_id", c.ID)
+			slog.Info("WRITER successfully wrote message to WebSocket", "reciever_id", msg.RecieverID)
 		// todo - must redirect status to client when got info if user was offline or online
 		// checking if case is able to read from BroadcastStatus chan - payload of type statsuPayload consisting data who is active or not
 		case statusPayload := <- c.BroadcastStatus :

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/ishowsagar/go-blog-web-application/services"
 	"github.com/rabbitmq/amqp091-go"
@@ -197,10 +198,26 @@ func (p *PubSubBroker) StartConsumingDeliveries() error {
 					slog.Error("CONSUMER unable to send to RoomClientsPayloads", "error", "channel full or blocked", "room_id", payload.RoomID)
 				}
 			} else if payload.RecieverID == 0 && payload.RoomID == 0 && payload.Type == "all_notify"  {
+				// incoming payload determines what type of payload is intercepted and routed from here
 				//& each recieved delivery from publisher get decoded here and set to hub for delivery to the client
 				slog.Info("CONSUMER routing to Broadcast (RecieverID=0)")
 				select {
+					// ! type is now very exclusive for the "routing of consumer deliveries"
+					// ! -> turned off else block, so every notification is now routed via publisher
 				case p.hub.Broadcast <- &payload:
+					slog.Info("request arrived at consumer 'routing' hub",
+									slog.Group("Request information",
+										slog.String("payload_type",payload.Type),
+										slog.String("goal","broadcast' this notificaition to all clients")),
+									slog.Group("payload",
+										slog.String("target","sending payload to the h.Broadcast"),
+										slog.Uint64("senderID",uint64(payload.SenderID)),
+										slog.Uint64("recieverID",uint64(payload.RecieverID)),
+									),
+									slog.Group("meta",
+										slog.Time("requested_at",time.Now()),
+									),
+								)
 				default:
 					slog.Error("CONSUMER unable to send to Broadcast", "error", "channel full or blocked")
 				}
@@ -235,9 +252,16 @@ func (p *PubSubBroker) StartConsumingDeliveries() error {
 				// bug - failing here and also need to fix above thing 
 					slog.Info("CONSUMER is unable to send to TargettedClientNotificationTypeOnly","error","channel is either full or blocked")
 				}
-			}  
-
-			slog.Debug("forwarded to hub", "sender_id", payload.SenderID, "receiver_id", payload.RecieverID)
+			} else if payload.Type == "like_posted" && payload.RecieverID != 0 && payload.RoomID == 0 && payload.SenderID != payload.RecieverID{
+				select {
+				case p.hub.TargettedClientNotificationTypeOnly<- &payload :
+					slog.Info("like notification is successfully sent to hub's TargettedClientNotificationTypeOnly chan")
+				default :
+				// bug - failing here and also need to fix above thing 
+					slog.Info("CONSUMER is unable to send to TargettedClientNotificationTypeOnly","error","channel is either full or blocked")
+				}   
+			}
+			slog.Debug("forwarded to hub", "sender_id", payload.SenderID, "receiver_id", payload.RecieverID) 
 		}
 	}()
 

@@ -138,6 +138,7 @@ func(ws *WSController) ServeRealtimeNotification(c *gin.Context) {
 
 	// active client is initialized and stored in  hub's clients []
 	client := &services.Client{
+		// & sets userID to be 'what' extracted from the token
 		ID: userID,
 		WebsocketConnection: wsConn,
 		Hub: ws.hub,
