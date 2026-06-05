@@ -29,3 +29,8 @@
 - I have tested and successfully got the backend logs that handler recieved request,checked origin and upgraded the connection.
 - Once that wsConn is established on clientSide and handler upgraded the conn to store client, payload recieved successfully on the handler and able to do the rest routing logic successfully✅.
 - wsConn.Send interceptor -> sends directly to the handler,when paired with ref.current to store conn, you can invoke send from anywhere to do sending✅.
+
+<!-- ! when your still is still serving old assets, you might encounter these bugs -->
+
+1. your cache is distributed everywhere,so newer builds won't be updated untill it renews
+2. You need to create invalidation -> this wipes cached resources and reloads new builds

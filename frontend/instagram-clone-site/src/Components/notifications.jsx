@@ -37,10 +37,10 @@ export default function NotificationComponent() {
   //   gives us - decodedToken {expiry: '2026-06-04T07:37:50.960431745Z', user_id: 16}
   // console.log("decodedToken", decodedToken);
 
-  // const senderID = decodedToken.user_id;
-  // const recieverID = senderID === 41 ? 16 : 41;
-  // const sender_name = senderID === 16 ? "brave" : "ronaldo";
-  // const reciever_name = recieverID === 16 ? "brave" : "ronaldo";
+  const senderID = decodedToken.user_id;
+  const recieverID = senderID === 41 ? 16 : 41;
+  const sender_name = senderID === 16 ? "brave" : "ronaldo";
+  const reciever_name = recieverID === 16 ? "brave" : "ronaldo";
 
   //** this fixed one thing -> now dynamically setting senderID,not like for every client it do trigger send */
   // bug - must include all fields or else it will fail on consumer routing,
@@ -142,7 +142,7 @@ export default function NotificationComponent() {
       } catch (err) {
         // ! throws err to the err interceptor handler -> works in sync
         console.error(err);
-        setHasWsConnHitErr(true)
+        setHasWsConnHitErr(true);
       }
     };
 
@@ -172,33 +172,33 @@ export default function NotificationComponent() {
 
   // todo - Now its time to implement webSocket connection here
   // todo - render incoming notification data inside these fillers
-  const [posts, setPosts] = useState([
-    {
-      id: "usr_node_01X",
-      name: "Administrator_System",
-      body: "Database migration pipeline completed successfully for production nodes.",
-      reference: "pkt_99210_db",
-      badge: "system normal",
-    },
-    {
-      id: "usr_node_88B",
-      name: "Gateway_Service",
-      body: "WebSocket connection established handshakes with 14 active browser sessions.",
-      reference: "pkt_99211_ws",
-      badge: "live status",
-    },
-  ]);
+  // const [posts, setPosts] = useState([
+  //   {
+  //     id: "usr_node_01X",
+  //     name: "Administrator_System",
+  //     body: "Database migration pipeline completed successfully for production nodes.",
+  //     reference: "pkt_99210_db",
+  //     badge: "system normal",
+  //   },
+  //   {
+  //     id: "usr_node_88B",
+  //     name: "Gateway_Service",
+  //     body: "WebSocket connection established handshakes with 14 active browser sessions.",
+  //     reference: "pkt_99211_ws",
+  //     badge: "live status",
+  //   },
+  // ]);
 
-  const testData = [
-    {
-      senderId: "usr_99_alpha",
-      senderName: "helloworld",
-      content:
-        "Title - Hello, world! Testing out the new real-time WebSocket architecture on denvergram.me.",
-      postId: "pkt_101_init",
-      rightElement: "Group Chat",
-    },
-  ];
+  // const testData = [
+  //   {
+  //     senderId: "usr_99_alpha",
+  //     senderName: "helloworld",
+  //     content:
+  //       "Title - Hello, world! Testing out the new real-time WebSocket architecture on denvergram.me.",
+  //     postId: "pkt_101_init",
+  //     rightElement: "Group Chat",
+  //   },
+  // ];
 
   // handles on-click sending payload via ref which -> stores wsConn Instance
   function handleSendNotificationPayload(notificationPayload) {
@@ -206,12 +206,13 @@ export default function NotificationComponent() {
     console.log("sent payload to the handler", notificationPayload);
   }
 
-
   // fallback ui
   if (!token || token === "") {
-    return <div style={{ color: "white", padding: "20px" }}>
-      <h1>login expired or invalid token. Please login again.</h1>
-       </div>;
+    return (
+      <div style={{ color: "white", padding: "20px" }}>
+        <h1>login expired or invalid token. Please login again.</h1>
+      </div>
+    );
   }
 
   return (
