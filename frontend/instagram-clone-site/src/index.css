@@ -3259,3 +3259,122 @@
 .messages-send-button:disabled {
   opacity: 0.72;
 }
+
+
+/* * notification  */
+/* Container card with asymmetrical borders */
+.dashboard-card {
+  width: 100%;
+  max-width: 1000px;
+  margin: 24px auto;
+  background-color: #00173d;
+  border: 2px solid #22d3ee; /* Neon cyan border */
+  border-top-left-radius: 2rem;
+  border-bottom-right-radius: 2rem;
+  padding: 24px;
+  color: #ffffff;
+  box-shadow: 0 10px 15px -3px rgba(6, 182, 212, 0.05);
+  box-sizing: border-box;
+  transition: border-color 0.2s ease;
+}
+
+.dashboard-card:hover {
+  border-color: #67e8f9;
+}
+
+/* Layout wrapper to handle horizontal splitting */
+.card-layout {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+/* Left content column stacking fields vertically */
+.card-left-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0; /* Prevents text overflow breaking the grid */
+}
+
+.card-label-id {
+  font-size: 12px;
+  font-family: monospace;
+  letter-spacing: 0.1em;
+  color: #9ca3af;
+  text-transform: uppercase;
+}
+
+.card-title-name {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
+.card-body-content {
+  margin: 8px 0 0 0;
+  font-size: 14px;
+  color: #d1d5db;
+  line-height: 1.6;
+}
+
+.card-label-post {
+  margin-top: 16px;
+  font-size: 12px;
+  font-family: monospace;
+  color: #22d3ee;
+  background-color: rgba(6, 78, 116, 0.4);
+  border: 1px solid rgba(21, 94, 117, 0.6);
+  padding: 2px 8px;
+  border-radius: 4px;
+  width: max-content;
+}
+
+/* Right element sitting high up on the opposite side */
+.card-right-element {
+  flex-shrink: 0; /* Ensures the right div never squeezes or shrinks */
+  font-size: 12px;
+  font-family: monospace;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #67e8f9;
+  border: 1px solid rgba(6, 182, 212, 0.3);
+  background-color: rgba(6, 78, 116, 0.6);
+  padding: 4px 12px;
+  border-top-right-radius: 6px;
+  border-bottom-left-radius: 12px;
+}
+
+
+.dashboard-feed-viewport {
+  width: 100%;
+  min-height: 100vh;
+  background-color: #00173d; /* Deep core dark blue background background setup */
+  padding: 40px 20px;
+  box-sizing: border-box;
+}
+
+.dashboard-feed-wrapper {
+  width: 100%;
+  max-width: 850px; /* Constrains column widths gracefully */
+  margin: 0 auto;  /* Centers layout perfectly inside layout views */
+  display: flex;
+  flex-direction: column;
+}
+
+.feed-empty-state {
+  text-align: center;
+  color: #64748b;
+  font-family: sans-serif;
+  margin-top: 60px;
+  font-size: 16px;
+}
+
+.ws_hero_text {
+  color: white;
+  font-size: large;
+  font-weight: bold;
+  font-family: 'Times New Roman', Times, serif;
+}
