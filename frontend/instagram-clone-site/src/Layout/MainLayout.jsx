@@ -313,8 +313,8 @@ export default function MainLayout() {
 
   const batchReq = {
     url: cursor
-      ? apiUrl(`/api/feed/batch?limit=4&nextCursor=${cursor}`)
-      : apiUrl("/api/feed/batch?limit=4"),
+      ? `/api/feed/batch?limit=4&nextCursor=${cursor}`
+      : "/api/feed/batch?limit=4",
 
     // uncomment above for prod,below for local
     //   `${LOCAL_DEVELOPMENT_API_BASE_URL}/api/feed/batch?limit=4&nextCursor=${cursor}`
