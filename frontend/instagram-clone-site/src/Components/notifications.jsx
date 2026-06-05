@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { jwtDecode } from "jwt-decode";
 import DashboardCard from "./notification_dashboard_card";
+import { wsUrl } from "../Services/apiConfig";
 
 // ** PRODUCTION TODOS **//
 // 1. replace wsConnector handler url to use production api url
@@ -81,8 +82,7 @@ export default function NotificationComponent() {
   //  bug - have to strip out http:// <- this would crash app
   //   fixed - it mounts again only if connStr changes + clean url without 'http' marka
   // const cleanBaseURL = DEVELOPMENT_API_BASE_URL.replace(/^https?:\/\//, ""); // \ \ for espacing and using them nested inside
-  const wsConnURlString = `ws://${DEVELOPMENT_API_BASE_URL}/ws/dm?token=${encodeURIComponent(token)}`;
-
+  const wsConnURlString = `${wsUrl("/api/ws")}?token=${encodeURIComponent(token)}`;
   //* 1- mouting ws connection instance - handler expects conn on route path -"/api/ws/" , ~/dm for dms which gives pesrsistent messages
   useEffect(() => {
     // since its not a http request, i can't send token in header for token verification, would have to send via encoded url utility in the queryParam
