@@ -12,17 +12,18 @@ import { wsUrl } from "../Services/apiConfig";
 
 // ** Only for local development and testing
 // uncomment prod apiUrl to use that, and uncomment this to remove this
-const DEVELOPMENT_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-// ** end //
 const token = localStorage.getItem("token");
+
 export default function NotificationComponent() {
-  // & States
   const [hasWsConnEstablished, setHasWsConnEstablished] = useState(false); // conditional for tracking wsConn when opened/closed
   const [hasWsConnHitErr, setHasWsConnHitErr] = useState(false); // conditional for tracking wsConn when closed abruptly or way it closed the conn
   const [writerResponse, SetWriterResponse] = useState([]); // for setting data in the arr when recieved from the client's writer's response
   const [notificationOfTypeDM, setNotificationOfTypeDM] = useState(false); // for conditionally rendering div if this becomes true
 
   const wsConnHolderRef = useRef(null); //* would be an holder for "wsConn"
+  // & States
+  const DEVELOPMENT_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  // ** end //
 
   if (token === "") {
     console.log("login expired or token not found ");
@@ -34,11 +35,12 @@ export default function NotificationComponent() {
   //   testing - explicityly sending dynamic userID for reader's payload check
   const decodedToken = jwtDecode(token);
   //   gives us - decodedToken {expiry: '2026-06-04T07:37:50.960431745Z', user_id: 16}
-  console.log("decodedToken", decodedToken);
-  const senderID = decodedToken.user_id;
-  const recieverID = senderID === 41 ? 16 : 41;
-  const sender_name = senderID === 16 ? "brave" : "ronaldo";
-  const reciever_name = recieverID === 16 ? "brave" : "ronaldo";
+  // console.log("decodedToken", decodedToken);
+
+  // const senderID = decodedToken.user_id;
+  // const recieverID = senderID === 41 ? 16 : 41;
+  // const sender_name = senderID === 16 ? "brave" : "ronaldo";
+  // const reciever_name = recieverID === 16 ? "brave" : "ronaldo";
 
   //** this fixed one thing -> now dynamically setting senderID,not like for every client it do trigger send */
   // bug - must include all fields or else it will fail on consumer routing,
@@ -82,11 +84,14 @@ export default function NotificationComponent() {
   //  bug - have to strip out http:// <- this would crash app
   //   fixed - it mounts again only if connStr changes + clean url without 'http' marka
   // const cleanBaseURL = DEVELOPMENT_API_BASE_URL.replace(/^https?:\/\//, ""); // \ \ for espacing and using them nested inside
-  const wsConnURlString = `wss://${window.location.host}/api/ws?token=${encodeURIComponent(token)}`;
+  const wsConnURlString = token
+    ? `wss://${window.location.host}/api/ws?token=${encodeURIComponent(token)}`
+    : null;
   console.log(wsConnURlString);
   //* 1- mouting ws connection instance - handler expects conn on route path -"/api/ws/" , ~/dm for dms which gives pesrsistent messages
   useEffect(() => {
     // since its not a http request, i can't send token in header for token verification, would have to send via encoded url utility in the queryParam
+    if (!wsConnURlString) return;
     const webSocketConn = new WebSocket(wsConnURlString);
     wsConnHolderRef.current = webSocketConn; //! assigning and stored connection in 'ref's current' state
 
@@ -136,7 +141,8 @@ export default function NotificationComponent() {
         }
       } catch (err) {
         // ! throws err to the err interceptor handler -> works in sync
-        console.log(err);
+        console.error(err);
+        setHasWsConnHitErr(true)
       }
     };
 
@@ -200,19 +206,13 @@ export default function NotificationComponent() {
     console.log("sent payload to the handler", notificationPayload);
   }
 
-  // {
-  //   hasWsConnEstablished && (
-  //     <div style={{ color: "white", fontSize: "47px", marginTop: "20px" }}>
-  //       {writerResponse.length > 0 ? (
-  //         <p style={{ color: "red", fontWeight: "900" }}>
-  //
-  //         </p>
-  //       ) : (
-  //         <p>No new notification...</p>
-  //       )}
-  //     </div>
-  //   );
-  // }
+
+  // fallback ui
+  if (!token || token === "") {
+    return <div style={{ color: "white", padding: "20px" }}>
+      <h1>login expired or invalid token. Please login again.</h1>
+       </div>;
+  }
 
   return (
     <div className="dashboard-feed-viewport">
