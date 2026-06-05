@@ -8,6 +8,11 @@ import { useWebSocket } from "../hooks/useWebSocket";
 import sendIcon from "../assets/icons/send.png";
 import { apiUrl } from "../Services/apiConfig";
 
+// ** Only for local development and testing
+// uncomment prod apiUrl to use that, and uncomment this to remove this
+const LOCAL_DEVELOPMENT_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+// ** end //
+
 const postDataContext = createContext();
 export const RealtimeContext = createContext(null);
 
@@ -308,8 +313,12 @@ export default function MainLayout() {
 
   const batchReq = {
     url: cursor
-      ? apiUrl(`/api/feed/batch?limit=4&nextCursor=${cursor}`)
-      : apiUrl("/api/feed/batch?limit=4"),
+      ? // ? apiUrl(`/api/feed/batch?limit=4&nextCursor=${cursor}`)
+        // : apiUrl("/api/feed/batch?limit=4"),
+
+        // uncomment above for prod,below for local
+        `${LOCAL_DEVELOPMENT_API_BASE_URL}/api/feed/batch?limit=4&nextCursor=${cursor}`
+      : `${LOCAL_DEVELOPMENT_API_BASE_URL}/api/feed/batch?limit=4`,
     header: { Authorization: token },
     method: "GET",
   };

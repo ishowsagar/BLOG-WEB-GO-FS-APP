@@ -131,3 +131,11 @@ IDEA - instead of deploying here and manually doing the code pushing, by using g
 **next Big implementation**
 
 - add full structured logging throughout the project for robust logging and metrics
+
+<!-- ! when new service is created with vol, it created in empty vol as we are in isolated environment -->
+
+- You either have to fresh start or dumo sql data into container
+
+dumping method
+Run this to dump data into container
+`docker exec -i running_postgres_container_name psql -U user_name -d db_name < sql_dump.sql`

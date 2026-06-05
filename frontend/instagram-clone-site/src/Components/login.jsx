@@ -9,7 +9,13 @@ import {
 import { useState } from "react";
 import { apiUrl } from "../Services/apiConfig";
 
+// ** Only for local development and testing
+// uncomment prod apiUrl to use that, and uncomment this to remove this
+const LOCAL_DEVELOPMENT_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+// ** end //
+
 export function Login() {
+  console.log("localAPIBaseURL", LOCAL_DEVELOPMENT_API_BASE_URL);
   //  form intial empty values
   const initialFormData = {
     email: "",
@@ -55,9 +61,11 @@ export function Login() {
 
     const payload = {
       method: "POST",
-      url: apiUrl("/form/login"),
+      // url: apiUrl("/form/login"), //uncomment for prod
+      url: `${LOCAL_DEVELOPMENT_API_BASE_URL}/form/login`,
     };
 
+    console.log("request url :", payload.url);
     localStorage.removeItem("token");
 
     try {
