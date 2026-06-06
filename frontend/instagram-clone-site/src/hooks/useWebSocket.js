@@ -54,6 +54,7 @@ export const useWebSocket = (token, endpointPath = "/api/ws") => {
               }
             });
           } catch (e) {
+
             console.error("Failed to parse notification:", e);
           }
         };
