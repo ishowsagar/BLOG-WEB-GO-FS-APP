@@ -40,16 +40,17 @@ export const useWebSocket = (token, endpointPath = "/api/ws") => {
 
         //#3 request-response method for ws conn on frontend
         ws.onmessage = (event) => {
-          // event is type of data being passed between ws, which is being expected by backend
           try {
             const notification = JSON.parse(event.data);
-            console.log("📩 Notification received:", notification);
+            console.log(`📩 Notification received on endpoint ${endpointPath}:`, notification);
+            console.log(`📊 Number of registered handlers for ${endpointPath}:`, messageHandlersRef.current.length);
             // Call all registered handlers
-            messageHandlersRef.current.forEach((handler) => {
+            messageHandlersRef.current.forEach((handler, i) => {
               try {
+                console.log(`  Executing handler #${i} for ${endpointPath}`);
                 handler(notification);
               } catch (e) {
-                console.error("Handler error:", e);
+                console.error(`Handler #${i} error:`, e);
               }
             });
           } catch (e) {
