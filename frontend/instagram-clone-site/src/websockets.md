@@ -23,10 +23,11 @@
 
 <!-- ! pitfalls / failures -->
 
+1. Load connection in global state,share that everywhere instead of comp based ws connection which does unexpected things
+
 <!-- ** SUCCESS ** -->
 
 - Finally, i have implemented and learned the "gotcha" behind how ws connection is established and how data is bidirectionally exchanged
 - I have tested and successfully got the backend logs that handler recieved request,checked origin and upgraded the connection.
 - Once that wsConn is established on clientSide and handler upgraded the conn to store client, payload recieved successfully on the handler and able to do the rest routing logic successfully✅.
 - wsConn.Send interceptor -> sends directly to the handler,when paired with ref.current to store conn, you can invoke send from anywhere to do sending✅.
-

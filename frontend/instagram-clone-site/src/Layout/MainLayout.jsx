@@ -103,8 +103,19 @@ export default function MainLayout() {
         }
       }
 
-      setNotification(incomingNotification);
-      setGlobalNotifications((prev) => [...prev, incomingNotification]);
+      // only types for storing incoming notitifications
+      const allowedNotificationTypes = [
+        "like_posted",
+        "comment_posted",
+        "follow_posted",
+        "dm"
+      ];
+
+
+      if (incomingNotification && allowedNotificationTypes.includes(incomingNotification.type)) {
+        // only add to notifs if satisfies condition check
+        setGlobalNotifications((prev) => [...prev, incomingNotification]);
+      }
 
       const notificationType = String(
         incomingNotification?.type || "",
@@ -515,8 +526,8 @@ export default function MainLayout() {
                           <div
                             key={`${message.direction}-${index}-${message.content}`}
                             className={`inbox-msg-bubble ${message.direction === "outgoing"
-                                ? "is-outgoing is-dm-outgoing"
-                                : "is-incoming"
+                              ? "is-outgoing is-dm-outgoing"
+                              : "is-incoming"
                               }`}
                           >
                             <div className="inbox-msg-sender">
@@ -619,8 +630,8 @@ export default function MainLayout() {
                         <div
                           key={`${message.room_id}-${message.direction}-${index}-${message.content}`}
                           className={`inbox-msg-bubble ${message.direction === "outgoing"
-                              ? "is-outgoing is-room-outgoing"
-                              : "is-incoming"
+                            ? "is-outgoing is-room-outgoing"
+                            : "is-incoming"
                             }`}
                         >
                           <div className="inbox-msg-sender">
