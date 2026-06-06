@@ -62,7 +62,7 @@ export function Login() {
     const payload = {
       method: "POST",
       // url: apiUrl("/form/login"), //uncomment for prod
-      url: `${LOCAL_DEVELOPMENT_API_BASE_URL}/form/login`,
+      url: `/form/login`,
     };
 
     console.log("request url :", payload.url);

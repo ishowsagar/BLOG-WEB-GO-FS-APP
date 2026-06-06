@@ -228,7 +228,9 @@ export default function NotificationComponent() {
         </div>
       )}
       <p className="ws_hero_text">
-        {hasWsConnEstablished ? `client online🟢` : "client offline🔴"}
+        {hasWsConnEstablished
+          ? `client online🟢`
+          : "connecting to the notification service..."}
       </p>
       {/* <button
         disabled={!hasWsConnEstablished}
