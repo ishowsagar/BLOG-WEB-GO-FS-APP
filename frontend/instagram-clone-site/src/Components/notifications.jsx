@@ -33,7 +33,7 @@ export default function NotificationComponent() {
   useEffect(() => {
     console.log("notification component is mounted.")
 
-    const wsConnUrl = `${wsUrl("/api/ws")}token=${encodeURIComponent(token)}`
+    const wsConnUrl = `${wsUrl("/api/ws")}?token=${encodeURIComponent(token)}`
     const ws = new WebSocket(wsConnUrl)
 
     //& loading all four interceptors
