@@ -657,8 +657,8 @@ export default function MainLayout() {
                               {message.direction === "outgoing"
                                 ? "You"
                                 : message.sender_name ||
-                                  message.senderName ||
-                                  `User ${message.sender_id}`}
+                                message.senderName ||
+                                `User ${message.sender_id}`}
                             </div>
                             <div>{message.content}</div>
                           </div>
@@ -877,8 +877,8 @@ export default function MainLayout() {
                             {message.direction === "outgoing"
                               ? "You"
                               : message.sender_name ||
-                                message.senderName ||
-                                `User ${message.sender_id}`}
+                              message.senderName ||
+                              `User ${message.sender_id}`}
                           </div>
                           <div>
                             {message.content ||
@@ -1004,7 +1004,7 @@ export default function MainLayout() {
                 <Sidebar />
               </div>
               <main>
-                <Outlet />
+                <Outlet context={{ subscribeNotifications, sendNotifications }} />
               </main>
             </div>
 

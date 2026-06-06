@@ -1,8 +1,8 @@
 import { useContext, useEffect, useRef, useState } from "react";
+import { useOutletContext } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import DashboardCard from "./notification_dashboard_card";
 import { wsUrl } from "../Services/apiConfig";
-import { RealtimeContext } from "../Layout/MainLayout";
 
 // ** PRODUCTION TODOS **//
 // 1. replace wsConnector handler url to use production api url
@@ -17,12 +17,12 @@ const token = localStorage.getItem("token");
 
 export default function NotificationComponent() {
 
-  const { subscribeNotifications } = useContext(RealtimeContext)
 
   const [hasWsConnEstablished, setHasWsConnEstablished] = useState(false); // conditional for tracking wsConn when opened/closed
   const [hasWsConnHitErr, setHasWsConnHitErr] = useState(false); // conditional for tracking wsConn when closed abruptly or way it closed the conn
   const [writerResponse, SetWriterResponse] = useState([]); // for setting data in the arr when recieved from the client's writer's response
   const [notificationOfTypeDM, setNotificationOfTypeDM] = useState(false); // for conditionally rendering div if this becomes true
+  const { subscribeNotifications, sendNotifications } = useOutletContext();
 
   const wsConnHolderRef = useRef(null); //* would be an holder for "wsConn"
   // & States
@@ -43,8 +43,6 @@ export default function NotificationComponent() {
 
   const senderID = decodedToken.user_id;
   const recieverID = senderID === 41 ? 16 : 41;
-  const sender_name = senderID === 16 ? "brave" : "ronaldo";
-  const reciever_name = recieverID === 16 ? "brave" : "ronaldo";
 
 
 
@@ -69,16 +67,9 @@ export default function NotificationComponent() {
         );
         setNotificationOfTypeDM(true); //* setting it true that we recieved tyoe payloa
       }
-      return () => unsubscribe()
     })
+    return () => unsubscribe()
   }, [subscribeNotifications])
-
-
-  // handles on-click sending payload via ref which -> stores wsConn Instance
-  function handleSendNotificationPayload(notificationPayload) {
-    wsConnHolderRef.current.send(notificationPayload); // calling sender via ref.current holder
-    console.log("sent payload to the handler", notificationPayload);
-  }
 
   // fallback ui
   if (!token || token === "") {
@@ -110,20 +101,6 @@ export default function NotificationComponent() {
           ? `client online🟢`
           : "connecting to the notification service..."}
       </p>
-      {/* <button
-        disabled={!hasWsConnEstablished}
-        onClick={() => handleSendNotificationPayload(jsonNotificationPayload)}
-        style={{
-          padding: "4px 6px",
-          fontWeight: "bolder",
-          fontSize: "17px",
-          cursor: "pointer",
-          borderRadius: "7px",
-          boxShadow: "skyblue -3px 3.8px",
-        }}
-      >
-        Send Notification
-      </button> */}
       {/* only conditionally render notification if they are of type 'dm' */}
       {notificationOfTypeDM && (
         <div className="dashboard-feed-wrapper">
