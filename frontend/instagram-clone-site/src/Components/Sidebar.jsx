@@ -56,7 +56,7 @@ export default function Sidebar({ globalNotification }) {
             <Link className="sidebar_link" to="/notify">
               Notification
               {/* conditonally rendering the badge number */}
-              {globalNotification.length > 0 && <span className="sidebar-notification-badge">
+              {globalNotification?.length > 0 && <span className="sidebar-notification-badge">
                 {globalNotification.length}
               </span>}
             </Link>
