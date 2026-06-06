@@ -126,17 +126,42 @@ func(l *LikeController) UpdateLike(c *gin.Context) {
 			})
 			return
 		}
-		slog.Error("error",err)
+		slog.Error("error","err",err)
 			c.AbortWithStatusJSON(500,utils.ErrResponse{
 				Status: err.Error(),
 			})
 			return
 	}
-	
+
+
+	// getting user's name
+	likerName,err := l.LikeDbModel.GetUserDetailsByUserID(updatedLikes.UserID)
+	if err != nil {
+		errMsg := "failed to get post liker user details"
+		slog.Error(errMsg,"error",err)
+		c.AbortWithStatusJSON(http.StatusBadRequest,utils.ErrResponse{
+			Ok: false,
+			Status: errMsg,
+		})
+		return
+	} 
+
+	if likerName == "" {
+		errMsg := "user not found"
+		slog.Error(errMsg,"error",err)
+		c.AbortWithStatusJSON(http.StatusBadRequest,utils.ErrResponse{
+			Ok: false,
+			Status: errMsg,
+		})
+		return
+	}
+
+	// if got liker name,attach it with this data
 	postDeets := models.PostDetailedNotification{
 		PostUserDetails: postDetails,
 		LikeData: updatedLikes,
 	}
+	postDeets.PostUserDetails.LikerName = likerName // attaching name to it <- no need to change anything else
 
 	l.PushNotificationService.NotifiesLikePostedOnPost(&postDeets)
 
@@ -170,7 +195,7 @@ func(l *LikeController) UpdateLike(c *gin.Context) {
 			})
 			return
 		}
-		slog.Error("error",err)
+		slog.Error("error","err",err)
 			c.AbortWithStatusJSON(500,utils.ErrResponse{
 				Status: err.Error(),
 			})

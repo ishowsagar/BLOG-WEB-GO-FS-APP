@@ -157,6 +157,7 @@ type ProfilePictureStorage struct {
 type PostUserDetails struct {
 	PostID uint `json:"post_id"`
 	LikesCount uint `json:"likes_count"`
+	LikerName string `json:"liker_name"`
 	RecieverID uint `json:"reciever_id"`
 	RecieverName string `json:"reciever_name"`
 }

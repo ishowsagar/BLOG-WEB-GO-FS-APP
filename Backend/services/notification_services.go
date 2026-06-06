@@ -115,9 +115,11 @@ func(pns *PushNotificationService) StartService() {
 			slog.Info("someone liked your post","postID",likedata.LikeData.PostID,"userID",likedata.LikeData.UserID)
 			slog.Info("notification recieved ✅","liked By UserID",likedata.LikeData.UserID, "On PostID",likedata.LikeData.PostID,"Post like-Count",likedata.LikeData.LikeCount)
 			// Broadcast to connected WebSocket clients
+		
+			// todo - send correct sender name
 			payload := &ClientNotifyPayload{
 				SenderID: likedata.LikeData.UserID,
-				SenderName: likedata.LikeData.User.Name,
+				SenderName: likedata.PostUserDetails.LikerName,
 				RecieverName: likedata.PostUserDetails.RecieverName,
 				RecieverID: likedata.PostUserDetails.RecieverID,
 				Type: "like_posted",

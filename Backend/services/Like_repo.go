@@ -178,3 +178,39 @@ func(l *LikeDBModel) GetUserDetailsByPostID(postID uint) (*models.PostUserDetail
 	return &res,nil
 
 }
+
+
+
+// fetch name of user by giving its id
+func(l *LikeDBModel) GetUserDetailsByUserID(userID uint)(string,error) {
+	ctx,timeout := context.WithTimeout(context.Background(),utils.DbTimeoutDuration)
+	defer timeout()
+
+	// u can also use transaction tx single atomic when needed
+
+	query := `
+		Select
+			name
+		from
+			users
+		where
+			id=$1
+	`
+
+	resRow:= l.DB.QueryRowContext(ctx,query,userID) // providing user id to fetch data of that entry
+	
+	var name string
+	err := resRow.Scan(
+		&name,
+	)
+	
+	if err!= nil {
+		// there was err but query was successfull,but no result,nil struct literal return
+		if err == sql.ErrNoRows {
+			return "",err
+		}
+		return "",err
+	}
+
+	return name,nil
+}

@@ -121,7 +121,6 @@ func(u *UserDBModel) GetUserByEmail(email string) (*models.User,error) {
 
 }
 
-
 // method that updates already existed user password - need newhash to be stored
 func(u *UserDBModel) ResetUserPassword(newPassHash ,email string) (bool,error){
 	ctx,timeout := context.WithTimeout(context.Background(),utils.DbTimeoutDuration)
@@ -142,6 +141,8 @@ func(u *UserDBModel) ResetUserPassword(newPassHash ,email string) (bool,error){
 	
 	return true,err
 }
+
+
 
 
 func(u *UserDBModel) GetUserByUserID(userID uint)(*models.User,error) {

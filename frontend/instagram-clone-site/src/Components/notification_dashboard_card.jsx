@@ -7,7 +7,7 @@ export default function DashboardCard({
   recieverID,
   recieverName,
   type,
-  postID
+  postID,
 }) {
   return (
     <div className="dashboard-card">
@@ -17,13 +17,11 @@ export default function DashboardCard({
           <span className="card-label-id">{`senderID : ${senderID}`}</span>
           <h3 className="card-title-name">{`SenderName : ${senderName}`}</h3>
           <p className="card-body-content">{`${content}`}</p>
-          <span className="card-label-post">
-            {`type : ${type}`}
-          </span>
+          <span className="card-label-post">{`type : ${type}`}</span>
         </div>
 
         {/* RIGHT SIDE: Action or position marker */}
-        <div className="card-right-element">{`${recieverName}`}</div>
+        <div className="card-right-element">{`Me : ${recieverName}`}</div>
         <div className="card-right-element">{`Post_ID : ${postID}`}</div>
       </div>
     </div>

@@ -737,6 +737,7 @@ func(h *Hub) RunService() {
 										slog.String("Via","h.TargettedClientNotificationTypeOnly")),
 									slog.Group("payload",
 										slog.String("Broadcast_type","p2p"),
+										slog.String("liker_name",notifyPayload.SenderName),
 										slog.Uint64("senderID",uint64(notifyPayload.SenderID)),
 										slog.Uint64("recieverID",uint64(notifyPayload.SenderID)),
 										slog.String("type",notifyPayload.Type),
