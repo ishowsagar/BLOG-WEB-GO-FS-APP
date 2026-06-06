@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import DashboardCard from "./notification_dashboard_card";
-
+import { wsUrl } from "../Services/apiConfig";
 // ** PRODUCTION TODOS **//
 // 1. replace wsConnector handler url to use production api url
 // 2. instead of manual sends,just let notifications come here from pns routed only
@@ -33,7 +33,8 @@ export default function NotificationComponent() {
   useEffect(() => {
     console.log("notification component is mounted.")
 
-    const ws = new WebSocket("wss://denvergram.me/api/ws?token=" + encodeURIComponent(token))
+    const wsConnUrl = `${wsUrl("/api/ws")}token=${encodeURIComponent(token)}`
+    const ws = new WebSocket(wsConnUrl)
 
     //& loading all four interceptors
     ws.onopen = () => {
