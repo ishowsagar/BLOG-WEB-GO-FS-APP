@@ -115,29 +115,25 @@ export default function NotificationComponent() {
       // note - if you try to log recievedRes/generalRes directly accessing its field -> undefined -> unparsed stringified data could not be retrieved without parsing
       console.log("payload intercepted");
       try {
-        if (recievedPayload.data) {
-          const parsedPayload = JSON.parse(recievedPayload.data);
+        const parsedPayload = JSON.parse(recievedPayload.data);
 
-          // since its parsed,we can put field checks on it, so only stores payload of type "dm"
-          if (
-            // todo - intercept p2p actual 'notification' , of these types
-            // todo - 1. must send exclusive payloads and render correctly in the card
-            parsedPayload.type === "like_posted" ||
-            parsedPayload.type === "follow_posted" ||
-            parsedPayload.type === "comment_posted" ||
-            parsedPayload.type === "dm"
-          ) {
-            SetWriterResponse((prevArrData) => [...prevArrData, parsedPayload]); // saving 'data' in state that writer would have responded with
-            console.log(
-              "intercepted incoming payload of type -",
-              parsedPayload.type,
-              "payload -",
-              parsedPayload,
-            );
-            setNotificationOfTypeDM(true); //* setting it true that we recieved tyoe payloa
-          }
-        } else {
-          throw new Error("only supported payload of type 'dm' ");
+        // since its parsed,we can put field checks on it, so only stores payload of type "dm"
+        if (
+          // todo - intercept p2p actual 'notification' , of these types
+          // todo - 1. must send exclusive payloads and render correctly in the card
+          parsedPayload.type === "like_posted" ||
+          parsedPayload.type === "follow_posted" ||
+          parsedPayload.type === "comment_posted" ||
+          parsedPayload.type === "dm"
+        ) {
+          SetWriterResponse((prevArrData) => [...prevArrData, parsedPayload]); // saving 'data' in state that writer would have responded with
+          console.log(
+            "intercepted incoming payload of type -",
+            parsedPayload.type,
+            "payload -",
+            parsedPayload,
+          );
+          setNotificationOfTypeDM(true); //* setting it true that we recieved tyoe payloa
         }
       } catch (err) {
         // ! throws err to the err interceptor handler -> works in sync
