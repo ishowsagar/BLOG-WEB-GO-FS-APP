@@ -33,7 +33,7 @@ export default function NotificationComponent() {
   useEffect(() => {
     console.log("notification component is mounted.")
 
-    const ws = new WebSocket("wss://denvergram.me/ws/notifications?token=" + encodeURIComponent(token))
+    const ws = new WebSocket("wss://denvergram.me/api/ws?token=" + encodeURIComponent(token))
 
     //& loading all four interceptors
     ws.onopen = () => {
