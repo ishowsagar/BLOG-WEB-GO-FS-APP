@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import DashboardCard from "./notification_dashboard_card";
 import { wsUrl } from "../Services/apiConfig";
+import { useOutletContext } from "react-router-dom"
 // ** PRODUCTION TODOS **//
 // 1. replace wsConnector handler url to use production api url
 // 2. instead of manual sends,just let notifications come here from pns routed only
@@ -19,6 +20,9 @@ export default function NotificationComponent() {
   const [hasWsConnHitErr, setHasWsConnHitErr] = useState(false); // conditional for tracking wsConn when closed abruptly or way it closed the conn
   const [writerResponse, SetWriterResponse] = useState([]); // for setting data in the arr when recieved from the client's writer's response
   const [notificationOfTypeDM, setNotificationOfTypeDM] = useState(false); // for conditionally rendering div if this becomes true
+
+  // fetching shared state from outlet context
+  const { globalNotification, setGlobalNotifications } = useOutletContext();
 
   // const wsConnHolderRef = useRef(null); //* would be an holder for "wsConn"
   // & States
@@ -69,6 +73,7 @@ export default function NotificationComponent() {
         // if succesfully parsed data into js object type of format and data type is matched
         setHasWsConnEstablished(true)
         SetWriterResponse((prevDataArr) => [...prevDataArr, notification_event_payload])
+        setGlobalNotifications((prev) => [...prev, notification_event_payload])
       } catch (err) {
         setHasWsConnHitErr(true)
 

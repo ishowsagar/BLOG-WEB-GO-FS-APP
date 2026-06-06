@@ -10,7 +10,7 @@ import UserIcon from "../assets/icons/user.png";
 
 import { Link } from "react-router-dom";
 
-export default function Sidebar() {
+export default function Sidebar({ globalNotification }) {
   return (
     <aside>
       <nav className="sidebar_nav">
@@ -55,6 +55,10 @@ export default function Sidebar() {
             <img className="sidebar_icon" src={NotificationsIcon} />
             <Link className="sidebar_link" to="/notify">
               Notification
+              {/* conditonally rendering the badge number */}
+              {globalNotification.length > 0 && <span className="sidebar-notification-badge">
+                {globalNotification.length}
+              </span>}
             </Link>
           </li>
           <li>
