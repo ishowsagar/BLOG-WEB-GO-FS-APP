@@ -698,95 +698,101 @@ func (h *Hub) RunService() {
 					slog.Time("requested_at", time.Now())),
 				slog.String("status", "recieved notification payload successfully,yet to dispatch⏳"),
 			)
-			var targettedActiveClient *Client
-			// ! Optimization issues -> had to check all client from active clients []
-			// fix - just check if that specific client is in the [] of active clients
-			targettedActiveClient, exists := h.ClientStore[notifyPayload.RecieverID] //* checking if targtted reciever client is active or not
-			if !exists || targettedActiveClient == nil {
+			// Find all active client connections matching the RecieverID
+			var targettedActiveClients []*Client
+			for client := range h.Clients {
+				if client.ID == notifyPayload.RecieverID {
+					targettedActiveClients = append(targettedActiveClients, client)
+				}
+			}
+
+			if len(targettedActiveClients) == 0 {
 				slog.Warn("could not send notification to the reciever", "error", "client is currently offline❌")
 				// ! important - don't put return as that would crash the application
 				continue // just break out of this nested loop and keep running hub
 			}
 
-			//test - since only type makes the diffrence in the payload , strict type check is must so only send that type of notification
-			switch notifyPayload.Type {
-			// case handeling for type check
-			// testing with switch statement cause select checks for the channel
-			case "like_posted":
-				slog.Info("successfully recieved payload of type Like")
-				// ticker sends when done ticked
-				targettedActiveClient.Send <- notifyPayload
-				slog.Info("successfully sent notification payload to the targetted client")
-				slog.Info("request arrived at the central 'hub'🏢",
-					slog.Group("P2P Notification",
-						slog.String("status", "notification payload sent successfully"),
-						slog.String("Via", "h.TargettedClientNotificationTypeOnly")),
-					slog.Group("payload",
-						slog.String("Broadcast_type", "p2p"),
-						slog.String("liker_name", notifyPayload.SenderName),
-						slog.Uint64("senderID", uint64(notifyPayload.SenderID)),
-						slog.Uint64("recieverID", uint64(notifyPayload.SenderID)),
-						slog.String("type", notifyPayload.Type),
-					),
-					slog.Group("meta",
-						slog.Time("requested_at", time.Now())),
-					slog.String("status", "successfully dispatched notification payload to the targetted client's writer"),
-				)
-			case "comment_posted":
-				slog.Info("successfully recieved payload of type Comment")
-				// ticker sends when done ticked
-				targettedActiveClient.Send <- notifyPayload
-				slog.Info("successfully sent notification payload to the targetted client")
-				slog.Info("request arrived at the central 'hub'🏢",
-					slog.Group("P2P Notification",
-						slog.String("status", "notification payload sent successfully"),
-						slog.String("Via", "h.TargettedClientNotificationTypeOnly")),
-					slog.Group("payload",
-						slog.String("Broadcast_type", "p2p"),
-						slog.Uint64("senderID", uint64(notifyPayload.SenderID)),
-						slog.Uint64("recieverID", uint64(notifyPayload.SenderID)),
-						slog.String("type", notifyPayload.Type),
-					),
-					slog.Group("meta",
-						slog.Time("requested_at", time.Now())),
-					slog.String("status", "successfully dispatched notification payload to the targetted client's writer"),
-				)
-			case "follow_posted":
-				slog.Info("successfully recieved payload of type follow")
-				// if upon recieving send to that targtted client chan where writer responds to that client with payload info
-				targettedActiveClient.Send <- notifyPayload
-				slog.Info("successfully sent notification payload to the targetted client")
-				slog.Info("request arrived at the central 'hub'🏢",
-					slog.Group("P2P Notification",
-						slog.String("status", "notification payload sent successfully"),
-						slog.String("Via", "h.TargettedClientNotificationTypeOnly")),
-					slog.Group("payload",
-						slog.String("Broadcast_type", "p2p"),
-						slog.Uint64("senderID", uint64(notifyPayload.SenderID)),
-						slog.Uint64("recieverID", uint64(notifyPayload.SenderID)),
-						slog.String("type", notifyPayload.Type),
-					),
-					slog.Group("meta",
-						slog.Time("requested_at", time.Now())),
-					slog.String("status", "successfully dispatched notification payload to the targetted client's writer"),
-				)
-				// must have default for fallback if nothing meets the conditions declared above
-			default:
-				slog.Info("unknown notificaiton payload", "notification_type", notifyPayload.Type)
-				slog.Info("request arrived at the central 'hub'🏢",
-					slog.Group("P2P Notification",
-						slog.String("status", "notification payload dipatch blocked"),
-						slog.String("Via", "h.TargettedClientNotificationTypeOnly")),
-					slog.Group("payload",
-						slog.String("Broadcast_type", "p2p"),
-						slog.Uint64("senderID", uint64(notifyPayload.SenderID)),
-						slog.Uint64("recieverID", uint64(notifyPayload.SenderID)),
-						slog.String("type", notifyPayload.Type),
-					),
-					slog.Group("meta",
-						slog.Time("requested_at", time.Now())),
-					slog.String("status", "could not dispatch notification payload; chan is full"),
-				)
+			for _, targettedActiveClient := range targettedActiveClients {
+				//test - since only type makes the diffrence in the payload , strict type check is must so only send that type of notification
+				switch notifyPayload.Type {
+				// case handeling for type check
+				// testing with switch statement cause select checks for the channel
+				case "like_posted":
+					slog.Info("successfully recieved payload of type Like")
+					// ticker sends when done ticked
+					targettedActiveClient.Send <- notifyPayload
+					slog.Info("successfully sent notification payload to the targetted client")
+					slog.Info("request arrived at the central 'hub'🏢",
+						slog.Group("P2P Notification",
+							slog.String("status", "notification payload sent successfully"),
+							slog.String("Via", "h.TargettedClientNotificationTypeOnly")),
+						slog.Group("payload",
+							slog.String("Broadcast_type", "p2p"),
+							slog.String("liker_name", notifyPayload.SenderName),
+							slog.Uint64("senderID", uint64(notifyPayload.SenderID)),
+							slog.Uint64("recieverID", uint64(notifyPayload.SenderID)),
+							slog.String("type", notifyPayload.Type),
+						),
+						slog.Group("meta",
+							slog.Time("requested_at", time.Now())),
+						slog.String("status", "successfully dispatched notification payload to the targetted client's writer"),
+					)
+				case "comment_posted":
+					slog.Info("successfully recieved payload of type Comment")
+					// ticker sends when done ticked
+					targettedActiveClient.Send <- notifyPayload
+					slog.Info("successfully sent notification payload to the targetted client")
+					slog.Info("request arrived at the central 'hub'🏢",
+						slog.Group("P2P Notification",
+							slog.String("status", "notification payload sent successfully"),
+							slog.String("Via", "h.TargettedClientNotificationTypeOnly")),
+						slog.Group("payload",
+							slog.String("Broadcast_type", "p2p"),
+							slog.Uint64("senderID", uint64(notifyPayload.SenderID)),
+							slog.Uint64("recieverID", uint64(notifyPayload.SenderID)),
+							slog.String("type", notifyPayload.Type),
+						),
+						slog.Group("meta",
+							slog.Time("requested_at", time.Now())),
+						slog.String("status", "successfully dispatched notification payload to the targetted client's writer"),
+					)
+				case "follow_posted":
+					slog.Info("successfully recieved payload of type follow")
+					// if upon recieving send to that targtted client chan where writer responds to that client with payload info
+					targettedActiveClient.Send <- notifyPayload
+					slog.Info("successfully sent notification payload to the targetted client")
+					slog.Info("request arrived at the central 'hub'🏢",
+						slog.Group("P2P Notification",
+							slog.String("status", "notification payload sent successfully"),
+							slog.String("Via", "h.TargettedClientNotificationTypeOnly")),
+						slog.Group("payload",
+							slog.String("Broadcast_type", "p2p"),
+							slog.Uint64("senderID", uint64(notifyPayload.SenderID)),
+							slog.Uint64("recieverID", uint64(notifyPayload.SenderID)),
+							slog.String("type", notifyPayload.Type),
+						),
+						slog.Group("meta",
+							slog.Time("requested_at", time.Now())),
+						slog.String("status", "successfully dispatched notification payload to the targetted client's writer"),
+					)
+					// must have default for fallback if nothing meets the conditions declared above
+				default:
+					slog.Info("unknown notificaiton payload", "notification_type", notifyPayload.Type)
+					slog.Info("request arrived at the central 'hub'🏢",
+						slog.Group("P2P Notification",
+							slog.String("status", "notification payload dipatch blocked"),
+							slog.String("Via", "h.TargettedClientNotificationTypeOnly")),
+						slog.Group("payload",
+							slog.String("Broadcast_type", "p2p"),
+							slog.Uint64("senderID", uint64(notifyPayload.SenderID)),
+							slog.Uint64("recieverID", uint64(notifyPayload.SenderID)),
+							slog.String("type", notifyPayload.Type),
+						),
+						slog.Group("meta",
+							slog.Time("requested_at", time.Now())),
+						slog.String("status", "could not dispatch notification payload; chan is full"),
+					)
+				}
 			}
 			// if found that client send it to client chan where writer recieves and send as a response
 			slog.Info("successfully sent notification to the client✅", "recieverID", notifyPayload.RecieverID)
