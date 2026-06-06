@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
 export default function DashboardCard({
   senderID,
@@ -22,9 +23,9 @@ export default function DashboardCard({
 
         {/* RIGHT SIDE: Action or position marker */}
         <div className="card-right-element">{`Me : ${recieverName}`}</div>
-        <link to={`/feed/${postID}`}>
+        <Link to={`/feed/${postID}`}>
           <div className="card-right-element">{`Go to Post_ID : ${postID}`}</div>
-        </link>
+        </Link>
       </div>
     </div>
   );
