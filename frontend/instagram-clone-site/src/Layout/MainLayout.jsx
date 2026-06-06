@@ -39,6 +39,7 @@ export default function MainLayout() {
   const [feedLoadFailed, setFeedLoadFailed] = useState(false);
   const bottomRef = useRef(null);
   const dmThreadRef = useRef(null);
+  const [globalNotification, setGlobalNotifications] = useState([]) // for tracking notifications
 
   const token = localStorage.getItem("token");
   const { subscribe: subscribeNotifications, send: sendNotifications } =
@@ -103,6 +104,7 @@ export default function MainLayout() {
       }
 
       setNotification(incomingNotification);
+      setGlobalNotifications((prev) => [...prev, incomingNotification]);
 
       const notificationType = String(
         incomingNotification?.type || "",
@@ -479,9 +481,8 @@ export default function MainLayout() {
                         <button
                           key={thread.peerId}
                           onClick={() => setActiveDmPeerId(thread.peerId)}
-                          className={`inbox-thread-btn ${
-                            activeDmPeerId === thread.peerId ? "is-active" : ""
-                          }`}
+                          className={`inbox-thread-btn ${activeDmPeerId === thread.peerId ? "is-active" : ""
+                            }`}
                         >
                           <div className="inbox-thread-title">
                             {thread.peerName}
@@ -513,11 +514,10 @@ export default function MainLayout() {
                         activeThreadMessages.map((message, index) => (
                           <div
                             key={`${message.direction}-${index}-${message.content}`}
-                            className={`inbox-msg-bubble ${
-                              message.direction === "outgoing"
+                            className={`inbox-msg-bubble ${message.direction === "outgoing"
                                 ? "is-outgoing is-dm-outgoing"
                                 : "is-incoming"
-                            }`}
+                              }`}
                           >
                             <div className="inbox-msg-sender">
                               {message.direction === "outgoing"
@@ -593,9 +593,8 @@ export default function MainLayout() {
                         <button
                           key={thread.roomId}
                           onClick={() => setActiveRoomId(thread.roomId)}
-                          className={`inbox-thread-btn ${
-                            activeRoomId === thread.roomId ? "is-active" : ""
-                          }`}
+                          className={`inbox-thread-btn ${activeRoomId === thread.roomId ? "is-active" : ""
+                            }`}
                         >
                           <div className="inbox-thread-title">
                             Room {thread.roomId}
@@ -619,11 +618,10 @@ export default function MainLayout() {
                       activeRoomMessages.map((message, index) => (
                         <div
                           key={`${message.room_id}-${message.direction}-${index}-${message.content}`}
-                          className={`inbox-msg-bubble ${
-                            message.direction === "outgoing"
+                          className={`inbox-msg-bubble ${message.direction === "outgoing"
                               ? "is-outgoing is-room-outgoing"
                               : "is-incoming"
-                          }`}
+                            }`}
                         >
                           <div className="inbox-msg-sender">
                             {message.direction === "outgoing"
@@ -710,10 +708,11 @@ export default function MainLayout() {
             <Header />
             <div className="Site_content">
               <div className="Site_sidebar">
-                <Sidebar />
+                {/* passing prop to the sidebar for tracking notifications*/}
+                <Sidebar globalNotification={globalNotification} />
               </div>
               <main>
-                <Outlet context={{ subscribeNotifications, sendNotifications }} />
+                <Outlet context={{ subscribeNotifications, sendNotifications, globalNotification, setGlobalNotifications }} />
               </main>
             </div>
 
