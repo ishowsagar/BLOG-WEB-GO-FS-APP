@@ -410,9 +410,7 @@ export default function MainLayout() {
 
   if (loading && !hasMore) {
     return (
-      <div
-        style={{ textAlign: "center", marginTop: "4rem", fontSize: "1.5rem" }}
-      >
+      <div className="main-layout-loading">
         Loading...
       </div>
     );
@@ -433,22 +431,6 @@ export default function MainLayout() {
                 if (willShow) joinRoom(1); // auto-join room 1 when opening
                 if (!willShow) setActiveRoomId(null);
               }}
-              style={{
-                position: "fixed",
-                bottom: "4.2rem",
-                right: "1rem",
-                padding: "0.85rem 1rem",
-                borderRadius: "999px",
-                border: "none",
-                background: "linear-gradient(135deg, #5b8cff, #6ee7ff)",
-                color: "#fff",
-                fontWeight: 700,
-                boxShadow: "0 16px 40px rgba(0,0,0,0.35)",
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem",
-                zIndex: 9998,
-              }}
             >
               Group Chat{" "}
               {roomThreadEntries.length > 0
@@ -459,96 +441,37 @@ export default function MainLayout() {
             <button
               className="floating_action_button floating_action_button_dm"
               onClick={() => setShowDmInbox((prev) => !prev)}
-              style={{
-                position: "fixed",
-                bottom: "1rem",
-                right: "1rem",
-                padding: "0.85rem 1rem",
-                borderRadius: "999px",
-                border: "none",
-                background: "linear-gradient(135deg, #ff4d9d, #ff8a5b)",
-                color: "#fff",
-                fontWeight: 700,
-                boxShadow: "0 16px 40px rgba(0,0,0,0.35)",
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem",
-                zIndex: 9998,
-              }}
             >
               <img
                 src={sendIcon}
                 alt="messages"
-                style={{ width: "18px", height: "18px", objectFit: "contain" }}
+                className="floating-btn-icon"
               />
               Messages{" "}
               {dmThreadEntries.length > 0 ? `(${dmThreadEntries.length})` : ""}
             </button>
 
             {showDmInbox && (
-              <div
-                style={{
-                  position: "fixed",
-                  bottom: "5rem",
-                  right: "1rem",
-                  width: "min(420px, calc(100vw - 2rem))",
-                  height: "min(70vh, 620px)",
-                  zIndex: 9999,
-                  display: "grid",
-                  gridTemplateRows: "auto 1fr auto",
-                  borderRadius: "20px",
-                  overflow: "hidden",
-                  background: "rgba(16, 16, 20, 0.98)",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  boxShadow: "0 24px 70px rgba(0,0,0,0.45)",
-                  color: "#fff",
-                }}
-              >
-                <div
-                  style={{
-                    padding: "1rem",
-                    borderBottom: "1px solid rgba(255,255,255,0.08)",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
+              <div className="inbox-container">
+                <div className="inbox-header">
                   <div>
-                    <div style={{ fontWeight: 800 }}>Inbox</div>
-                    <div style={{ fontSize: "0.84rem", opacity: 0.72 }}>
+                    <div className="inbox-header-title">Inbox</div>
+                    <div className="inbox-header-subtitle">
                       Live receiver-side messages
                     </div>
                   </div>
                   <button
-                    className="profile_button"
+                    className="profile_button inbox-close-btn"
                     onClick={() => setShowDmInbox(false)}
-                    style={{ padding: "0.45rem 0.8rem" }}
                   >
                     Close
                   </button>
                 </div>
 
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "140px 1fr",
-                    minHeight: 0,
-                  }}
-                >
-                  <div
-                    style={{
-                      borderRight: "1px solid rgba(255,255,255,0.08)",
-                      overflowY: "auto",
-                    }}
-                  >
+                <div className="inbox-split-layout">
+                  <div className="inbox-sidebar">
                     {dmThreadEntries.length === 0 ? (
-                      <div
-                        style={{
-                          padding: "1rem",
-                          color: "rgba(255,255,255,0.65)",
-                          fontSize: "0.92rem",
-                        }}
-                      >
+                      <div className="inbox-sidebar-empty">
                         No messages yet.
                       </div>
                     ) : (
@@ -556,31 +479,14 @@ export default function MainLayout() {
                         <button
                           key={thread.peerId}
                           onClick={() => setActiveDmPeerId(thread.peerId)}
-                          style={{
-                            width: "100%",
-                            textAlign: "left",
-                            padding: "0.9rem 1rem",
-                            border: "none",
-                            borderBottom: "1px solid rgba(255,255,255,0.05)",
-                            background:
-                              activeDmPeerId === thread.peerId
-                                ? "rgba(255,255,255,0.08)"
-                                : "transparent",
-                            color: "#fff",
-                          }}
+                          className={`inbox-thread-btn ${
+                            activeDmPeerId === thread.peerId ? "is-active" : ""
+                          }`}
                         >
-                          <div style={{ fontWeight: 700 }}>
+                          <div className="inbox-thread-title">
                             {thread.peerName}
                           </div>
-                          <div
-                            style={{
-                              fontSize: "0.82rem",
-                              opacity: 0.72,
-                              whiteSpace: "nowrap",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                            }}
-                          >
+                          <div className="inbox-thread-snippet">
                             {thread.lastMessage?.content}
                           </div>
                         </button>
@@ -588,20 +494,8 @@ export default function MainLayout() {
                     )}
                   </div>
 
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateRows: "1fr auto",
-                      minHeight: 0,
-                    }}
-                  >
-                    <div
-                      style={{
-                        padding: "1rem",
-                        borderBottom: "1px solid rgba(255,255,255,0.08)",
-                        fontWeight: 700,
-                      }}
-                    >
+                  <div className="inbox-chat-pane">
+                    <div className="inbox-chat-header">
                       {activeDmPeerId
                         ? `Chat with ${activeThreadTitle}`
                         : "Select a conversation"}
@@ -609,51 +503,23 @@ export default function MainLayout() {
 
                     <div
                       ref={dmThreadRef}
-                      style={{
-                        minHeight: 0,
-                        overflowY: "auto",
-                        padding: "1rem",
-                        display: "grid",
-                        gap: "0.65rem",
-                        alignContent: "start",
-                        background:
-                          "linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01))",
-                      }}
+                      className="inbox-messages-container"
                     >
                       {activeThreadMessages.length === 0 ? (
-                        <div style={{ color: "rgba(255,255,255,0.65)" }}>
+                        <div className="inbox-messages-empty">
                           Open a conversation to start chatting.
                         </div>
                       ) : (
                         activeThreadMessages.map((message, index) => (
                           <div
                             key={`${message.direction}-${index}-${message.content}`}
-                            style={{
-                              justifySelf:
-                                message.direction === "outgoing"
-                                  ? "end"
-                                  : "start",
-                              maxWidth: "82%",
-                              padding: "0.8rem 0.9rem",
-                              borderRadius:
-                                message.direction === "outgoing"
-                                  ? "16px 16px 6px 16px"
-                                  : "16px 16px 16px 6px",
-                              background:
-                                message.direction === "outgoing"
-                                  ? "linear-gradient(135deg, #ff4d9d, #ff8a5b)"
-                                  : "rgba(255,255,255,0.08)",
-                              color: "#fff",
-                              lineHeight: 1.38,
-                            }}
+                            className={`inbox-msg-bubble ${
+                              message.direction === "outgoing"
+                                ? "is-outgoing is-dm-outgoing"
+                                : "is-incoming"
+                            }`}
                           >
-                            <div
-                              style={{
-                                fontSize: "0.76rem",
-                                opacity: 0.8,
-                                marginBottom: "0.3rem",
-                              }}
-                            >
+                            <div className="inbox-msg-sender">
                               {message.direction === "outgoing"
                                 ? "You"
                                 : message.sender_name ||
@@ -666,14 +532,7 @@ export default function MainLayout() {
                       )}
                     </div>
 
-                    <div
-                      style={{
-                        padding: "1rem",
-                        borderTop: "1px solid rgba(255,255,255,0.08)",
-                        display: "grid",
-                        gap: "0.75rem",
-                      }}
-                    >
+                    <div className="inbox-composer">
                       <textarea
                         placeholder={
                           activeDmPeerId
@@ -684,24 +543,9 @@ export default function MainLayout() {
                         onChange={(e) => setDmDraft(e.target.value)}
                         rows={3}
                         disabled={!activeDmPeerId}
-                        style={{
-                          width: "100%",
-                          padding: "0.85rem",
-                          borderRadius: "12px",
-                          border: "1px solid rgba(255,255,255,0.12)",
-                          background: "#111",
-                          color: "#fff",
-                          resize: "vertical",
-                          opacity: activeDmPeerId ? 1 : 0.6,
-                        }}
+                        className="inbox-composer-textarea"
                       />
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: "0.75rem",
-                          alignItems: "center",
-                        }}
-                      >
+                      <div className="inbox-composer-actions">
                         <button
                           className="profile_button"
                           onClick={handleSendInboxDm}
@@ -710,9 +554,7 @@ export default function MainLayout() {
                           Send
                         </button>
                         {dmInboxStatus && (
-                          <span
-                            style={{ color: "#9eff9e", fontSize: "0.9rem" }}
-                          >
+                          <span className="inbox-status-text">
                             {dmInboxStatus}
                           </span>
                         )}
@@ -724,69 +566,26 @@ export default function MainLayout() {
             )}
 
             {showRoomInbox && (
-              <div
-                style={{
-                  position: "fixed",
-                  bottom: "5rem",
-                  right: "1rem",
-                  width: "min(420px, calc(100vw - 2rem))",
-                  height: "min(70vh, 620px)",
-                  zIndex: 9999,
-                  display: "grid",
-                  gridTemplateRows: "auto 1fr auto",
-                  borderRadius: "20px",
-                  overflow: "hidden",
-                  background: "rgba(16, 16, 20, 0.98)",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  boxShadow: "0 24px 70px rgba(0,0,0,0.45)",
-                  color: "#fff",
-                }}
-              >
-                <div
-                  style={{
-                    padding: "1rem",
-                    borderBottom: "1px solid rgba(255,255,255,0.08)",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
+              <div className="inbox-container">
+                <div className="inbox-header">
                   <div>
-                    <div style={{ fontWeight: 800 }}>Group Chat</div>
-                    <div style={{ fontSize: "0.84rem", opacity: 0.72 }}>
+                    <div className="inbox-header-title">Group Chat</div>
+                    <div className="inbox-header-subtitle">
                       Live room messages
                     </div>
                   </div>
                   <button
-                    className="profile_button"
+                    className="profile_button inbox-close-btn"
                     onClick={() => setShowRoomInbox(false)}
-                    style={{ padding: "0.45rem 0.8rem" }}
                   >
                     Close
                   </button>
                 </div>
 
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "140px 1fr",
-                    minHeight: 0,
-                  }}
-                >
-                  <div
-                    style={{
-                      borderRight: "1px solid rgba(255,255,255,0.08)",
-                      overflowY: "auto",
-                    }}
-                  >
+                <div className="inbox-split-layout">
+                  <div className="inbox-sidebar">
                     {roomThreadEntries.length === 0 ? (
-                      <div
-                        style={{
-                          padding: "1rem",
-                          color: "rgba(255,255,255,0.65)",
-                          fontSize: "0.92rem",
-                        }}
-                      >
+                      <div className="inbox-sidebar-empty">
                         No room messages yet.
                       </div>
                     ) : (
@@ -794,31 +593,14 @@ export default function MainLayout() {
                         <button
                           key={thread.roomId}
                           onClick={() => setActiveRoomId(thread.roomId)}
-                          style={{
-                            width: "100%",
-                            textAlign: "left",
-                            padding: "0.9rem 1rem",
-                            border: "none",
-                            borderBottom: "1px solid rgba(255,255,255,0.05)",
-                            background:
-                              activeRoomId === thread.roomId
-                                ? "rgba(255,255,255,0.08)"
-                                : "transparent",
-                            color: "#fff",
-                          }}
+                          className={`inbox-thread-btn ${
+                            activeRoomId === thread.roomId ? "is-active" : ""
+                          }`}
                         >
-                          <div style={{ fontWeight: 700 }}>
+                          <div className="inbox-thread-title">
                             Room {thread.roomId}
                           </div>
-                          <div
-                            style={{
-                              fontSize: "0.82rem",
-                              opacity: 0.72,
-                              whiteSpace: "nowrap",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                            }}
-                          >
+                          <div className="inbox-thread-snippet">
                             {thread.lastMessage?.content ||
                               thread.lastMessage?.type ||
                               "Room event"}
@@ -828,52 +610,22 @@ export default function MainLayout() {
                     )}
                   </div>
 
-                  <div
-                    style={{
-                      minHeight: 0,
-                      overflowY: "auto",
-                      padding: "1rem",
-                      display: "grid",
-                      gap: "0.65rem",
-                      alignContent: "start",
-                      background:
-                        "linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01))",
-                    }}
-                  >
+                  <div className="inbox-messages-container">
                     {activeRoomMessages.length === 0 ? (
-                      <div style={{ color: "rgba(255,255,255,0.65)" }}>
+                      <div className="inbox-messages-empty">
                         Open a room to view messages.
                       </div>
                     ) : (
                       activeRoomMessages.map((message, index) => (
                         <div
                           key={`${message.room_id}-${message.direction}-${index}-${message.content}`}
-                          style={{
-                            justifySelf:
-                              message.direction === "outgoing"
-                                ? "end"
-                                : "start",
-                            maxWidth: "82%",
-                            padding: "0.8rem 0.9rem",
-                            borderRadius:
-                              message.direction === "outgoing"
-                                ? "16px 16px 6px 16px"
-                                : "16px 16px 16px 6px",
-                            background:
-                              message.direction === "outgoing"
-                                ? "linear-gradient(135deg, #5b8cff, #6ee7ff)"
-                                : "rgba(255,255,255,0.08)",
-                            color: "#fff",
-                            lineHeight: 1.38,
-                          }}
+                          className={`inbox-msg-bubble ${
+                            message.direction === "outgoing"
+                              ? "is-outgoing is-room-outgoing"
+                              : "is-incoming"
+                          }`}
                         >
-                          <div
-                            style={{
-                              fontSize: "0.76rem",
-                              opacity: 0.8,
-                              marginBottom: "0.3rem",
-                            }}
-                          >
+                          <div className="inbox-msg-sender">
                             {message.direction === "outgoing"
                               ? "You"
                               : message.sender_name ||
@@ -890,14 +642,7 @@ export default function MainLayout() {
                       ))
                     )}
                   </div>
-                  <div
-                    style={{
-                      padding: "1rem",
-                      borderTop: "1px solid rgba(255,255,255,0.08)",
-                      display: "grid",
-                      gap: "0.75rem",
-                    }}
-                  >
+                  <div className="inbox-composer">
                     <textarea
                       placeholder={
                         activeRoomId
@@ -908,24 +653,9 @@ export default function MainLayout() {
                       onChange={(e) => setRoomDraft(e.target.value)}
                       rows={3}
                       disabled={!activeRoomId}
-                      style={{
-                        width: "100%",
-                        padding: "0.85rem",
-                        borderRadius: "12px",
-                        border: "1px solid rgba(255,255,255,0.12)",
-                        background: "#111",
-                        color: "#fff",
-                        resize: "vertical",
-                        opacity: activeRoomId ? 1 : 0.6,
-                      }}
+                      className="inbox-composer-textarea"
                     />
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "0.75rem",
-                        alignItems: "center",
-                      }}
-                    >
+                    <div className="inbox-composer-actions">
                       <button
                         className="profile_button"
                         onClick={() => {
@@ -967,32 +697,11 @@ export default function MainLayout() {
             )}
 
             {notification && (
-              <div
-                style={{
-                  position: "fixed",
-                  top: "1rem",
-                  right: "1rem",
-                  zIndex: 9999,
-                  minWidth: "280px",
-                  maxWidth: "360px",
-                  padding: "0.9rem 1rem",
-                  borderRadius: "14px",
-                  background: "rgba(18, 18, 18, 0.96)",
-                  color: "#fff",
-                  boxShadow: "0 18px 50px rgba(0,0,0,0.35)",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: "0.85rem",
-                    opacity: 0.8,
-                    marginBottom: "0.35rem",
-                  }}
-                >
+              <div className="notification-toast">
+                <div className="notification-toast-label">
                   New notification recieved
                 </div>
-                <div style={{ fontWeight: 200, marginBottom: "0.25rem" }}>
+                <div className="notification-toast-content">
                   {notification.type}
                 </div>
               </div>
