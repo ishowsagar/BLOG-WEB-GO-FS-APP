@@ -234,7 +234,7 @@ export default function NotificationComponent() {
       <p className="ws_hero_text">
         {hasWsConnEstablished ? `client online🟢` : "client offline🔴"}
       </p>
-      <button
+      {/* <button
         disabled={!hasWsConnEstablished}
         onClick={() => handleSendNotificationPayload(jsonNotificationPayload)}
         style={{
@@ -247,7 +247,7 @@ export default function NotificationComponent() {
         }}
       >
         Send Notification
-      </button>
+      </button> */}
       {/* only conditionally render notification if they are of type 'dm' */}
       {notificationOfTypeDM && (
         <div className="dashboard-feed-wrapper">
