@@ -40,6 +40,7 @@ export default function NotificationComponent() {
     ws.onopen = () => {
       console.log("connection is successfully established on the notifications page")
       console.log("wsConnUrl - ", wsConnUrl)
+      setHasWsConnEstablished(true)
     }
 
     // notification reciever interceptor
@@ -82,6 +83,7 @@ export default function NotificationComponent() {
     // any error - ws closed with an error
     ws.onerror = () => {
       setHasWsConnHitErr(true)
+      setHasWsConnEstablished(false)
       console.log("ws connection error")
     }
 
