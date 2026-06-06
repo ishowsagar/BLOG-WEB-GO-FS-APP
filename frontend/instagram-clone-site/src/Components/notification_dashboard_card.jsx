@@ -22,7 +22,9 @@ export default function DashboardCard({
 
         {/* RIGHT SIDE: Action or position marker */}
         <div className="card-right-element">{`Me : ${recieverName}`}</div>
-        <div className="card-right-element">{`Post_ID : ${postID}`}</div>
+        <link to={`/feed/${postID}`}>
+          <div className="card-right-element">{`Go to Post_ID : ${postID}`}</div>
+        </link>
       </div>
     </div>
   );
