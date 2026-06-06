@@ -168,7 +168,7 @@ export default function NotificationComponent() {
         webSocketConn.close();
       }
     };
-  }, [wsConnURlString]); // remount only if that changes, that would depend on token
+  }, []); // remount only if that changes, that would depend on token
 
   // todo - Now its time to implement webSocket connection here
   // todo - render incoming notification data inside these fillers
