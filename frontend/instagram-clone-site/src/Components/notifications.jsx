@@ -1,8 +1,5 @@
-import { useContext, useEffect, useRef, useState } from "react";
-import { useOutletContext } from "react-router-dom";
-import { jwtDecode } from "jwt-decode";
+import { useEffect, useState } from "react";
 import DashboardCard from "./notification_dashboard_card";
-import { wsUrl } from "../Services/apiConfig";
 
 // ** PRODUCTION TODOS **//
 // 1. replace wsConnector handler url to use production api url
@@ -22,54 +19,82 @@ export default function NotificationComponent() {
   const [hasWsConnHitErr, setHasWsConnHitErr] = useState(false); // conditional for tracking wsConn when closed abruptly or way it closed the conn
   const [writerResponse, SetWriterResponse] = useState([]); // for setting data in the arr when recieved from the client's writer's response
   const [notificationOfTypeDM, setNotificationOfTypeDM] = useState(false); // for conditionally rendering div if this becomes true
-  const { subscribeNotifications, sendNotifications } = useOutletContext();
 
-  const wsConnHolderRef = useRef(null); //* would be an holder for "wsConn"
+  // const wsConnHolderRef = useRef(null); //* would be an holder for "wsConn"
   // & States
-  const DEVELOPMENT_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-  // ** end //
+  // const apiUrl = import.meta.env.VITE_API_BASE_URL;
+
 
   if (token === "") {
     console.log("login expired or token not found ");
     return;
   }
 
+  useEffect(() => {
+    console.log("notification component is mounted.")
+
+    const ws = new WebSocket("wss://denvergram.me/ws/notifications?token=" + encodeURIComponent(token))
+
+    //& loading all four interceptors
+    ws.onopen = () => {
+      console.log("connection is successfully established on the notifications page")
+    }
+
+    // notification reciever interceptor
+    ws.onmessage = (event) => {
+      console.log("notification event data recieved")
+
+      try {
+
+        const notification_event_payload = JSON.parse(event.data)
+        console.log("parsed notification event payload : ", notification_event_payload)
+
+        const allowedEventDataTypes = {
+          "like_posted": true,
+          "comment_posted": true,
+          "follow_posted": true,
+          "dm": true
+        }
+
+        // pass only allowed types
+        if (!allowedEventDataTypes[notification_event_payload.type]) {
+          console.log("wrong notification data type")
+          throw new Error("invalid notification data type")
+        }
+
+
+        // if succesfully parsed data into js object type of format and data type is matched
+        setHasWsConnEstablished(true)
+        SetWriterResponse((prevDataArr) => [...prevDataArr, notification_event_payload])
+      } catch (err) {
+        setHasWsConnHitErr(true)
+
+        console.error(err)
+      }
+    }
+
+    ws.onclose = () => {
+      console.log("ws connection has been closed")
+    }
+
+    // any error - ws closed with an error
+    ws.onerror = () => {
+      setHasWsConnHitErr(true)
+      console.log("ws connection error")
+    }
+
+    return () => {
+      // close websocket connection when component unmounts
+      ws.close()
+    }
+  }, [token])
+
   // ! since we are no longer sending id from here manually, our handler extracts token from query and
   //  extract token str and by parsing, retrieves the userID and attches it to the client
   //   testing - explicityly sending dynamic userID for reader's payload check
-  const decodedToken = jwtDecode(token);
+  // const decodedToken = jwtDecode(token);
   //   gives us - decodedToken {expiry: '2026-06-04T07:37:50.960431745Z', user_id: 16}
   // console.log("decodedToken", decodedToken);
-
-  const senderID = decodedToken.user_id;
-  const recieverID = senderID === 41 ? 16 : 41;
-
-
-
-  useEffect(() => {
-    const unsubscribe = subscribeNotifications((parsedPayload) => {
-
-      // since its parsed,we can put field checks on it, so only stores payload of type "dm"
-      if (
-        // todo - intercept p2p actual 'notification' , of these types
-        // todo - 1. must send exclusive payloads and render correctly in the card
-        parsedPayload.type === "like_posted" ||
-        parsedPayload.type === "follow_posted" ||
-        parsedPayload.type === "comment_posted" ||
-        parsedPayload.type === "dm"
-      ) {
-        SetWriterResponse((prevArrData) => [...prevArrData, parsedPayload]); // saving 'data' in state that writer would have responded with
-        console.log(
-          "intercepted incoming payload of type -",
-          parsedPayload.type,
-          "payload -",
-          parsedPayload,
-        );
-        setNotificationOfTypeDM(true); //* setting it true that we recieved tyoe payloa
-      }
-    })
-    return () => unsubscribe()
-  }, [subscribeNotifications])
 
   // fallback ui
   if (!token || token === "") {
@@ -102,7 +127,7 @@ export default function NotificationComponent() {
           : "connecting to the notification service..."}
       </p>
       {/* only conditionally render notification if they are of type 'dm' */}
-      {notificationOfTypeDM && (
+      {hasWsConnEstablished && (
         <div className="dashboard-feed-wrapper">
           {/* Dynamic List Render Loop */}
           {writerResponse.length > 0 ? (
