@@ -92,7 +92,7 @@ export default function CreatePost() {
   }
 
   async function createPost() {
-    const postReq = await fetch(apiUrl("/api/post/create"), {
+    const postReq = await fetch("/api/post/create", {
       method: "POST",
       headers: {
         Authorization: token,
@@ -181,9 +181,7 @@ export default function CreatePost() {
         <div className="createpost_hero">
           <p className="createpost_kicker">New post</p>
           <h1>Share a moment with an image-first post</h1>
-          <p>
-            Write the caption, pick your image, and see the magic🪄🎩
-          </p>
+          <p>Write the caption, pick your image, and see the magic🪄🎩</p>
         </div>
 
         <label className="createpost_label" htmlFor="title">
