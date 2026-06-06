@@ -112,9 +112,18 @@ export default function MainLayout() {
       ];
 
 
+      console.log("🔔 MainLayout received incomingNotification in callback:", incomingNotification);
+
       if (incomingNotification && allowedNotificationTypes.includes(incomingNotification.type)) {
+        console.log("✅ Adding notification to globalNotifications state:", incomingNotification);
         // only add to notifs if satisfies condition check
-        setGlobalNotifications((prev) => [...prev, incomingNotification]);
+        setGlobalNotifications((prev) => {
+          const updated = [...prev, incomingNotification];
+          console.log("📊 Updated globalNotification state array:", updated);
+          return updated;
+        });
+      } else {
+        console.log("❌ incomingNotification did not match allowed types or was null. Type:", incomingNotification?.type);
       }
 
       const notificationType = String(
