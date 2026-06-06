@@ -39,6 +39,7 @@ export default function NotificationComponent() {
     //& loading all four interceptors
     ws.onopen = () => {
       console.log("connection is successfully established on the notifications page")
+      console.log("wsConnUrl - ", wsConnUrl)
     }
 
     // notification reciever interceptor
