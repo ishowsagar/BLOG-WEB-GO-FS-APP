@@ -20,8 +20,14 @@ export default function Footer() {
             </ul>
           </nav>
           <div className="footer_text_content">
-            <a className="footer_text" href="mailto:ishowdenver@gmail.com">ishowdenver@gmail.com</a>
-            <span className="footer_text">• Built by Denver &amp; Co</span>
+            <a className="footer_text" href="mailto:ishowdenver@gmail.com">
+              ishowdenver@gmail.com
+            </a>
+            <span className="footer_text">
+              • Built by{" "}
+              <a href="https://www.instagram.com/ishow.denver/">Denver</a> &amp;
+              Co
+            </span>
           </div>
         </div>
       </div>
