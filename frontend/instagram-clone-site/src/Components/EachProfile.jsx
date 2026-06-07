@@ -8,8 +8,7 @@ export default function EachProfile() {
   console.log("/eachProfile");
   // states
   // fallback images for demo
-  const FALLBACK_AVATAR =
-    "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=facearea&w=256&h=256&facepad=2";
+  const FALLBACK_AVATAR = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="%23f3f4f6"/><circle cx="12" cy="8" r="4" fill="%23cbd5e1"/><path d="M12 14c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5z" fill="%23cbd5e1"/></svg>`;
   const FALLBACK_HIGHLIGHT =
     "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=128&q=80";
 

@@ -15,9 +15,8 @@ export default function Profile() {
   const [profileAvatarSrc, setProfileAvatarSrc] = useState("");
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
-  // Free online images for demo
-  const avatarImg =
-    "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=facearea&w=256&h=256&facepad=2";
+  // Default circular white avatar SVG placeholder (Instagram style)
+  const DEFAULT_AVATAR = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="%23f3f4f6"/><circle cx="12" cy="8" r="4" fill="%23cbd5e1"/><path d="M12 14c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5z" fill="%23cbd5e1"/></svg>`;
   const highlightImg =
     "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=128&q=80";
 
@@ -213,7 +212,7 @@ export default function Profile() {
       <div className="profile_header_row">
         <div className="profile_avatar_shell">
           <img
-            src={profileAvatarSrc || profileAvatar}
+            src={profileAvatarSrc || profileAvatar || DEFAULT_AVATAR}
             alt="Profile avatar"
             className="profile_avatar"
           />
@@ -300,7 +299,7 @@ export default function Profile() {
               <div className="profile_pfp_preview_wrap">
                 <img
                   className="profile_pfp_preview"
-                  src={selectedPfpPreview || profileAvatarSrc || profileAvatar}
+                  src={selectedPfpPreview || profileAvatarSrc || profileAvatar || DEFAULT_AVATAR}
                   alt="Selected preview"
                 />
                 <div className="profile_pfp_preview_hint">
