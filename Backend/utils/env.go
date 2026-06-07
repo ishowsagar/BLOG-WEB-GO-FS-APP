@@ -53,10 +53,10 @@ func LoadConfig() (*ENVConfig,error) {
 	rabbitmqURL := os.Getenv("RABBITMQ_URL")
 
 	// * since we stored aws s3 important keys in env, container would look for them in its space <- must define there too
-	s3AccessKeyID := os.Getenv("AWS_ACCESS_KEY_ID")
-	s3SecretKey := os.Getenv("AWS_SECRET_ACCESS_KEY")
+	s3AccessKeyID := os.Getenv("S3_ACCESS_KEY_ID")
+	s3SecretKey := os.Getenv("S3_SECRET_ACCESS_KEY")
 	s3BucketName := os.Getenv("S3BucketName") // switching to what aws expects naming to be for default loads
-	s3RegionName := os.Getenv("AWS_REGION")
+	s3RegionName := os.Getenv("S3_REGION")
 
 	dbPort, err := strconv.Atoi(dbPortStr)
 	if err != nil {
@@ -80,10 +80,10 @@ func LoadConfig() (*ENVConfig,error) {
 
 	// env check
 	fmt.Println("--- DOCKER ENV CHECK ---")
-	fmt.Printf("Access ID:  '%s'\n", os.Getenv("AWS_ACCESS_KEY_ID"))
-	fmt.Printf("Secret Key: '%s' (Length: %d)\n", os.Getenv("AWS_SECRET_ACCESS_KEY"), len(os.Getenv("AWS_SECRET_ACCESS_KEY")))
+	fmt.Printf("Access ID:  '%s'\n", os.Getenv("S3_ACCESS_KEY_ID"))
+	fmt.Printf("Secret Key: '%s' (Length: %d)\n", os.Getenv("S3_SECRET_ACCESS_KEY"), len(os.Getenv("S3_SECRET_ACCESS_KEY")))
 	fmt.Printf("Bucket:     '%s'\n", os.Getenv("S3BucketName"))
-	fmt.Printf("Region:     '%s'\n", os.Getenv("AWS_REGION"))
+	fmt.Printf("Region:     '%s'\n", os.Getenv("S3_REGION"))
 	fmt.Println("------------------------")
 
 	// returning instance with env accessed vars
