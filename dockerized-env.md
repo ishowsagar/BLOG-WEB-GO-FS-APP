@@ -139,3 +139,7 @@ IDEA - instead of deploying here and manually doing the code pushing, by using g
 dumping method
 Run this to dump data into container
 `docker exec -i running_postgres_container_name psql -U user_name -d db_name < sql_dump.sql`
+
+<!-- ! .env not synced pitfall -->
+
+1. If .env on ec2 server side is not synced and when backend is trying to build from new variables you listed out in the .env in local machine and when compose tried to look the same on its ubuntu machine (gotha -> its own machine server side) -> could not find it cause .gitignore was not pushing changes as git is being ignored

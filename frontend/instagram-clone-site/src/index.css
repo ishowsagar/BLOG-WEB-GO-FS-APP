@@ -252,8 +252,9 @@
     .feedpost_image,
     .single-post .feedpost_image,
     .profile_posts_grid .feedpost_image {
-      height: auto;
-      max-height: 280px;
+      height: 260px; /* consistent stable height on mobile */
+      object-fit: cover;
+      background-color: #f1f5f9;
     }
 
     .single-post {
@@ -622,7 +623,8 @@
         transparent 36%
       ),
       linear-gradient(180deg, #1b1d25 0%, #111318 100%);
-    height: calc(100vh - 90px - 68px - 32px); /* fits viewport space with header, footer and margins */
+    min-height: calc(100vh - 90px - 68px - 32px); /* fits viewport space with header, footer and margins */
+    height: auto; /* natural growth to include all navigation links when zoomed in or on short screens */
     padding: 1.2rem 0.9rem 1.25rem;
     width: 100%;
     min-width: 220px;
@@ -1212,10 +1214,11 @@
 
   .feedpost_image {
     width: 100%;
-    max-height: 580px; /* higher max-height for portrait/square photos */
+    height: 420px; /* stable height for feed post images to maintain consistency */
     border-radius: 10px;
     object-fit: cover;
     margin-bottom: 0.5rem;
+    background-color: #f1f5f9; /* placeholder color in case of slow or broken image loading */
   }
 
   /* Profile-specific card sizing (scoped to profile posts grid) */

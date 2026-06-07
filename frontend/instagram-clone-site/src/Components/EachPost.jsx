@@ -236,7 +236,7 @@ export default function EachPost() {
   }
 
   const displayUsername = eachPost.user_id && `insta-user-${eachPost.user_id}`;
-  const displayImage = resolvePostImage(post);
+  const displayImage = resolvePostImage(eachPost);
   const avatarImg = eachPost.user_id
     ? `https://i.pravatar.cc/150?img=${eachPost.user_id}`
     : `https://i.pravatar.cc/150?u=${eachPost.id}`;
