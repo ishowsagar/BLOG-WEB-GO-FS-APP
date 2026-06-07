@@ -2177,7 +2177,7 @@
   transform: translateY(-1px);
 }
 
-.sign-up-form-div button[type="submit"] {
+.sign-up-form-div button {
   padding: 0.8rem 1rem;
   background: linear-gradient(90deg, #68b8ff 0%, #3999f8 100%);
   color: #ffffff;
@@ -2190,11 +2190,35 @@
     box-shadow 0.2s ease,
     filter 0.2s ease;
   box-shadow: 0 10px 20px rgba(57, 153, 248, 0.22);
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
 }
 
-.sign-up-form-div button[type="submit"]:hover {
+.sign-up-form-div button:hover:not(:disabled) {
   filter: brightness(1.03);
   transform: translateY(-1px);
+}
+
+.sign-up-form-div .step-navigation-buttons {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.sign-up-form-div .step-navigation-buttons button {
+  flex: 1;
+}
+
+.sign-up-form-div button.secondary-btn {
+  background: #f1f5f9;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+  box-shadow: none;
+}
+
+.sign-up-form-div button.secondary-btn:hover:not(:disabled) {
+  background: #e2e8f0;
 }
 
 .sign-up-form-div p {
