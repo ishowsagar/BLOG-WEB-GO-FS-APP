@@ -53,10 +53,10 @@ func LoadConfig() (*ENVConfig,error) {
 	rabbitmqURL := os.Getenv("RABBITMQ_URL")
 
 	// * since we stored aws s3 important keys in env, container would look for them in its space <- must define there too
-	s3AccessKeyID := os.Getenv("S3AccessKeyID")
-	s3SecretKey := os.Getenv("S3SecretKey")
-	s3BucketName := os.Getenv("S3BucketName")
-	s3RegionName := os.Getenv("S3Region")
+	s3AccessKeyID := os.Getenv("AWS_ACCESS_KEY_ID")
+	s3SecretKey := os.Getenv("AWS_SECRET_ACCESS_KEY")
+	s3BucketName := os.Getenv("S3BucketName") // switching to what aws expects naming to be for default loads
+	s3RegionName := os.Getenv("AWS_REGION")
 
 	dbPort, err := strconv.Atoi(dbPortStr)
 	if err != nil {
