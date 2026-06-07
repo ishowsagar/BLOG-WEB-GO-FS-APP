@@ -80,7 +80,7 @@ func LoadConfig() (*ENVConfig, error) {
 	// env check
 	fmt.Println("--- DOCKER ENV CHECK ---")
 	fmt.Printf("New Access ID:  '%s'\n", os.Getenv("AWS_ACCESS_KEY_ID"))
-	fmt.Printf("New Secret Key: '%s' (Length: %d)\n", os.Getenv("AWS_SECRET_ACCESS_KEY"), len(os.Getenv("AwsAccessSecretKey")))
+	fmt.Printf("New Secret Key: '%s' (Length: %d)\n", os.Getenv("AWS_SECRET_ACCESS_KEY"), len(os.Getenv("AWS_SECRET_ACCESS_KEY")))
 	fmt.Printf("Bucket:     '%s'\n", os.Getenv("S3BucketName"))
 	fmt.Printf("New Region:     '%s'\n", os.Getenv("AWS_REGION"))
 	fmt.Println("------------------------")
