@@ -109,15 +109,19 @@
     .header_logo {
       width: 36px;
       height: 36px;
+      border-radius: 0;
+      background: transparent;
+      padding: 0;
+      box-shadow: none;
     }
     .header_title {
-      font-size: 1.4rem;
+      font-size: 1.9rem;
     }
   }
 
   @media (max-width: 480px) {
     .header_title {
-      font-size: 1.2rem;
+      font-size: 1.7rem;
     }
     .footer_text_content {
       flex-direction: column;
@@ -217,11 +221,14 @@
     .header_logo {
       width: 32px;
       height: 32px;
-      border-radius: 10px;
+      border-radius: 0;
+      background: transparent;
+      padding: 0;
+      box-shadow: none;
     }
 
     .header_title {
-      font-size: 1.35rem;
+      font-size: 1.8rem;
     }
 
     .footer_container,
@@ -465,19 +472,13 @@
   /* header elements */
   .header_container {
     font-size: clamp(2.15rem, 2.9vw, 3.25rem);
-    /* use less-slanted script fallbacks to retain wordmark feel but reduce italicness */
-    font-family:
-      "Segoe Script", "Lucida Handwriting", "Brush Script MT", cursive;
-    font-style: normal;
-    font-weight: 600;
-    letter-spacing: 0.005em;
     min-width: 7.5ch;
     line-height: 1;
-    background: transparent;
-    color: #f3f6ff; /* high-contrast on dark canvas */
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
-    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
-    text-transform: none;
+    background: rgba(255, 255, 255, 0.9); /* premium high-contrast white glass */
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(110, 168, 255, 0.16); /* distinct boundary separation */
+    box-shadow: 0 4px 20px rgba(7, 42, 107, 0.04); /* premium soft shadow */
     white-space: nowrap;
   }
   .header_content {
@@ -504,26 +505,25 @@
   }
 
   .header_logo {
-    width: 46px;
-    height: 46px;
-    object-fit: cover;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.08);
-    padding: 0.22rem;
-    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+    width: 42px;
+    height: 42px;
+    object-fit: contain;
+    border-radius: 0;
+    background: transparent;
+    padding: 0;
+    box-shadow: none;
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.06));
   }
 
   .header_title {
-    font-size: clamp(2.15rem, 2.9vw, 3.25rem);
-    font-family:
-      "Segoe Script", "Lucida Handwriting", "Brush Script MT", cursive;
-    font-weight: 600;
-    letter-spacing: 0.005em;
+    font-size: clamp(2.3rem, 3.2vw, 3.4rem);
+    font-family: "Grand Hotel", "Pacifico", "Quicksand", sans-serif;
+    font-weight: 400; /* normal script weight looks cleanest */
+    letter-spacing: 0.01em;
     min-width: 7.5ch;
     line-height: 1;
-    transform: translateY(1px);
-    color: #072a6b; /* make wordmark a solid deep blue for contrast */
-    text-shadow: 0 1px 0 rgba(7, 42, 107, 0.06);
+    transform: translateY(-2px); /* visual centering for script alignment */
+    color: #0c1b3e; /* premium deep navy slate */
     text-transform: none;
     white-space: nowrap;
   }
