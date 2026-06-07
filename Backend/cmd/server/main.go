@@ -237,6 +237,14 @@ func main() {
 	router.TrustedPlatform = "X-Forwarded-For" // sends real ip in this header
 	router.SetTrustedProxies([]string{"0.0.0.0/0"})
 
+	// cache invalidator
+	cloudfrontDistributionID := fmt.Sprintf("%s","E3338TWTO58MPS")
+	invalidationErr := s3bucket.InvokeCdnInvalidation(cloudfrontDistributionID)
+	if invalidationErr != nil {
+		slog.Error("could not created invalidation","error",err)
+		return
+	}
+	// if no err -> successfully created invalidation
 	// end //
 
 	routes.ServeRoutes(router,masterController,config,wsController) // serving controller to router to route methods on them routes
