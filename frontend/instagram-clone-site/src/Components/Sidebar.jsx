@@ -16,60 +16,62 @@ export default function Sidebar({ globalNotification }) {
       <nav className="sidebar_nav">
         <ul className="sidebar_list_items">
           <li>
-            <img className="sidebar_icon" src={HomeIcon} />
             <Link className="sidebar_link" to="/">
+              <img className="sidebar_icon" src={HomeIcon} alt="Home" />
               Home
             </Link>
           </li>
           <li>
-            <img className="sidebar_icon" src={SearchIcon} />
             <Link className="sidebar_link" to="/search">
+              <img className="sidebar_icon" src={SearchIcon} alt="Search" />
               Search
             </Link>
           </li>
           <li>
-            <img className="sidebar_icon" src={ExploreIcon} />
             <Link className="sidebar_link" to="/explore">
+              <img className="sidebar_icon" src={ExploreIcon} alt="Explore" />
               Explore
             </Link>
           </li>
           <li>
-            <img className="sidebar_icon" src={CreateIcon} />
             <Link className="sidebar_link" to="/create">
+              <img className="sidebar_icon" src={CreateIcon} alt="Create" />
               Create
             </Link>
           </li>
           <li>
-            <img className="sidebar_icon" src={ReelsIcon} />
             <Link className="sidebar_link" to="/reels">
+              <img className="sidebar_icon" src={ReelsIcon} alt="Reels" />
               Reels
             </Link>
           </li>
           <li>
-            <img className="sidebar_icon" src={MessagesIcon} />
             <Link className="sidebar_link" to="/messages">
+              <img className="sidebar_icon" src={MessagesIcon} alt="Messages" />
               Messages
             </Link>
           </li>
           <li>
-            <img className="sidebar_icon" src={NotificationsIcon} />
             <Link className="sidebar_link" to="/notify">
+              <img className="sidebar_icon" src={NotificationsIcon} alt="Notifications" />
               Notification
-              {/* conditonally rendering the badge number */}
-              {globalNotification?.length > 0 && <span className="sidebar-notification-badge">
-                {globalNotification.length}
-              </span>}
+              {/* conditionally rendering the badge number */}
+              {globalNotification?.length > 0 && (
+                <span className="sidebar-notification-badge">
+                  {globalNotification.length}
+                </span>
+              )}
             </Link>
           </li>
           <li>
-            <img className="sidebar_icon" src={UserIcon} />
             <Link className="sidebar_link" to="/profile">
+              <img className="sidebar_icon" src={UserIcon} alt="Profile" />
               Profile
             </Link>
           </li>
           <li>
-            <img className="sidebar_icon" src={AiIcon} />
-            <Link className="sidebar_link" to="denai">
+            <Link className="sidebar_link" to="/denai">
+              <img className="sidebar_icon" src={AiIcon} alt="Denver AI" />
               Denver AI
             </Link>
           </li>
