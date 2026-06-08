@@ -56,7 +56,7 @@ type Hub struct {
 	RoomClientsPayloads                 chan *ClientNotifyPayload
 	RegisterRoomClient                  chan *Client // recieves client for room
 	TargettedClientNotificationTypeOnly chan *ClientNotifyPayload
-	// GeminiAIResponseOnly 				chan *ClientNotifyPayload //* recieves notification payload for sending res via ws writer,distinguished by the "type" field
+	GeminiAIResponseOnly                chan *ClientNotifyPayload //* recieves notification payload for sending res via ws writer,distinguished by the "type" field
 	// DirectMessagesHub chan *models.DirectMessage
 }
 
@@ -82,6 +82,7 @@ func IntializeNewHubInstance() *Hub {
 		ClientStore:                         make(map[uint]*Client),
 		TargettedClientNotificationTypeOnly: make(chan *ClientNotifyPayload),
 		// DirectMessagesHub: make(chan *models.DirectMessage),
+		GeminiAIResponseOnly: make(chan *ClientNotifyPayload, 20),
 	}
 }
 
@@ -278,6 +279,34 @@ func (h *Hub) RunService() {
 						}(client, msg)
 					}
 				}
+			}
+
+		// & for routing gemini responses
+		case geminiResponse := <-h.GeminiAIResponseOnly:
+			slog.Info("HUB received gemini response", "receiverID", geminiResponse.SenderID, "clients_count", len(h.Clients))
+			// check for target client and redirect to its ws writer for response
+			slog.Info("request arrived at the central 'hub'🏢",
+				slog.Group("Send",
+					slog.String("Via", "h.GeminiAIResponseOnly")),
+				slog.Group("payload",
+					slog.String("Broadcast_type", "p2p"),
+					slog.Uint64("SenderID", uint64(geminiResponse.SenderID)),
+				),
+				slog.Group("meta",
+					slog.Time("requested_at", time.Now()),
+					slog.String("status", "ai response recieved successfully"),
+				),
+			)
+			var targttedClient *Client
+			for activeClient := range h.Clients {
+				if activeClient.ID == geminiResponse.SenderID {
+					// here sender is the reciever <- so routing himself to himself only, cause reciever is just empty vessel
+					targttedClient = activeClient //* set that client to be one which is targetted
+				}
+			}
+
+			if targttedClient != nil {
+				targttedClient.Send <- geminiResponse // sending response
 			}
 
 		// & broker case -> when payload comes from consumer - "dm"

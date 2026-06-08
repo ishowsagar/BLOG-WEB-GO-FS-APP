@@ -1,11 +1,14 @@
 package controller
 
 import (
+	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/ishowsagar/go-blog-web-application/gemini"
 	"github.com/ishowsagar/go-blog-web-application/models"
+	"github.com/ishowsagar/go-blog-web-application/services"
 	"github.com/ishowsagar/go-blog-web-application/utils"
 )
 
@@ -14,6 +17,7 @@ import (
 // type that stores gemini ai model which -> stores gemini api callers method in it
 type GeminiController struct {
 	GeminiAIServiceModel *gemini.GeminiAIService
+	pns *services.PushNotificationService
 }
 
 // func that returns instance of handler type which -> which stores mehtod for calling gemini api for responses
@@ -62,9 +66,19 @@ func(g *GeminiController) ServeGEMINIAIPromptRequest(c *gin.Context) {
 		return
 	}
 
+	airespayload := models.GeminiResponse{
+		SenderID: userID,
+		GeminiID: 99999, //* just vessel id
+		AIResponse: AiResponse,
+	}
+	// handler invokes method to send payload to the pns retry which redirect to the pns's chan
+	g.pns.RetryDenverAIPromptRequestWithTimeout(g.pns,7 * time.Second,&airespayload) // sends to retryWithTimeout -> pns.geminiaires'chan -> publisher-> consumer-> hub-> h.GeminiReschan -> ws -> client's writer -> client
+	slog.Info("successfully sent payload to the pns service✅")
 
 	// todos - add db postgres layer + caching layer for caching same responses to avoid excess credit usage for same prompts
-
+	slog.Info("ai response is served successfully✅","GeminiResponse",AiResponse)
+	
+	// now; it is just optional to send concrete response we are sending response aired via websocket connection
 	c.JSON(http.StatusOK,utils.GeminiSuccessResponse{
 		Status: "successfully fetched response from the given user prompt🎉",
 		Ok: true,
