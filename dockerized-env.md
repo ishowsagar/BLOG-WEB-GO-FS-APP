@@ -143,3 +143,12 @@ Run this to dump data into container
 <!-- ! .env not synced pitfall -->
 
 1. If .env on ec2 server side is not synced and when backend is trying to build from new variables you listed out in the .env in local machine and when compose tried to look the same on its ubuntu machine (gotha -> its own machine server side) -> could not find it cause .gitignore was not pushing changes as git is being ignored
+
+<!-- & logging compose services -->
+
+1. Access them at ec2 ip:port where they are being exposed at served from the container image and provided env
+
+> Grafana at 3k
+
+- You could search for any log fetched in grafana with this type of query 👇
+  `{container="targetContainerName_whoseLogsYouWantToSearchFor"} |= "searchingStr" | json`

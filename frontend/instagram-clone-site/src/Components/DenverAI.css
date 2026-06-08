@@ -1,0 +1,618 @@
+/* Denver AI Premium Glassmorphic Chat Styles */
+
+.denver-ai-container {
+  display: flex;
+  gap: 1.5rem;
+  max-width: 1100px;
+  margin: 1.5rem auto;
+  height: calc(100vh - 180px);
+  min-height: 500px;
+  animation: denver-fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  box-sizing: border-box;
+}
+
+@keyframes denver-fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Glassmorphic Cards */
+.denver-glass {
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 
+    0 12px 40px rgba(31, 38, 135, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  border-radius: 24px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+/* Sidebar / Info Panel */
+.denver-sidebar {
+  flex: 0 0 320px;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+  gap: 1.5rem;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.denver-brand-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.75rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid rgba(37, 99, 235, 0.1);
+}
+
+.denver-ai-logo-outer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  box-shadow: 0 8px 24px rgba(124, 58, 237, 0.3);
+  animation: denver-float 6s ease-in-out infinite;
+}
+
+@keyframes denver-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.denver-ai-logo-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  filter: blur(10px);
+  opacity: 0.5;
+  z-index: -1;
+}
+
+.denver-brand-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #1e3a8a, #7c3aed);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0;
+}
+
+.denver-brand-tagline {
+  font-size: 0.82rem;
+  color: #4b5563;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.denver-sidebar-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.denver-section-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #3b82f6;
+  margin-bottom: 0.25rem;
+}
+
+.denver-suggested-prompts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.denver-prompt-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(37, 99, 235, 0.1);
+  border-radius: 14px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #1e3a8a;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.denver-prompt-pill:hover {
+  background: linear-gradient(135deg, #eff6ff, #f5f3ff);
+  border-color: rgba(124, 58, 237, 0.3);
+  transform: translateY(-2px) translateX(2px);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.08);
+}
+
+.denver-prompt-icon {
+  font-size: 1rem;
+}
+
+.denver-status-panel {
+  margin-top: auto;
+  padding: 0.85rem;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.denver-status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  color: #4b5563;
+}
+
+.denver-status-value {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.denver-indicator {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+}
+
+/* Main Chat Panel */
+.denver-chat-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.denver-chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.15rem 1.5rem;
+  background: rgba(255, 255, 255, 0.4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(10px);
+}
+
+.denver-chat-header-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.denver-chat-header-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);
+}
+
+.denver-chat-header-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.denver-chat-header-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.denver-chat-header-status {
+  font-size: 0.75rem;
+  color: #10b981;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 500;
+}
+
+.denver-chat-header-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.denver-action-btn {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(229, 231, 235, 0.5);
+  padding: 0.5rem;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  color: #4b5563;
+}
+
+.denver-action-btn:hover {
+  background: white;
+  color: #111827;
+  transform: translateY(-1px);
+}
+
+/* Chat Messages Container */
+.denver-messages-container {
+  flex: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  scroll-behavior: smooth;
+}
+
+/* Welcome Screen */
+.denver-welcome-container {
+  margin: auto;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1.25rem;
+  padding: 2.5rem;
+  animation: denver-slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes denver-slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.denver-welcome-glow-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  box-shadow: 0 8px 30px rgba(139, 92, 246, 0.05);
+}
+
+.denver-welcome-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #111827;
+  margin: 0;
+}
+
+.denver-welcome-desc {
+  font-size: 0.9rem;
+  color: #4b5563;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.denver-capabilities-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.denver-cap-card {
+  padding: 0.85rem;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 16px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.denver-cap-icon {
+  font-size: 1.15rem;
+  margin-bottom: 0.15rem;
+}
+
+.denver-cap-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #1e3a8a;
+}
+
+.denver-cap-text {
+  font-size: 0.72rem;
+  color: #6b7280;
+  line-height: 1.3;
+}
+
+/* Bubbles */
+.denver-msg-row {
+  display: flex;
+  width: 100%;
+  animation: denver-bubbleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes denver-bubbleIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.denver-msg-row.is-user {
+  justify-content: flex-end;
+}
+
+.denver-msg-row.is-ai {
+  justify-content: flex-start;
+}
+
+.denver-msg-bubble {
+  max-width: 75%;
+  padding: 0.95rem 1.2rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+  position: relative;
+}
+
+.denver-msg-row.is-user .denver-msg-bubble {
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  color: white;
+  border-bottom-right-radius: 4px;
+  box-shadow: 0 4px 15px rgba(124, 58, 237, 0.15);
+}
+
+.denver-msg-row.is-ai .denver-msg-bubble {
+  background: rgba(255, 255, 255, 0.85);
+  color: #1f2937;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-bottom-left-radius: 4px;
+}
+
+.denver-msg-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.72rem;
+  margin-top: 0.45rem;
+  font-weight: 500;
+}
+
+.denver-msg-row.is-user .denver-msg-info {
+  color: rgba(255, 255, 255, 0.8);
+  justify-content: flex-end;
+}
+
+.denver-msg-row.is-ai .denver-msg-info {
+  color: #9ca3af;
+}
+
+/* Typing Indicator */
+.denver-typing-indicator {
+  display: flex;
+  gap: 0.35rem;
+  padding: 0.35rem 0.5rem;
+  align-items: center;
+}
+
+.denver-typing-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #7c3aed;
+  opacity: 0.4;
+  animation: denver-pulse 1.2s infinite ease-in-out;
+}
+
+.denver-typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.denver-typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes denver-pulse {
+  0%, 100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  50% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+/* Input Composer Area */
+.denver-composer {
+  padding: 1.25rem 1.5rem;
+  background: rgba(255, 255, 255, 0.4);
+  border-top: 1px solid rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(10px);
+}
+
+.denver-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(37, 99, 235, 0.15);
+  border-radius: 18px;
+  box-shadow: 
+    0 4px 20px rgba(0, 0, 0, 0.03),
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.8);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 0.35rem;
+}
+
+.denver-input-wrapper:focus-within {
+  border-color: rgba(124, 58, 237, 0.5);
+  box-shadow: 
+    0 4px 24px rgba(124, 58, 237, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  background: white;
+  transform: translateY(-1px);
+}
+
+.denver-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  color: #1f2937;
+  outline: none;
+  resize: none;
+  min-height: 24px;
+  max-height: 120px;
+  font-family: inherit;
+  line-height: 1.4;
+}
+
+.denver-input::placeholder {
+  color: #9ca3af;
+}
+
+.denver-send-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
+}
+
+.denver-send-btn:hover:not(:disabled) {
+  transform: translateY(-1.5px) scale(1.03);
+  box-shadow: 0 6px 18px rgba(124, 58, 237, 0.35);
+  filter: brightness(1.08);
+}
+
+.denver-send-btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.97);
+}
+
+.denver-send-btn:disabled {
+  background: #e5e7eb;
+  color: #9ca3af;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.denver-send-icon {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+  transform: translateX(1px);
+}
+
+.denver-disclaimer {
+  font-size: 0.7rem;
+  color: #9ca3af;
+  text-align: center;
+  margin-top: 0.6rem;
+}
+
+/* Scrollbar Customization for Glassmorphic Feel */
+.denver-messages-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.denver-messages-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.denver-messages-container::-webkit-scrollbar-thumb {
+  background: rgba(124, 58, 237, 0.15);
+  border-radius: 10px;
+}
+
+.denver-messages-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(124, 58, 237, 0.3);
+}
+
+/* Responsive Styles for Denver AI component specifically */
+@media (max-width: 860px) {
+  .denver-ai-container {
+    flex-direction: column;
+    height: auto;
+    max-height: none;
+    margin: 1rem;
+  }
+
+  .denver-sidebar {
+    flex: none;
+    width: 100%;
+  }
+
+  .denver-chat-panel {
+    min-height: 480px;
+  }
+}
+
+@media (max-width: 500px) {
+  .denver-ai-container {
+    margin: 0.5rem;
+    height: calc(100vh - 120px - env(safe-area-inset-bottom));
+  }
+
+  .denver-sidebar {
+    display: none; /* Hide sidebar completely in compact view */
+  }
+
+  .denver-capabilities-grid {
+    grid-template-columns: 1fr;
+  }
+}
