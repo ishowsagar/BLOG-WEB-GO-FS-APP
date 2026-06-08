@@ -19,6 +19,7 @@ type PushNotificationService struct {
 	CommentNotification chan *models.CommentPayload
 	// todo - add last chan for follow notifications
 	FollowNotificationPanel chan *models.FollowPayload
+	GeminiResponse chan *models.GeminiResponse
 	Hub *Hub // WebSocket hub for broadcasting to connected clients
 
 }
@@ -108,6 +109,11 @@ func(pns *PushNotificationService) StartService() {
 				slog.Group("redirecting payload to the consumer",
 					slog.Time("requested_at",time.Now())),
 			)
+
+		
+		// & case for gemini respomses
+		case geminiResPayload := <- pns.GeminiResponse :
+				slog.Info("payload recieved","tyoe",geminiResPayload.Type)
 			
 		// todo - add a redirection method to redirect Like output so this chan can read
 		// fixed - added method which invokes this method through the corresponding handler
@@ -361,4 +367,35 @@ func(p *PushNotificationService) RetryFollowWithTimeout(pns *PushNotificationSer
 			// retry as default case when nothing happens
 		}
 	}
+}
+
+
+// method that belongs to the p
+func(p *PushNotificationService) RetryDenverAIPromptRequestWithTimeout(pns *PushNotificationService,timeout time.Duration,AIresponse *models.GeminiResponse){
+
+
+	// &upon handler is invoked -> it would call this to send payload to this method which redirects data to the pns service
+
+	ctx,cancel := context.WithTimeout(context.Background(),timeout)
+	defer cancel()
+
+	// ticker
+	ticker := time.NewTicker(200 * time.Millisecond) // 200ms ticker
+	defer ticker.Stop()
+
+	for {
+		select {
+		case  pns.GeminiResponse <- AIresponse :
+			slog.Info("gemini response payload is redirected to pns service","type",AIresponse.Type)
+			return
+		
+		case  <- ctx.Done() :
+			slog.Info("queue is timed out","type",AIresponse.Type)
+			return
+		
+		case <- ticker.C :
+			// default retry
+		}
+	}
+
 }

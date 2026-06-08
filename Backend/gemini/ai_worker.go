@@ -34,7 +34,7 @@ func NewGeminiAIService(geminiapikey string) (*GeminiAIService, error) {
 	return &GeminiAIService{
 		Client: genAIClient,
 		// storing which model to use
-		AIModelName: "gemini-2.5-flash",
+		AIModelName: "gemini-2.0-flash",
 	}, nil
 }
 

@@ -212,3 +212,11 @@ type RoomMessages struct {
 type GeminiPromptRequestPayload struct {
 	Prompt string `json:"prompt" binding:"required"`
 }
+
+// gemini type response for prompt
+type GeminiResponse struct {
+	SenderID uint `json:"sender_id"`
+	GeminiID uint `json:"gemini_id"`
+	AIResponse string `json:"ai_response"`
+	Type string `json:"type"`
+}
