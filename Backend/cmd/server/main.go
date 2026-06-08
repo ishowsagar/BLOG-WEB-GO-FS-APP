@@ -200,15 +200,14 @@ func main() {
 	// connect notification service to hub for broadcasting
 	pushNotificationService.SetHub(hub)
 
-
 	// & GEMINI AI
 	geminiAIclientModel, err := gemini.NewGeminiAIService(config.GeminiAPIKey)
 	if err != nil {
 		slog.Error("failed to integrate Gemini-AI api access into the project❌", "error", err)
 		return
 	}
-	geminiController := controller.NewGeminiController(geminiAIclientModel)
-	slog.Info("----gemini--integration---check","status","successfully integrated gemini in the application✅")
+	geminiController := controller.NewGeminiController(geminiAIclientModel, pushNotificationService)
+	slog.Info("----gemini--integration---check", "status", "successfully integrated gemini in the application✅")
 	//& AWS-S3-BUCKET SETUP
 
 	// bucketManeger type's instance which -> stores s3Client which holds all the bucket operations
