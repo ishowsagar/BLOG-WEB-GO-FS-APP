@@ -297,16 +297,17 @@ func (h *Hub) RunService() {
 					slog.String("status", "ai response recieved successfully"),
 				),
 			)
-			var targttedClient *Client
+
+			// checking client exists then sending response
 			for activeClient := range h.Clients {
 				if activeClient.ID == geminiResponse.SenderID {
-					// here sender is the reciever <- so routing himself to himself only, cause reciever is just empty vessel
-					targttedClient = activeClient //* set that client to be one which is targetted
+					select {
+					case activeClient.Send <- geminiResponse:
+						slog.Info("successfully sent gemini response to client connection", "clientID", activeClient.ID)
+					default:
+						slog.Warn("client send channel full or blocked", "clientID", activeClient.ID)
+					}
 				}
-			}
-
-			if targttedClient != nil {
-				targttedClient.Send <- geminiResponse // sending response
 			}
 
 		// & broker case -> when payload comes from consumer - "dm"
