@@ -56,6 +56,7 @@ type Hub struct {
 	RoomClientsPayloads                 chan *ClientNotifyPayload
 	RegisterRoomClient                  chan *Client // recieves client for room
 	TargettedClientNotificationTypeOnly chan *ClientNotifyPayload
+	// GeminiAIResponseOnly 				chan *ClientNotifyPayload //* recieves notification payload for sending res via ws writer,distinguished by the "type" field
 	// DirectMessagesHub chan *models.DirectMessage
 }
 

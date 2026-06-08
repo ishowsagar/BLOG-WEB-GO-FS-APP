@@ -24,6 +24,19 @@ type ErrResponse struct {
 	Ok bool
 }
 
+// type struct for gemini handlers err responses
+type GeminiErrResponse struct {
+	Status string `json:"status"`
+	Ok bool `json:"ok"`
+	GeminiResponse string `json:"gemini_response"`
+}
+
+// type for sending 'success' only handler responses
+type GeminiSuccessResponse struct {
+	Status string `json:"status"`
+	Ok bool	`json:"ok"`
+	GeminiResponse string `json:"gemini_response"`
+}
 
 //  type struct for dedicated comment success response
 type CommentSuccessResponse struct {

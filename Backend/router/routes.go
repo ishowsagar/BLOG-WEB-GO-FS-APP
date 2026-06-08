@@ -13,50 +13,50 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-func ServeRoutes(router *gin.Engine,masterController *controller.MasterController,config *utils.ENVConfig,wsController *controller.WSController)  {
+func ServeRoutes(router *gin.Engine, masterController *controller.MasterController, config *utils.ENVConfig, wsController *controller.WSController) {
 
 	// auth instances
-	authMiddleware := middleware.NewAuthMiddlewareInventory(masterController.UserController.TokenDbModel,masterController.UserController.RedisClient)
+	authMiddleware := middleware.NewAuthMiddlewareInventory(masterController.UserController.TokenDbModel, masterController.UserController.RedisClient)
 
 	// * health check function to check health of API
 	health := router.Group("/health")
 	// health.Use(middleware.SlogLoggerMiddlewareFunction())
-		{
-			health.GET("/",func(c *gin.Context) {
-				metrics.HttpRequestsTotal.WithLabelValues("/health","200").Inc() //& updating metrics
-				c.JSON(http.StatusOK,gin.H{
-					"status":"OK",
-					"message":"API IS RUNNING FINE⚡...",
-				})
+	{
+		health.GET("/", func(c *gin.Context) {
+			metrics.HttpRequestsTotal.WithLabelValues("/health", "200").Inc() //& updating metrics
+			c.JSON(http.StatusOK, gin.H{
+				"status":  "OK",
+				"message": "API IS RUNNING FINE⚡...",
 			})
-			
-		} 
-	
+		})
+
+	}
+
 	// * router Configuration
 	router.Use(cors.New(cors.Config{
-		// bug - since our app is running on the aws, need to specify ip address to make it bypass cors 
-		AllowOrigins: []string{"http://localhost:5173","http://3.84.111.249:5173","https://denvergram.me"},
-		AllowMethods: []string{"POST","GET","PUT","DELETE"},
-		AllowHeaders: []string{"Origin","Authorization","Content-type"},
-		AllowBrowserExtensions:false, //! don't let mess with site headers or anything by installing scripts or like we did with auth header with mod header
-		AllowCredentials: true,
-		MaxAge: 1 * time.Hour,
+		// bug - since our app is running on the aws, need to specify ip address to make it bypass cors
+		AllowOrigins:           []string{"http://localhost:5173", "http://3.84.111.249:5173", "https://denvergram.me"},
+		AllowMethods:           []string{"POST", "GET", "PUT", "DELETE"},
+		AllowHeaders:           []string{"Origin", "Authorization", "Content-type"},
+		AllowBrowserExtensions: false, //! don't let mess with site headers or anything by installing scripts or like we did with auth header with mod header
+		AllowCredentials:       true,
+		MaxAge:                 1 * time.Hour,
 	}))
 	router.Static("/static", "./static")
 
 	// * frontend Testing ✅
 	client := router.Group("/form")
 	{
-		client.POST("/register",masterController.UserController.RegisterUser) // just in case - need binded req payload of type registerReq
-		client.POST("/login",masterController.UserController.LoginUser)
-		client.POST("/password/reset",masterController.UserController.UpdateUserPassword)
-	} 
-	
-	cached := router.Group("/cached") 
+		client.POST("/register", masterController.UserController.RegisterUser) // just in case - need binded req payload of type registerReq
+		client.POST("/login", masterController.UserController.LoginUser)
+		client.POST("/password/reset", masterController.UserController.UpdateUserPassword)
+	}
+
+	cached := router.Group("/cached")
 	cached.Use(middleware.LatencyCheckerMiddlewareFunction())
 	{
-		cached.POST("/register",masterController.UserController.RegisterUser)
-		cached.POST("/login",masterController.UserController.SuperfastLogin)
+		cached.POST("/register", masterController.UserController.RegisterUser)
+		cached.POST("/login", masterController.UserController.SuperfastLogin)
 	}
 
 	// WebSocket route (no auth middleware - token passed as query param)
@@ -70,52 +70,54 @@ func ServeRoutes(router *gin.Engine,masterController *controller.MasterControlle
 	metrics := router.Group("/metrics")
 	// bug - Simply returning handler does nothing, we have to set it the concrete by wrapping so it acts like gin but metric prometheus handler
 	{
-		metrics.GET("/",gin.WrapH(promhttp.Handler()))
+		metrics.GET("/", gin.WrapH(promhttp.Handler()))
 	}
-	api := router.Group("/api") 
+	api := router.Group("/api")
 	api.Use(authMiddleware.AuthMiddlewareFunction(config.JwtSecret))
 	api.Use(middleware.RateLimiterFunction())
 	// api.Use(middleware.SlogLoggerMiddlewareFunction())
 	api.Use(middleware.LatencyCheckerMiddlewareFunction())
 	{
 		// user ✅
-		api.GET("/users/profile",masterController.UserController.FetchProfileData)
-		api.GET("/users/search",masterController.UserController.FindUsersByNAME)
-		api.GET("/user/profile/:userid",masterController.UserController.FetchProfileDataByURlParamID) // client would have to request on this url passing last endPoint as the userID for query the res and returning it
-		
+		api.GET("/users/profile", masterController.UserController.FetchProfileData)
+		api.GET("/users/search", masterController.UserController.FindUsersByNAME)
+		api.GET("/user/profile/:userid", masterController.UserController.FetchProfileDataByURlParamID) // client would have to request on this url passing last endPoint as the userID for query the res and returning it
+
 		// comment ✅
-		api.GET("/feed/comments/:postid",masterController.CommentController.LoadPostComments)
-		api.GET("/feed/comment",masterController.CommentController.LoadAllCommentsAssociatedWithPostAndUsers)
-		api.GET("/feed/post/comments/:postid",masterController.CommentController.GetCommentsCountByPostID)
-		
+		api.GET("/feed/comments/:postid", masterController.CommentController.LoadPostComments)
+		api.GET("/feed/comment", masterController.CommentController.LoadAllCommentsAssociatedWithPostAndUsers)
+		api.GET("/feed/post/comments/:postid", masterController.CommentController.GetCommentsCountByPostID)
+
 		// * ✅changing to post comment on post - by postID in url path, instead of sending json embedded postID
-		api.POST("/post/comment/:postid",masterController.CommentController.PostComment)
-		api.DELETE("/comment/delete",masterController.CommentController.DeleteCommentByUser)
+		api.POST("/post/comment/:postid", masterController.CommentController.PostComment)
+		api.DELETE("/comment/delete", masterController.CommentController.DeleteCommentByUser)
 
 		// feed ✅
-		api.GET("/feed/full",masterController.PostController.LoadFeed)
-		api.GET("/feed/batch",masterController.PostController.FeedBatchRequest)
-		api.GET("/post/count",masterController.PostController.GetPostCountByUserID)
-		api.POST("/post/create",masterController.PostController.CreatePost)
-		api.GET("/feed/post/:id",masterController.PostController.GetPostByID)
-		api.GET("/feed/client/posts",masterController.PostController.GetAllPostsOfClient)
-		api.DELETE("/post/:id",masterController.PostController.DeletePost)
-		api.GET("/messages",wsController.LoadMessages)
-
+		api.GET("/feed/full", masterController.PostController.LoadFeed)
+		api.GET("/feed/batch", masterController.PostController.FeedBatchRequest)
+		api.GET("/post/count", masterController.PostController.GetPostCountByUserID)
+		api.POST("/post/create", masterController.PostController.CreatePost)
+		api.GET("/feed/post/:id", masterController.PostController.GetPostByID)
+		api.GET("/feed/client/posts", masterController.PostController.GetAllPostsOfClient)
+		api.DELETE("/post/:id", masterController.PostController.DeletePost)
+		api.GET("/messages", wsController.LoadMessages)
 
 		// profile ✅
-		api.GET("/profile",masterController.UserController.FetchFullProfileData)
-		api.GET("/followings",masterController.UserController.GetFollowedUserProfiles)
-		
+		api.GET("/profile", masterController.UserController.FetchFullProfileData)
+		api.GET("/followings", masterController.UserController.GetFollowedUserProfiles)
+
 		// s3Bucket✅
-		api.GET("/s3/pfp",masterController.S3Controller.GetProfilePictureBucketURl)
-		api.POST("/user/upload/post/image",masterController.S3Controller.HandlePostsImageStream) // for posts image only
-		api.POST("/user/pfp/upload",masterController.S3Controller.HandleUploadImageStream)
+		api.GET("/s3/pfp", masterController.S3Controller.GetProfilePictureBucketURl)
+		api.POST("/user/upload/post/image", masterController.S3Controller.HandlePostsImageStream) // for posts image only
+		api.POST("/user/pfp/upload", masterController.S3Controller.HandleUploadImageStream)
 
 		// like✅
-		api.POST("/like",masterController.LikeController.UpdateLike)
-		
+		api.POST("/like", masterController.LikeController.UpdateLike)
+
 		// follow ✅
-		api.POST("/users/follow/:followeeID",masterController.FollowController.FollowUser)
+		api.POST("/users/follow/:followeeID", masterController.FollowController.FollowUser)
+
+		// gemini - post cause we would be sending body payload and yeah silly me we still get response
+		api.POST("/denverai/new", masterController.GeminiController.ServeGEMINIAIPromptRequest) // serves ai responses based off provided prompt
 	}
 }

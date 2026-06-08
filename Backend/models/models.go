@@ -208,3 +208,7 @@ type RoomMessages struct {
 	Messages []string `json:"messages"` // contains all the messages
 }
 
+// type for inbound messages payload 
+type GeminiPromptRequestPayload struct {
+	Prompt string `json:"prompt" binding:"required"`
+}
