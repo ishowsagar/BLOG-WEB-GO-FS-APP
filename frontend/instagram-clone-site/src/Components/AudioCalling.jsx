@@ -267,6 +267,11 @@ const AudioCalling = forwardRef(
             `[WebRTC Accept] Processing ${iceCandidatesQueue.current.length} queued ICE candidates on accept`,
           );
           for (const candidate of iceCandidatesQueue.current) {
+            // ! skip null/end-of-gathering candidates
+            if (!candidate || (!candidate.candidate && candidate.sdpMid == null && candidate.sdpMLineIndex == null)) {
+              console.log("[WebRTC Accept] Skipping null/end-of-gathering queued ICE candidate");
+              continue;
+            }
             try {
               console.log("[WebRTC Accept] Adding queued candidate:", candidate);
               await peerConnection.current.addIceCandidate(
@@ -369,6 +374,11 @@ const AudioCalling = forwardRef(
                   `[WebRTC WS] Processing ${iceCandidatesQueue.current.length} queued ICE candidates on answer`,
                 );
                 for (const candidate of iceCandidatesQueue.current) {
+                  // ! skip null/end-of-gathering candidates
+                  if (!candidate || (!candidate.candidate && candidate.sdpMid == null && candidate.sdpMLineIndex == null)) {
+                    console.log("[WebRTC WS] Skipping null/end-of-gathering queued ICE candidate");
+                    continue;
+                  }
                   try {
                     console.log("[WebRTC WS] Adding queued ICE candidate:", candidate);
                     await peerConnection.current.addIceCandidate(
@@ -390,6 +400,14 @@ const AudioCalling = forwardRef(
             //& when both gets connected
             const candidate = audioPayload.audio_payload_only;
             console.log(`[WebRTC WS] Received ICE-CANDIDATE from sender: ${audioPayload.sender_id}`, candidate);
+
+            // ! guard: null candidate = end-of-gathering signal from the browser, not a real candidate
+            // ! constructing RTCIceCandidate from it throws "sdpMid and sdpMLineIndex are both null"
+            if (!candidate || (!candidate.candidate && candidate.sdpMid == null && candidate.sdpMLineIndex == null)) {
+              console.log("[WebRTC WS] Skipping null/end-of-gathering ICE candidate");
+              break;
+            }
+
             if (
               peerConnection.current &&
               peerConnection.current.remoteDescription // since we store connection when answered <- if that exists
