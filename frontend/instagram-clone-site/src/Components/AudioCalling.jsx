@@ -203,6 +203,14 @@ const AudioCalling = forwardRef(
           return;
         }
 
+        // ! pre-activate the remote audio element with the user click gesture to bypass autoplay policy blocks
+        const el = document.getElementById("remote-hidden-audio-element");
+        if (el) {
+          el.muted = false;
+          el.volume = 1.0;
+          el.play().catch((err) => console.log("[WebRTC Accept] Pre-play gesture activation:", err.message));
+        }
+
         // peer connection is stored in current state <- created by new RTCPeerConnection(passingInIceStunServersConfig)
         peerConnection.current = new RTCPeerConnection(rtcConfig); // just remember everything is stored in current state by the use of ref
         setupPeerConnectionListeners(peerConnection.current);
@@ -534,6 +542,14 @@ const AudioCalling = forwardRef(
         console.log("[WebRTC Call] Initializing calling to recieverID:", recieverID);
         setCallState("calling");
 
+        // ! pre-activate the remote audio element with the user click gesture to bypass autoplay policy blocks
+        const el = document.getElementById("remote-hidden-audio-element");
+        if (el) {
+          el.muted = false;
+          el.volume = 1.0;
+          el.play().catch((err) => console.log("[WebRTC Call] Pre-play gesture activation:", err.message));
+        }
+
         // 1. grab mic/permissions first
         // setting localStream <- senderSide permission for audio access
         console.log("[WebRTC Call] Requesting local microphone stream...");
@@ -688,7 +704,16 @@ const AudioCalling = forwardRef(
       return `${mins}:${secs}`;
     };
 
-    if (callState === "idle") return null;
+    if (callState === "idle") {
+      return (
+        <audio
+          id="remote-hidden-audio-element"
+          autoPlay
+          playsInline
+          style={{ display: "none" }}
+        />
+      );
+    }
 
     const getStatusText = () => {
       switch (callState) {
