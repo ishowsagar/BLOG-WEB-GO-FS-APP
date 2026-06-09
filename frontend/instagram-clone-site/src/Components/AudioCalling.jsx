@@ -270,12 +270,12 @@ const AudioCalling = forwardRef(
             "remote-hidden-audio-element",
           );
 
-          if (!remoteHiddenAudioElement) {
-            console.log("[WebRTC Accept] Creating remote-hidden-audio-element");
-            remoteHiddenAudioElement = document.createElement("audio");
-            remoteHiddenAudioElement.id = "remote-hidden-audio-element";
-            document.body.appendChild(remoteHiddenAudioElement);
-          }
+          // if (!remoteHiddenAudioElement) {
+          //   console.log("[WebRTC Accept] Creating remote-hidden-audio-element");
+          //   remoteHiddenAudioElement = document.createElement("audio");
+          //   remoteHiddenAudioElement.id = "remote-hidden-audio-element";
+          //   document.body.appendChild(remoteHiddenAudioElement);
+          // }
 
           // if element exists and cause it would be hidden, sourcing the recieved stream from peerConnection rtc to source in from e.streams[at0thPlace]
           if (remoteHiddenAudioElement) {
@@ -624,12 +624,12 @@ const AudioCalling = forwardRef(
             "remote-hidden-audio-element",
           ); // ohhh, this would be played in hidden side but hearble track
 
-          if (!remoteHiddenAudioElement) {
-            console.log("[WebRTC Call] Creating remote-hidden-audio-element");
-            remoteHiddenAudioElement = document.createElement("audio");
-            remoteHiddenAudioElement.id = "remote-hidden-audio-element";
-            document.body.appendChild(remoteHiddenAudioElement);
-          }
+          // if (!remoteHiddenAudioElement) {
+          //   console.log("[WebRTC Call] Creating remote-hidden-audio-element");
+          //   remoteHiddenAudioElement = document.createElement("audio");
+          //   remoteHiddenAudioElement.id = "remote-hidden-audio-element";
+          //   document.body.appendChild(remoteHiddenAudioElement);
+          // }
 
           // if element exists and cause it would be hidden, sourcing the recieved stream from peerConnection rtc to source in from e.streams[at0thPlace]
           if (remoteHiddenAudioElement) {
