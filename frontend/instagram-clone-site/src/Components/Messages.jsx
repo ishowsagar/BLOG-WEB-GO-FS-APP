@@ -452,11 +452,11 @@ export default function Messages() {
                     boxShadow: "0 8px 18px rgba(0,0,0,0.22)",
                   }}
                 />
-                <div>
-                  <div style={{ fontWeight: 800, color: "#f8fafc" }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 800, color: "#f8fafc", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {profiles.find((p) => p.id === activePeer)?.name}
                   </div>
-                  <div style={{ fontSize: "0.85rem", color: "#94a3b8" }}>
+                  <div style={{ fontSize: "0.85rem", color: "#94a3b8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {formatLastSeen(activePeer)}
                   </div>
                 </div>
