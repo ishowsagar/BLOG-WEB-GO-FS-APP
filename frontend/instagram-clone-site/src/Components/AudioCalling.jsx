@@ -230,20 +230,18 @@ const AudioCalling = forwardRef(
 
         // streaming incoming stream from peerRtcConnection
         peerConnection.current.ontrack = (e) => {
+          const track = e.track; // always use the track directly, not e.streams[0] which can be muted/empty on first fire
+          // on track property gives us remotely recieved stream <- in streams array being the 0th as first element being the recieved stream
+          const remoteAudioStream = e.streams[0] || new MediaStream([track]); // fallback: build a stream from the track itself if streams[0] is missing
+
           console.log("[WebRTC Accept] ontrack event received:", {
             streamsCount: e.streams.length,
-            trackKind: e.track.kind,
-            trackId: e.track.id
+            trackKind: track.kind,
+            trackId: track.id,
+            trackMuted: track.muted,
+            trackReadyState: track.readyState
           });
-          const remoteAudioStream = e.streams[0]; // on track property gives us remotely recieved stream <- in streams array being the 0th as first element being the recieved stream
-          if (remoteAudioStream) {
-            console.log(`[WebRTC Accept] Remote stream ID: ${remoteAudioStream.id}`);
-            remoteAudioStream.getTracks().forEach((track, i) => {
-              logTrackDetails(`Remote [${i}]`, track);
-            });
-          } else {
-            console.warn("[WebRTC Accept] No stream on ontrack event");
-          }
+          logTrackDetails("Remote (Accept)", track);
 
           let remoteHiddenAudioElement = document.getElementById(
             "remote-hidden-audio-element",
@@ -259,15 +257,23 @@ const AudioCalling = forwardRef(
           // if element exists and cause it would be hidden, sourcing the recieved stream from peerConnection rtc to source in from e.streams[at0thPlace]
           if (remoteHiddenAudioElement) {
             // ! setting {src} of this hidden el to play this audio track steam from the candidate
-            if (remoteHiddenAudioElement.srcObject === remoteAudioStream) {
-              console.log("[WebRTC Accept] remoteHiddenAudioElement.srcObject is already set to this stream. Skipping setting to avoid audio reset glitch.");
-            } else {
+            if (remoteHiddenAudioElement.srcObject !== remoteAudioStream) {
               console.log("[WebRTC Accept] Setting remoteHiddenAudioElement.srcObject to remoteAudioStream");
               remoteHiddenAudioElement.srcObject = remoteAudioStream;
             }
             remoteHiddenAudioElement.autoplay = true;
             remoteHiddenAudioElement.playsInline = true;
-            
+            remoteHiddenAudioElement.muted = false; // explicitly unmute - browser can default to muted for autoplay policy
+
+            // ! critical: ontrack fires BEFORE ICE connects - track starts muted, play() hits silence.
+            // ! bind onunmute to restart playback the moment ICE connects and audio starts flowing
+            track.onunmute = () => {
+              console.log("[WebRTC Accept] Track UNMUTED (ICE connected, audio flowing) - restarting play()");
+              remoteHiddenAudioElement.play().catch((err) => {
+                console.error("[WebRTC Accept] Audio playback failed on unmute:", err);
+              });
+            };
+
             console.log("[WebRTC Accept] Playing remote audio...");
             remoteHiddenAudioElement.play()
               .then(() => {
@@ -385,7 +391,17 @@ const AudioCalling = forwardRef(
               sdpType: audioPayload.audio_payload_only?.type
             });
             // &when call is either approved or not <- 'answering' call => reciever gets 'answer''s audio_payload
-            if (peerConnection.current) {
+            if (!peerConnection.current) {
+              console.warn("[WebRTC WS] Received ANSWER but peerConnection.current is null!");
+              break;
+            }
+            // ! guard: only set remote description if we're in the right signaling state
+            // ! if 3 handlers fire for this same message, 2nd and 3rd would throw "wrong state" without this check
+            if (peerConnection.current.signalingState !== "have-local-offer") {
+              console.warn(`[WebRTC WS] Skipping setRemoteDescription(answer) - wrong signalingState: ${peerConnection.current.signalingState}`);
+              break;
+            }
+            try {
               console.log("[WebRTC WS] Setting remote description (Answer)...");
               await peerConnection.current.setRemoteDescription(
                 new RTCSessionDescription(audioPayload.audio_payload_only), // opening rtcConnection from recieved audioPayload to the reciever
@@ -416,8 +432,8 @@ const AudioCalling = forwardRef(
                 }
                 iceCandidatesQueue.current = [];
               }
-            } else {
-              console.warn("[WebRTC WS] Received ANSWER but peerConnection.current is null!");
+            } catch (err) {
+              console.error("[WebRTC WS] Failed to process ANSWER:", err);
             }
             break;
           }
@@ -569,23 +585,20 @@ const AudioCalling = forwardRef(
             console.log("[WebRTC Call] ICE Candidate Gathering complete (Caller)");
           }
         };
-
-        // streaming incoming stream from peerRtcConnection
+// streaming incoming stream from peerRtcConnection
         peerConnection.current.ontrack = (e) => {
+          const track = e.track; // always use the track directly, not e.streams[0] which can be muted/empty on first fire
+          // on track property gives us remotely recieved stream <- in streams array being the 0th as first element being the recieved stream
+          const remoteAudioStream = e.streams[0] || new MediaStream([track]); // fallback: build a stream from the track itself if streams[0] is missing
+
           console.log("[WebRTC Call] ontrack event received:", {
             streamsCount: e.streams.length,
-            trackKind: e.track.kind,
-            trackId: e.track.id
+            trackKind: track.kind,
+            trackId: track.id,
+            trackMuted: track.muted,
+            trackReadyState: track.readyState
           });
-          const remoteAudioStream = e.streams[0]; // on track property gives us remotely recieved stream <- in streams array being the 0th as first element being the recieved stream
-          if (remoteAudioStream) {
-            console.log(`[WebRTC Call] Remote stream ID: ${remoteAudioStream.id}`);
-            remoteAudioStream.getTracks().forEach((track, i) => {
-              logTrackDetails(`Remote [${i}]`, track);
-            });
-          } else {
-            console.warn("[WebRTC Call] No stream on ontrack event");
-          }
+          logTrackDetails("Remote (Call)", track);
 
           let remoteHiddenAudioElement = document.getElementById(
             "remote-hidden-audio-element",
@@ -601,15 +614,23 @@ const AudioCalling = forwardRef(
           // if element exists and cause it would be hidden, sourcing the recieved stream from peerConnection rtc to source in from e.streams[at0thPlace]
           if (remoteHiddenAudioElement) {
             // ! setting {src} of this hidden el to play this audio track steam from the candidate
-            if (remoteHiddenAudioElement.srcObject === remoteAudioStream) {
-              console.log("[WebRTC Call] remoteHiddenAudioElement.srcObject is already set to this stream. Skipping setting to avoid audio reset glitch.");
-            } else {
+            if (remoteHiddenAudioElement.srcObject !== remoteAudioStream) {
               console.log("[WebRTC Call] Setting remoteHiddenAudioElement.srcObject to remoteAudioStream");
               remoteHiddenAudioElement.srcObject = remoteAudioStream;
             }
             remoteHiddenAudioElement.autoplay = true;
             remoteHiddenAudioElement.playsInline = true;
-            
+            remoteHiddenAudioElement.muted = false; // explicitly unmute - browser can default to muted for autoplay policy
+
+            // ! critical: ontrack fires BEFORE ICE connects - track starts muted, play() hits silence.
+            // ! bind onunmute to restart playback the moment ICE connects and audio starts flowing
+            track.onunmute = () => {
+              console.log("[WebRTC Call] Track UNMUTED (ICE connected, audio flowing) - restarting play()");
+              remoteHiddenAudioElement.play().catch((err) => {
+                console.error("[WebRTC Call] Audio playback failed on unmute:", err);
+              });
+            };
+
             console.log("[WebRTC Call] Playing remote audio...");
             remoteHiddenAudioElement.play()
               .then(() => {
