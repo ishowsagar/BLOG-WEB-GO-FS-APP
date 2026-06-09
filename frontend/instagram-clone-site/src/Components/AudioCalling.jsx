@@ -19,6 +19,7 @@ const AudioCalling = forwardRef(({
   const peerConnection = useRef(null);
   const localStream = useRef(null);
   const targetPeerID = useRef(null); //* the one current user is connected to <- sent by the backend answer
+  const iceCandidatesQueue = useRef([]);
 
   // stun servers
   const rtcConfig = {
@@ -64,6 +65,7 @@ const AudioCalling = forwardRef(({
       remoteAudioElement.srcObject = null;
     }
 
+    iceCandidatesQueue.current = [];
     setCallState("hangup");
     console.log("user has been disconnected from the call; all the rtc connection have been safely remved.");
   };
@@ -127,6 +129,9 @@ const AudioCalling = forwardRef(({
           remoteHiddenAudioElement.srcObject = remoteAudioStream;
           remoteHiddenAudioElement.autoplay = true;
           remoteHiddenAudioElement.playsInline = true;
+          remoteHiddenAudioElement.play().catch((err) => {
+            console.error("Audio playback failed:", err);
+          });
         }
       };
 
@@ -145,6 +150,19 @@ const AudioCalling = forwardRef(({
       await peerConnection.current.setRemoteDescription(
         new RTCSessionDescription(incomingOfferSdp),
       );
+
+      // Process queued candidates
+      if (iceCandidatesQueue.current.length > 0) {
+        console.log(`Processing ${iceCandidatesQueue.current.length} queued ICE candidates on accept`);
+        for (const candidate of iceCandidatesQueue.current) {
+          try {
+            await peerConnection.current.addIceCandidate(new RTCIceCandidate(candidate));
+          } catch (err) {
+            console.error("Failed to add queued ICE candidate:", err);
+          }
+        }
+        iceCandidatesQueue.current = [];
+      }
 
       // now sending answer payload to the caller with sdp block and audio_payload, this time sending 'answer' payload,
       const createdAnsSdpPayload = await peerConnection.current.createAnswer(); //sdp answer audio payload, sending to caller with type "answer" for connection
@@ -188,17 +206,37 @@ const AudioCalling = forwardRef(({
               new RTCSessionDescription(audioPayload.audio_payload_only), // opening rtcConnection from recieved audioPayload to the reciever
             );
             setCallState("active");
+
+            // Process queued candidates
+            if (iceCandidatesQueue.current.length > 0) {
+              console.log(`Processing ${iceCandidatesQueue.current.length} queued ICE candidates on answer`);
+              for (const candidate of iceCandidatesQueue.current) {
+                try {
+                  await peerConnection.current.addIceCandidate(new RTCIceCandidate(candidate));
+                } catch (err) {
+                  console.error("Failed to add queued ICE candidate:", err);
+                }
+              }
+              iceCandidatesQueue.current = [];
+            }
           }
           break;
         }
         case "ice-candidate": { //& when both gets connected
+          const candidate = audioPayload.audio_payload_only;
           if (
             peerConnection.current &&
             peerConnection.current.remoteDescription // since we store connection when answered <- if that exists
           ) {
-            await peerConnection.current.addIceCandidate(
-              new RTCIceCandidate(audioPayload.audio_payload_only),
-            );
+            try {
+              await peerConnection.current.addIceCandidate(new RTCIceCandidate(candidate));
+            } catch (err) {
+              console.error("Failed to add ICE candidate:", err);
+            }
+          } else {
+            // Queue candidate for later
+            iceCandidatesQueue.current.push(candidate);
+            console.log("Queued ICE candidate:", candidate);
           }
           break;
         }
@@ -315,6 +353,9 @@ const AudioCalling = forwardRef(({
           remoteHiddenAudioElement.srcObject = remoteAudioStream;
           remoteHiddenAudioElement.autoplay = true;
           remoteHiddenAudioElement.playsInline = true;
+          remoteHiddenAudioElement.play().catch((err) => {
+            console.error("Audio playback failed:", err);
+          });
         }
       };
 
