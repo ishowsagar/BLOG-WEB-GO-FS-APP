@@ -30,22 +30,37 @@ const AudioCalling = forwardRef(
     const localStream = useRef(null);
     const targetPeerID = useRef(null); //* the one current user is connected to <- sent by the backend answer
     const iceCandidatesQueue = useRef([]);
+    const audioContextRef = useRef(null); //* Web Audio API context - more reliable than <audio> element for remote stream playback
 
-    // stun servers
+    // ! helper: play remote WebRTC stream via AudioContext
+    // ! AudioContext bypasses Chrome autoplay policy & device routing issues that silent-fail on <audio>.play()
+    const playRemoteStreamViaAudioContext = (stream) => {
+      try {
+        // close stale context before creating new one
+        if (audioContextRef.current && audioContextRef.current.state !== "closed") {
+          audioContextRef.current.close();
+        }
+        audioContextRef.current = new AudioContext();
+        // Chrome suspends AudioContext until user interaction - resume it
+        if (audioContextRef.current.state === "suspended") {
+          audioContextRef.current.resume();
+        }
+        const sourceNode = audioContextRef.current.createMediaStreamSource(stream);
+        sourceNode.connect(audioContextRef.current.destination);
+        console.log("[WebRTC Audio] AudioContext stream connected to destination, state:", audioContextRef.current.state);
+      } catch (err) {
+        console.error("[WebRTC Audio] AudioContext playback failed:", err);
+      }
+    };
+
+    // stun and turn servers configuration
     const rtcConfig = {
-      // type of AudioPayload sending for calling config to determine things when request is either<- "offer" or "answer"
-
-      // must follow this native configuration naming conventions
-      // using multiple STUN servers as fallback in case primary times out (errorCode 701)
-      // + a free public TURN relay so ICE always has a working path even behind strict NAT
-      iceTransportPolicy: "all", // try host candidates even if STUN/TURN fails
+      iceTransportPolicy: "all",
       iceServers: [
+        // One robust master STUN server handles 99% of P2P lookups
         { urls: "stun:stun.l.google.com:19302" },
-        { urls: "stun:stun1.l.google.com:19302" },
-        { urls: "stun:stun2.l.google.com:19302" },
-        { urls: "stun:stun3.l.google.com:19302" },
-        { urls: "stun:stun4.l.google.com:19302" },
-        // free public TURN relay for local dev & NAT-blocked environments
+
+        // Streamlined TURN relay channels favoring stable ports
         {
           urls: "turn:openrelay.metered.ca:80",
           username: "openrelayproject",
@@ -57,7 +72,7 @@ const AudioCalling = forwardRef(
           credential: "openrelayproject",
         },
         {
-          urls: "turn:openrelay.metered.ca:443?transport=tcp",
+          urls: "turn:openrelay.metered.ca:443?transport=tcp", // Forces reliable TCP over flaky UDP
           username: "openrelayproject",
           credential: "openrelayproject",
         },
@@ -88,13 +103,8 @@ const AudioCalling = forwardRef(
           settings: JSON.stringify(settings),
           capabilities: JSON.stringify(capabilities),
         });
-
-        track.onmute = () => {
-          console.warn(`[WebRTC Telemetry] ${prefix} Track MUTED:`, track.id);
-        };
-        track.onunmute = () => {
-          console.log(`[WebRTC Telemetry] ${prefix} Track UNMUTED:`, track.id);
-        };
+        // ! note: do NOT set onmute/onunmute here - caller sets them in ontrack handler
+        // ! overwriting them here would kill the audio restart logic
         track.onended = () => {
           console.log(`[WebRTC Telemetry] ${prefix} Track ENDED:`, track.id);
         };
@@ -107,9 +117,22 @@ const AudioCalling = forwardRef(
       console.log("[WebRTC Telemetry] Setting up listeners on RTCPeerConnection");
 
       pc.oniceconnectionstatechange = () => {
-        console.log(`[WebRTC Telemetry] ICE Connection State changed to: ${pc.iceConnectionState}`);
-        if (pc.iceConnectionState === "failed" || pc.iceConnectionState === "disconnected") {
+        const state = pc.iceConnectionState;
+        console.log(`[WebRTC Telemetry] ICE Connection State changed to: ${state}`);
+        if (state === "failed" || state === "disconnected") {
           console.warn("[WebRTC Telemetry] ICE Connection is in failed/disconnected state.");
+        }
+        // ! belt-and-suspenders: when ICE confirms a live path, re-trigger AudioContext
+        // ! in case ontrack fired before ICE and the initial play() hit silence
+        if (state === "connected" || state === "completed") {
+          const el = document.getElementById("remote-hidden-audio-element");
+          if (el && el.srcObject) {
+            console.log("[WebRTC Telemetry] ICE connected - re-triggering AudioContext & audio element play()");
+            playRemoteStreamViaAudioContext(el.srcObject);
+            el.muted = false;
+            el.volume = 1.0;
+            el.play().catch((err) => console.error("[WebRTC Telemetry] Play on ICE connect failed:", err));
+          }
         }
       };
 
@@ -370,7 +393,7 @@ const AudioCalling = forwardRef(
         if (!audioPayload) return;
 
         switch (
-          audioPayload.type //& when call 'offer' is recieved <- for cal connection => reciever get that request with peerID being the senderID as sender is one who is sending call request
+        audioPayload.type //& when call 'offer' is recieved <- for cal connection => reciever get that request with peerID being the senderID as sender is one who is sending call request
         ) {
           case "offer": {
             console.log(`[WebRTC WS] Received OFFER from sender: ${audioPayload.sender_id}`, {
@@ -552,9 +575,6 @@ const AudioCalling = forwardRef(
         setupPeerConnectionListeners(peerConnection.current);
 
         // 3. attach~connect the permitted microphone to reciever side {peer}
-        // at this ppinte.forEach((track) => {
-        //  at this point lstream would have stored the permission now we are ready to connect to the peer mics
-        // })   peerConnection.current.addTrack(track,localStream.current)controlling structure -> if finds ip -> send attached ips in contructed payload via ws
         localStream.current.getTracks().forEach((track) => {
           console.log("[WebRTC Call] Adding local track to connection:", track.id);
           peerConnection.current.addTrack(track, localStream.current);
@@ -585,7 +605,7 @@ const AudioCalling = forwardRef(
             console.log("[WebRTC Call] ICE Candidate Gathering complete (Caller)");
           }
         };
-// streaming incoming stream from peerRtcConnection
+        // streaming incoming stream from peerRtcConnection
         peerConnection.current.ontrack = (e) => {
           const track = e.track; // always use the track directly, not e.streams[0] which can be muted/empty on first fire
           // on track property gives us remotely recieved stream <- in streams array being the 0th as first element being the recieved stream
@@ -704,13 +724,12 @@ const AudioCalling = forwardRef(
         <div className="audiocall-card">
           {/* Pulsating avatar placeholder */}
           <div
-            className={`audiocall-avatar ${
-              callState === "calling" || callState === "active"
+            className={`audiocall-avatar ${callState === "calling" || callState === "active"
                 ? "pulse-calling"
                 : callState === "incoming"
                   ? "pulse-incoming"
                   : ""
-            }`}
+              }`}
           >
             {String(peerLabel).substring(0, 2).toUpperCase()}
           </div>

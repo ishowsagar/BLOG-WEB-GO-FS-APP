@@ -230,6 +230,7 @@ type AudioOffer struct {
 
 // audio chunks determinors for inbounds & outbounds
 type AudioIceCandidate struct {
-	Candidate string `json:"candidate"`
-	SdpMLineIndex int `json:"sdpMLineIndex"`
+	Candidate     string `json:"candidate"`
+	SdpMLineIndex int    `json:"sdpMLineIndex"`
+	SdpMid        string `json:"sdpMid"` // ! was missing - without this sdpMid is silently dropped when forwarded to receiver
 }

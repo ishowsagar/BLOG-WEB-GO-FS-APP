@@ -77,6 +77,13 @@ type StatusPayload struct {
 	Status string `json:"status"`
 }
 
+// audio chunks determinors for inbounds & outbounds
+type AudioIceCandidate struct {
+	Candidate     string `json:"candidate"`
+	SdpMLineIndex int    `json:"sdpMLineIndex"`
+	SdpMid        string `json:"sdpMid"` // ! was missing - without this the sdpMid field gets silently dropped when forwarded to the receiver
+}
+
 // initializes pointer instance of type Hub
 func IntializeNewHubInstance() *Hub {
 	return &Hub{
@@ -756,47 +763,10 @@ func (h *Hub) RunService() {
 				}
 
 			}
-			// slog.Debug("HUB room fanout summary", "room_id", roomMsgPayload.RoomID,)
-
-			// for activeClient := range h.Clients {
-			// 	if activeClient.ID == roomPayload.RecieverID || activeClient.ID == roomPayload.SenderID {
-			// 		// if there is any client in clients [] exists whose id matches any of these -> if they are active and then are binded to exchange
-			// 		// storing them in a room
-
-			// 		h.ChatRoomClients[roomPayload.RoomID][activeClient] = true // storing those clients in the room
-			// 		// key[innerMapKey] = val //* if this set to true means innerMap key is stored whose, we use "key" only <- same logic in setting active clients
-			// 		// * if there is any activeClient coming -> read and if it is -> set "key" being client to be true so -> now it stored as pair, we check on everything from key
-			// 		slog.Info("Room is created and clients are stored in chatRoomClientsNestedMap","roomID",roomPayload.RoomID,"clients :",h.ChatRoomClients)
-
-			// 		// but need to send message too to all room clients
-			// 		for eachRoomClient := range h.ChatRoomClients[roomPayload.RoomID] {
-			// 			eachRoomClient.Send <- roomPayload // redirect payload to eachClient send chan which would be proactively checked by the active client writer to write res what recieved in send chan
-			// 		}
-			// 	}
-			// }
 
 		// tracking online-offline activity
 		case currentClient := <-h.Online:
-			// set it online with status being true
-
-			// // first if it exists there in clients
-			// _,ok := h.Clients[currentClient]
-			// if ok {
-			// 	// test - if it shows these indicators
-			// 	// simply loggin for now to test it
-			// 	for client := range h.Clients {
-			// 		// checking which client we are targetting - we are here talking about each active client, not sender or reciever for now
-			// 		if client.ID == currentClient.ID {
-			// 			// send status to that client's OnlineStatus chan
-			// 			client.OnlineStatus <- true // when recieved it will check if it is true then send -> response as online 🟢
-			// 			slog.Info("user is online🟢","userID:",currentClient.ID)
-			// 		}else {
-			// 			// else label it as offline
-			// 			client.OnlineStatus <- false
-			// 		}
-			// 	}
-
-			// checking what is being recieved here and send to all clients which ->
+			
 			statusPayload := StatusPayload{
 				Status: "online🟢",
 				UserID: currentClient.ID, // passing id of current client which is active
@@ -848,8 +818,6 @@ func (h *Hub) RunService() {
 					)
 				}
 			}
-
-			//  redirects to all client's statusChan where writers writes through status Chan seperately handels writing fo rit
 
 		// & for targetted client notification of all types {likes,comment...}
 		// this chan is dedicated to type related notifications only which check for type exclusively
@@ -963,9 +931,7 @@ func (h *Hub) RunService() {
 			slog.Info("successfully sent notification to the client✅", "recieverID", notifyPayload.RecieverID)
 
 		case currentDisconnectedClient := <-h.Offline:
-			// for disconnect it would be simulanously removed from clients, so checking if its not there and successfully disconnected
-			// time.Sleep(time.Millisecond * 200) // adding a lil delay to let other go routine finish its work
-			// deferred disconnected offlien client is redirected to this chan and checking if it recieved here and we can read from the chan
+			
 			statusPayload := StatusPayload{
 				UserID: currentDisconnectedClient.ID,
 				Status: "offline🔴",
@@ -1017,11 +983,6 @@ func (h *Hub) RunService() {
 					)
 				}
 			}
-
-			// _,disconnectedClientExists := h.Clients[currentClient]
-			// if !disconnectedClientExists {
-			// 	slog.Info("user is offline🔴","userID:",currentClient.ID)
-			// }
 
 		}
 
@@ -1173,18 +1134,24 @@ func (c *Client) MessageReader(db *gorm.DB) {
 		// at this point, reader would have got sender's/reciever's name from his id recieved in payload sent from the frontend✅✅
 		// -> since same func is acting for both we can't assume by default active client is the sender in this case
 
-		// * if recieving msg is correct of type inBMsg - making query to store in db
-		err = db.Create(&models.Message{
-			// we not storing name just we will send result back with name
-			SenderID:   msg.SenderID,
-			RecieverID: msg.RecieverID,
-			Content:    msg.Content,
-			CreatedAt:  time.Now(),
-		}).Error
+		// * audio signaling payloads (offer/answer/ice-candidate/hangup) must NOT go through the DB write path
+		// * they have empty Content which would break the reader loop on a NOT NULL constraint error
+		isAudioPayload := msg.Type == "offer" || msg.Type == "answer" || msg.Type == "ice-candidate" || msg.Type == "ice_candidate" || msg.Type == "hangup"
 
-		if err != nil {
-			slog.Error("failed to load message", "error", err)
-			break
+		if !isAudioPayload {
+			// * if recieving msg is correct of type inBMsg - making query to store in db
+			err = db.Create(&models.Message{
+				// we not storing name just we will send result back with name
+				SenderID:   msg.SenderID,
+				RecieverID: msg.RecieverID,
+				Content:    msg.Content,
+				CreatedAt:  time.Now(),
+			}).Error
+
+			if err != nil {
+				slog.Error("failed to load message", "error", err)
+				break
+			}
 		}
 
 		// * if successfully stored in db --> need to broadcast this message to reciever 👇
@@ -1202,7 +1169,7 @@ func (c *Client) MessageReader(db *gorm.DB) {
 		}
 
 		var audioChunkPayload *ClientNotifyPayload
-		if msg.Type == "offer" || msg.Type == "answer" || msg.Type == "ice-candidate" || msg.Type == "ice_candidate" || msg.Type == "hangup" {
+		if isAudioPayload {
 			// & 3 - publishing audio offer "whether to join or not" -> to the reciever || also make payload for ice-candidate
 			audioChunkPayload = &ClientNotifyPayload{
 				Type:             msg.Type,
@@ -1237,8 +1204,8 @@ func (c *Client) MessageReader(db *gorm.DB) {
 		// 	}
 		// }()
 
-		// &  2 - mark delivery in "notifications" exchange for this userID when its not nil
-		if msg.RecieverID != 0 && payload.RoomID == 0 {
+		// & 2 - mark delivery in "notifications" exchange for this userID when its not nil
+		if !isAudioPayload && msg.RecieverID != 0 && payload.RoomID == 0 {
 			//* checked by consumer which -> redirects to targetted chan of hub -> which sends to targetted client only for reciever send chan
 			c.Hub.Publish(msg.RecieverID, payload) //payload of type being "dm" publishes to the exchange
 			// todo - when successfully published also store in the db - dm message
