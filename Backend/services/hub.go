@@ -1,28 +1,37 @@
 package services
 
 import (
+	"encoding/json"
 	"log/slog"
 	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/ishowsagar/go-blog-web-application/metrics"
 	"github.com/ishowsagar/go-blog-web-application/models"
+	"github.com/ishowsagar/go-blog-web-application/utils"
 	"gorm.io/gorm"
 )
+
+// audio config sent from the client for connecting call
+type AudioConfig struct {
+	Type string
+	sdp  string
+}
 
 // client payload for post notificaton type struct
 type ClientNotifyPayload struct {
 	// $ since we can set this as central payload for notifications, so we can as many fields it will be conditonal checked on frontend side to check what is coming and deal with it
-	SenderID     uint      `json:"sender_id"`
-	RecieverID   uint      `json:"reciever_id"`
-	SenderName   string    `json:"sender_name"`
-	RecieverName string    `json:"reciever_name"`
-	RoomID       uint      `json:"room_id"`
-	RoomStatus   bool      `json:"room_status"` // clients sends payload with bool true -> joined, false -> left
-	Type         string    `json:"type"`
-	Content      string    `json:"content"`
-	PostID       uint      `json:"post_id"`
-	CreatedAt    time.Time `json:"created_at"`
+	SenderID         uint            `json:"sender_id"`
+	RecieverID       uint            `json:"reciever_id"`
+	SenderName       string          `json:"sender_name"`
+	RecieverName     string          `json:"reciever_name"`
+	RoomID           uint            `json:"room_id"`
+	RoomStatus       bool            `json:"room_status"` // clients sends payload with bool true -> joined, false -> left
+	Type             string          `json:"type"`
+	Content          string          `json:"content"`
+	PostID           uint            `json:"post_id"`
+	CreatedAt        time.Time       `json:"created_at"`
+	AudioPayloadOnly json.RawMessage `json:"audio_payload_only"`
 }
 
 type Client struct {
@@ -33,6 +42,7 @@ type Client struct {
 	// testing - adding more chan to recieve and send more data
 	BroadcastStatus chan *StatusPayload // for tracking status of client activity
 	OnDisconnect    func(userID uint)
+	PeerID          uint // Keep track of the peer we are in a call with
 }
 
 // @ Interface that stores method -> which belongs to the hub which -> when called calls publisher method
@@ -57,6 +67,7 @@ type Hub struct {
 	RegisterRoomClient                  chan *Client // recieves client for room
 	TargettedClientNotificationTypeOnly chan *ClientNotifyPayload
 	GeminiAIResponseOnly                chan *ClientNotifyPayload //* recieves notification payload for sending res via ws writer,distinguished by the "type" field
+	AudioCallingOnly                    chan *ClientNotifyPayload //* chan for only routing audio chunks to the client in the active ws connection
 	// DirectMessagesHub chan *models.DirectMessage
 }
 
@@ -83,6 +94,7 @@ func IntializeNewHubInstance() *Hub {
 		TargettedClientNotificationTypeOnly: make(chan *ClientNotifyPayload),
 		// DirectMessagesHub: make(chan *models.DirectMessage),
 		GeminiAIResponseOnly: make(chan *ClientNotifyPayload, 20),
+		AudioCallingOnly:     make(chan *ClientNotifyPayload, 10), //max 10 buffers allowed for call rn
 	}
 }
 
@@ -186,7 +198,135 @@ func (h *Hub) RunService() {
 			metrics.ActiveConnections.Set(float64(len(h.ClientStore))) // setting in once all clients that has been disconnected - remaining only active
 			slog.Info("client removed from all rooms on disconnect", "client_id", readdisconnectedclient.ID)
 
-			// if payload is redirected to chan <- which has client data
+		// ** Calling feature **//
+		case audioPayload := <-h.AudioCallingOnly:
+
+			slog.Info("audio chunk has been successfully recieved in the h.AudioCallingOnly chan", "recieverID", audioPayload.RecieverID, "type", audioPayload.Type)
+			slog.Info("request arrived at the central 'hub'🏢",
+				slog.Group("hub",
+					slog.String("station", "h.AudioCallingOnly")),
+				slog.Group("payload",
+					slog.String("Goal", "Audio calling"),
+					slog.Uint64("hasSenderID", uint64(audioPayload.SenderID)),
+					slog.Uint64("hasRecieverID", uint64(audioPayload.RecieverID)),
+				),
+				slog.Group("call ready to be recieved on the reciever's end.",
+					slog.Time("requested_at", time.Now()),
+				),
+			)
+
+			// client check - optimize lookup via ClientStore
+			reciever := h.ClientStore[audioPayload.RecieverID]
+			if reciever != nil {
+				slog.Info("request arrived at the central 'hub'🏢",
+					slog.Group("hub",
+						slog.String("station", "h.AudioCallingOnly")),
+					slog.Group("payload",
+						slog.String("Goal", "reciever check"),
+						slog.Uint64("hasSenderID", uint64(audioPayload.SenderID)),
+						slog.Uint64("hasRecieverID", uint64(audioPayload.RecieverID)),
+					),
+					slog.Group("reciever is successfully connected for caling.📞",
+						slog.Time("requested_at", time.Now()),
+					),
+				)
+
+				// Track/Untrack PeerID{connected_partner} on receiver end - so reciever also have information on who is connected
+				switch audioPayload.Type {
+					// % peer is his partner for calling <- 
+				case "offer":
+					reciever.PeerID = audioPayload.SenderID
+					slog.Info("reciever found his peer for calling📞.","peerID",reciever.PeerID)
+				case "answer":
+					reciever.PeerID = audioPayload.SenderID				
+					slog.Info("reciever found his peer for calling📞.","peerID",reciever.PeerID)
+				case "hangup":
+					reciever.PeerID = 0
+					slog.Info("reciever could not found peer for calling❌.","peerID",reciever.PeerID)
+				}
+
+				// redirecting chunk to the reciever end
+				switch audioPayload.Type {
+				case "offer":
+					// if incoming type on this chan recieved payload is "offer" -> we need to send this payload to the reciever to get his answer whether to connect to the call or not
+					select {
+					case reciever.Send <- audioPayload:
+						slog.Info("request arrived at the central 'hub'🏢",
+							slog.Group("hub",
+								slog.String("station", "h.AudioCallingOnly")),
+							slog.Group("payload",
+								slog.String("Goal", "call offer sent"),
+								slog.Uint64("hasSenderID", uint64(audioPayload.SenderID)),
+								slog.Uint64("hasRecieverID", uint64(audioPayload.RecieverID)),
+							),
+							slog.Group("call offer ready to be recieved on the reciever's end.",
+								slog.Time("requested_at", time.Now()),
+							),
+						)
+					default:
+						slog.Info("audio channels are full right", "error", "please try again later to send call offer, all lines are busy right now", "senderOD", audioPayload.SenderID)
+					} //..select
+
+				case "answer":
+					select {
+					case reciever.Send <- audioPayload:
+						slog.Info("request arrived at the central 'hub'🏢",
+							slog.Group("hub",
+								slog.String("station", "h.AudioCallingOnly")),
+							slog.Group("payload",
+								slog.String("Goal", "call answer sent"),
+								slog.Uint64("hasSenderID", uint64(audioPayload.SenderID)),
+								slog.Uint64("hasRecieverID", uint64(audioPayload.RecieverID)),
+							),
+							slog.Group("call answer ready to be recieved on the sender's end.",
+								slog.Time("requested_at", time.Now()),
+							),
+						)
+					default:
+						slog.Info("audio channels are full right", "error", "please try again later to send call answer, all lines are busy right now", "senderOD", audioPayload.SenderID)
+					} //..select
+
+				case "ice_candidate", "ice-candidate":
+					// if this payload is for candidate for call approval for client connection
+					select {
+					case reciever.Send <- audioPayload:
+						slog.Info("request arrived at the central 'hub'🏢",
+							slog.Group("hub",
+								slog.String("station", "h.AudioCallingOnly")),
+							slog.Group("payload",
+								slog.String("Goal", "call candidate approval sent"),
+								slog.Uint64("hasSenderID", uint64(audioPayload.SenderID)),
+								slog.Uint64("hasRecieverID", uint64(audioPayload.RecieverID)),
+							),
+							slog.Group("call candidate approval is ready to connect clients on call.",
+								slog.Time("requested_at", time.Now()),
+							),
+						)
+					default:
+						slog.Info("audio channels are full right", "error", "please try again later to send call candidate approval, all lines are busy right now", "senderOD", audioPayload.SenderID)
+					} //..select
+
+				case "hangup":
+					select {
+					case reciever.Send <- audioPayload:
+						slog.Info("request arrived at the central 'hub'🏢",
+							slog.Group("hub",
+								slog.String("station", "h.AudioCallingOnly")),
+							slog.Group("payload",
+								slog.String("Goal", "call hangup sent"),
+								slog.Uint64("hasSenderID", uint64(audioPayload.SenderID)),
+								slog.Uint64("hasRecieverID", uint64(audioPayload.RecieverID)),
+							),
+							slog.Group("call hangup is ready to be processed on peer end.",
+								slog.Time("requested_at", time.Now()),
+							),
+						)
+					default:
+						slog.Info("audio channels are full right", "error", "please try again later to send call hangup", "senderOD", audioPayload.SenderID)
+					} //..select
+				} //..switch
+			}
+		// if payload is redirected to chan <- which has client data
 		case msg := <-h.Broadcast: // if something is redirected to this chan
 			slog.Info("request arrived at the central 'hub'🏢",
 				slog.Group("hub",
@@ -918,9 +1058,19 @@ func (c *Client) MessageReader(db *gorm.DB) {
 
 		c.WebsocketConnection.Close() //! close close as soon as *c is unregistered
 
-		// @ chan methodology
-		// * var <- chan (reading from chan n storing onto var or reading onto var)
-		// ! chan <- vat (redirecting output to chan)
+		// also when calling is implemented -> publishing a hang message that client has been disconnected from call, abort the calling rtc
+		if c.PeerID != 0 {
+			audioDisconnectionPayload := ClientNotifyPayload{
+				SenderID:   c.ID,
+				RecieverID: c.PeerID,
+				Type:       "hangup",
+				RoomID:     0,
+				CreatedAt:  time.Now(),
+			}
+			if c.Hub.BrokerInterface != nil {
+				c.Hub.BrokerInterface.PublishEvents(c.PeerID, &audioDisconnectionPayload)
+			}
+		}
 	}()
 
 	// *heartbeat - for pong response check after this set interval
@@ -957,7 +1107,7 @@ func (c *Client) MessageReader(db *gorm.DB) {
 			break /// break loop from furthur calls
 		}
 
-		// & if payload has roomID -> publish in the exchange marked with room.ID -> consumer redirects to hub which sends response to the room clients
+		// & 1 - if payload has roomID -> publish in the exchange marked with room.ID -> consumer redirects to hub which sends response to the room clients
 		if msg.RoomID != 0 && msg.Type == "room_msg" {
 			var senderUser models.User
 			if senderResErr := db.Select("id", "username", "name").First(&senderUser, msg.SenderID).Error; senderResErr != nil {
@@ -993,12 +1143,12 @@ func (c *Client) MessageReader(db *gorm.DB) {
 			continue
 		} // ...room end...
 
-		// ** Otherwise publish with "userID" as routing key and non-room ID payload **//
 		// todo - add explicit type block later
 		// fetch sender and receiver details
 		var senderUser models.User
 		var recieverUser models.User
 
+		// ** Otherwise publish with "userID" as routing key and non-room ID payload -dm **//
 		if senderResErr := db.Select("id", "username", "name").First(&senderUser, msg.SenderID).Error; senderResErr != nil {
 			if senderResErr == gorm.ErrRecordNotFound {
 				slog.Error("sender not found", "sender_id", msg.SenderID)
@@ -1051,6 +1201,24 @@ func (c *Client) MessageReader(db *gorm.DB) {
 			RecieverName: recieverName,
 		}
 
+		var audioChunkPayload *ClientNotifyPayload
+		if msg.Type == "offer" || msg.Type == "answer" || msg.Type == "ice-candidate" || msg.Type == "ice_candidate" || msg.Type == "hangup" {
+			// & 3 - publishing audio offer "whether to join or not" -> to the reciever || also make payload for ice-candidate
+			audioChunkPayload = &ClientNotifyPayload{
+				Type:             msg.Type,
+				SenderID:         msg.SenderID,
+				RecieverID:       msg.RecieverID,
+				RoomID:           0, // explicitly set 0 for to non-clash in consumer routing
+				CreatedAt:        msg.CreatedAt,
+				AudioPayloadOnly: msg.AudioPayloadOnly, // wharver json raw msg payload is sent to reader <- inject in here
+			}
+		}
+
+		if audioChunkPayload != nil {
+			//*now offerpayload holds the call offer payload data that has to be published by the publisher
+			slog.Info("audio payload is ready✅", "type", audioChunkPayload.Type)
+		}
+
 		// uncomment for prod ack if used
 		// // send ack back to the sender so frontend can update UI (delivery/persisted)
 		// ack := &ClientNotifyPayload{
@@ -1069,7 +1237,7 @@ func (c *Client) MessageReader(db *gorm.DB) {
 		// 	}
 		// }()
 
-		// & mark delivery in "notifications" exchange for this userID when its not nil
+		// &  2 - mark delivery in "notifications" exchange for this userID when its not nil
 		if msg.RecieverID != 0 && payload.RoomID == 0 {
 			//* checked by consumer which -> redirects to targetted chan of hub -> which sends to targetted client only for reciever send chan
 			c.Hub.Publish(msg.RecieverID, payload) //payload of type being "dm" publishes to the exchange
@@ -1077,6 +1245,95 @@ func (c *Client) MessageReader(db *gorm.DB) {
 			// fix - already storing above
 			// need repo query method + handler for it + much needed table migration and routing ofc
 		}
+
+		// & 3 - publishing audio offer "whether to join or not" -> to the reciever
+		if audioChunkPayload != nil {
+
+			switch audioChunkPayload.Type {
+			case "offer":
+				// audioChunkPayload.AudioPayloadOnly
+				var offer models.AudioOffer //* offer holds type of data sent from client for offer
+				err := json.Unmarshal(audioChunkPayload.AudioPayloadOnly, &offer)
+				if err != nil {
+					slog.Error("failed to unmarshal offer", "error", err)
+					c.WebsocketConnection.WriteJSON(utils.ErrResponse{
+						Status: "failed to decode sent offer",
+						Ok:     false,
+					})
+					continue
+				}
+
+				//* if we successfully recieved offer but if validation check did not pass
+				if offer.Sdp == "" {
+					slog.Error("rejecting client audio calling offer", "error", "sdp string is missing!.")
+					continue // skip this
+				}
+				if offer.Platform == "web" {
+					slog.Info("handeling web based audio calling handshake")
+				}
+
+				// Track peer
+				c.PeerID = audioChunkPayload.RecieverID
+
+				c.Hub.Publish(audioChunkPayload.RecieverID, audioChunkPayload) //* stamping delivery of the event on the reciverID for consumer to route it
+				slog.Info("successfully recieved and published the delivery of this audioChunkPayload to the consumer", "recieverID", audioChunkPayload.RecieverID)
+
+			case "answer":
+				var answer models.AudioOffer
+				err := json.Unmarshal(audioChunkPayload.AudioPayloadOnly, &answer)
+				if err != nil {
+					slog.Error("failed to unmarshal answer", "error", err)
+					c.WebsocketConnection.WriteJSON(utils.ErrResponse{
+						Status: "failed to decode sent answer",
+						Ok:     false,
+					})
+					continue
+				}
+
+				if answer.Sdp == "" {
+					slog.Error("rejecting client audio calling answer", "error", "sdp string is missing!.")
+					continue
+				}
+
+				// Track peer
+				c.PeerID = audioChunkPayload.RecieverID
+
+				c.Hub.Publish(audioChunkPayload.RecieverID, audioChunkPayload)
+				slog.Info("successfully received and published the delivery of answer", "receiverID", audioChunkPayload.RecieverID)
+
+			case "ice_candidate", "ice-candidate":
+				// whatever struct type data sent to client <- reader msg's recieved payload has that field which carries payload, we just here checking if on unmarshaling if populates into desired type, we got that in out hand
+				var candidate models.AudioIceCandidate //* candidate holds type of data sent from client for candidate
+				err := json.Unmarshal(audioChunkPayload.AudioPayloadOnly, &candidate)
+				if err != nil {
+					slog.Error("failed to unmarashal candidate", "error", err)
+					c.WebsocketConnection.WriteJSON(utils.ErrResponse{
+						Status: "failed to decode sent candidate",
+						Ok:     false,
+					})
+					continue
+				}
+
+				//* if we successfully recieved candidate but if validation check did not pass
+				if candidate.Candidate == "" {
+					slog.Error("rejecting client audio calling candidate approval", "error", "candidate string is missing!.")
+					continue // skip this
+				}
+
+				// if present publish this event
+				c.Hub.Publish(audioChunkPayload.RecieverID, audioChunkPayload) //* stamping delivery of the event on the reciverID for consumer to route it
+				slog.Info("successfully recieved and published the delivery of this audioChunkPayload to the consumer", "recieverID", audioChunkPayload.RecieverID, "type", audioChunkPayload.Type)
+
+			case "hangup":
+				// Clear peer tracking
+				c.PeerID = 0
+
+				c.Hub.Publish(audioChunkPayload.RecieverID, audioChunkPayload)
+				slog.Info("successfully received and published the delivery of hangup to consumer", "receiverID", audioChunkPayload.RecieverID)
+			} //..swtich
+
+		} //..audioPayloadNotNilCheck
+
 		// else {
 		// 	//$ for broadcasting to all except the sender
 		// 	c.Hub.Broadcast <-payload // send payload to broadcast chan of hub which sends to all client's send chan to send response to all

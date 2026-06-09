@@ -3753,3 +3753,156 @@
   font-weight: 200;
   margin-bottom: 0.25rem;
 }
+
+/* Audio Calling Component Overlay Styles */
+@keyframes ringPulse {
+  0% { box-shadow: 0 0 0 0 rgba(236, 72, 153, 0.45); }
+  70% { box-shadow: 0 0 0 22px rgba(236, 72, 153, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(236, 72, 153, 0); }
+}
+
+@keyframes greenPulse {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.45); }
+  70% { box-shadow: 0 0 0 22px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.audiocall-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(6, 11, 22, 0.82);
+  backdrop-filter: blur(14px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.audiocall-card {
+  background: linear-gradient(135deg, rgba(17, 24, 39, 0.96), rgba(9, 15, 29, 0.98));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 28px;
+  padding: 3.5rem 2.5rem;
+  width: 360px;
+  text-align: center;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #fff;
+}
+
+.audiocall-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f97316, #ec4899);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.2rem;
+  font-weight: bold;
+  color: #fff;
+  margin-bottom: 1.5rem;
+  border: 3px solid rgba(255, 255, 255, 0.15);
+}
+
+.pulse-calling {
+  animation: ringPulse 2s infinite;
+}
+
+.pulse-incoming {
+  animation: greenPulse 2s infinite;
+}
+
+.audiocall-name {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.audiocall-status {
+  margin: 0 0 2rem 0;
+  font-size: 0.98rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.audiocall-status.is-active {
+  color: #10b981;
+}
+
+.audiocall-status.is-pending {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.audiocall-timer {
+  font-size: 2.5rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-bottom: 2rem;
+  color: #f8fafc;
+}
+
+.audiocall-duration {
+  font-size: 1.05rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 2rem;
+}
+
+.audiocall-duration-value {
+  font-weight: 700;
+  color: #10b981;
+}
+
+.audiocall-actions {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  width: 100%;
+}
+
+.audiocall-btn {
+  border: none;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.6rem;
+  color: #fff;
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.audiocall-btn:hover {
+  transform: scale(1.1);
+}
+
+.audiocall-btn:active {
+  transform: scale(0.95);
+}
+
+.audiocall-btn-accept {
+  background: #10b981;
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.35);
+}
+
+.audiocall-btn-accept:hover {
+  background-color: #059669;
+}
+
+.audiocall-btn-decline {
+  background: #ef4444;
+  box-shadow: 0 8px 24px rgba(239, 68, 68, 0.35);
+}
+
+.audiocall-btn-decline:hover {
+  background-color: #dc2626;
+}

@@ -5,6 +5,7 @@ import { WebSocketDebug } from "../Components/WebSocketDebug";
 import { Outlet, useLocation } from "react-router-dom";
 import { useEffect, useRef, useState, createContext, useContext } from "react";
 import { useWebSocket } from "../hooks/useWebSocket";
+import AudioCalling from "../Components/AudioCalling";
 import sendIcon from "../assets/icons/send.png";
 import { apiUrl } from "../Services/apiConfig";
 
@@ -48,6 +49,14 @@ export default function MainLayout() {
     token,
     "/api/ws/dm",
   );
+
+  const audioCallingRef = useRef(null);
+
+  const startAudioCall = (peerId) => {
+    if (audioCallingRef.current) {
+      audioCallingRef.current.initialiseCalling(peerId);
+    }
+  };
 
   function joinRoom(roomId) {
     if (!currentUserId || !sendNotifications) return;
@@ -440,7 +449,7 @@ export default function MainLayout() {
 
   return (
     <>
-      <RealtimeContext.Provider value={{ subscribeDm, sendDm, currentUserId }}>
+      <RealtimeContext.Provider value={{ subscribeDm, sendDm, currentUserId, startAudioCall }}>
         <postDataContext.Provider
           value={{ postBatch, SetPostBatch, bottomRef }}
         >
@@ -732,7 +741,7 @@ export default function MainLayout() {
                 <Sidebar globalNotification={globalNotification} />
               </div>
               <main>
-                <Outlet context={{ subscribeNotifications, sendNotifications, globalNotification, setGlobalNotifications }} />
+                <Outlet context={{ subscribeNotifications, sendNotifications, globalNotification, setGlobalNotifications, startAudioCall }} />
               </main>
             </div>
 
@@ -740,6 +749,7 @@ export default function MainLayout() {
           </section>
         </postDataContext.Provider>
       </RealtimeContext.Provider>
+      <AudioCalling ref={audioCallingRef} passedCurrentUserID={currentUserId} />
       <WebSocketDebug token={token} />
     </>
   );

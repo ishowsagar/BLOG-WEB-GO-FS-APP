@@ -220,3 +220,16 @@ type GeminiResponse struct {
 	AIResponse string `json:"ai_response"`
 	Type string `json:"type"`
 }
+
+// audio chunks determinors for inbounds & outbounds
+type AudioOffer struct {
+	Type string `json:"type"`
+	Sdp string `json:"sdp"`
+	Platform string `json:"platform"`
+}
+
+// audio chunks determinors for inbounds & outbounds
+type AudioIceCandidate struct {
+	Candidate string `json:"candidate"`
+	SdpMLineIndex int `json:"sdpMLineIndex"`
+}
