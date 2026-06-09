@@ -722,14 +722,21 @@ const AudioCalling = forwardRef(
     return (
       <div className="audiocall-overlay">
         <div className="audiocall-card">
+          <audio
+            id="remote-hidden-audio-element"
+            autoPlay
+            playsInline
+            style={{ display: "none" }}
+          />
           {/* Pulsating avatar placeholder */}
           <div
-            className={`audiocall-avatar ${callState === "calling" || callState === "active"
+            className={`audiocall-avatar ${
+              callState === "calling" || callState === "active"
                 ? "pulse-calling"
                 : callState === "incoming"
                   ? "pulse-incoming"
                   : ""
-              }`}
+            }`}
           >
             {String(peerLabel).substring(0, 2).toUpperCase()}
           </div>
