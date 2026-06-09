@@ -30,28 +30,6 @@ const AudioCalling = forwardRef(
     const localStream = useRef(null);
     const targetPeerID = useRef(null); //* the one current user is connected to <- sent by the backend answer
     const iceCandidatesQueue = useRef([]);
-    const audioContextRef = useRef(null); //* Web Audio API context - more reliable than <audio> element for remote stream playback
-
-    // ! helper: play remote WebRTC stream via AudioContext
-    // ! AudioContext bypasses Chrome autoplay policy & device routing issues that silent-fail on <audio>.play()
-    const playRemoteStreamViaAudioContext = (stream) => {
-      try {
-        // close stale context before creating new one
-        if (audioContextRef.current && audioContextRef.current.state !== "closed") {
-          audioContextRef.current.close();
-        }
-        audioContextRef.current = new AudioContext();
-        // Chrome suspends AudioContext until user interaction - resume it
-        if (audioContextRef.current.state === "suspended") {
-          audioContextRef.current.resume();
-        }
-        const sourceNode = audioContextRef.current.createMediaStreamSource(stream);
-        sourceNode.connect(audioContextRef.current.destination);
-        console.log("[WebRTC Audio] AudioContext stream connected to destination, state:", audioContextRef.current.state);
-      } catch (err) {
-        console.error("[WebRTC Audio] AudioContext playback failed:", err);
-      }
-    };
 
     // stun and turn servers configuration
     const rtcConfig = {
@@ -122,13 +100,12 @@ const AudioCalling = forwardRef(
         if (state === "failed" || state === "disconnected") {
           console.warn("[WebRTC Telemetry] ICE Connection is in failed/disconnected state.");
         }
-        // ! belt-and-suspenders: when ICE confirms a live path, re-trigger AudioContext
+        // ! belt-and-suspenders: when ICE confirms a live path, re-trigger audio element play()
         // ! in case ontrack fired before ICE and the initial play() hit silence
         if (state === "connected" || state === "completed") {
           const el = document.getElementById("remote-hidden-audio-element");
           if (el && el.srcObject) {
-            console.log("[WebRTC Telemetry] ICE connected - re-triggering AudioContext & audio element play()");
-            playRemoteStreamViaAudioContext(el.srcObject);
+            console.log("[WebRTC Telemetry] ICE connected - re-triggering audio element play()");
             el.muted = false;
             el.volume = 1.0;
             el.play().catch((err) => console.error("[WebRTC Telemetry] Play on ICE connect failed:", err));
@@ -179,6 +156,7 @@ const AudioCalling = forwardRef(
         });
         localStream.current = null;
       }
+
 
       // tearing down the hidden audio served element for tracks
       const remoteAudioElement = document.getElementById(
@@ -564,6 +542,15 @@ const AudioCalling = forwardRef(
           audio: true,
           video: false,
         });
+
+        const checktrack = localStream.current?.getTracks()[0];
+        console.log({
+          enabled: checktrack?.enabled,
+          muted: checktrack?.muted,
+          readyState: checktrack?.readyState,
+          kind: checktrack?.kind
+        })
+
         console.log("[WebRTC Call] Local microphone acquired, stream ID:", localStream.current?.id);
         localStream.current.getTracks().forEach((track, i) => {
           logTrackDetails(`Local [${i}]`, track);
@@ -600,6 +587,7 @@ const AudioCalling = forwardRef(
               };
 
               sendNotifications(payload); // this would send this type of payload to the client's reader which would be consumed with attached peerID as senderID
+              console.log(peerConnection.current?.getSenders(), "sender");
             }
           } else {
             console.log("[WebRTC Call] ICE Candidate Gathering complete (Caller)");
@@ -730,13 +718,12 @@ const AudioCalling = forwardRef(
           />
           {/* Pulsating avatar placeholder */}
           <div
-            className={`audiocall-avatar ${
-              callState === "calling" || callState === "active"
-                ? "pulse-calling"
-                : callState === "incoming"
-                  ? "pulse-incoming"
-                  : ""
-            }`}
+            className={`audiocall-avatar ${callState === "calling" || callState === "active"
+              ? "pulse-calling"
+              : callState === "incoming"
+                ? "pulse-incoming"
+                : ""
+              }`}
           >
             {String(peerLabel).substring(0, 2).toUpperCase()}
           </div>
