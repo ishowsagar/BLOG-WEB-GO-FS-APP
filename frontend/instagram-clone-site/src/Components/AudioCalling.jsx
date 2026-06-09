@@ -70,7 +70,9 @@ const AudioCalling = forwardRef(
       }
       try {
         const settings = track.getSettings ? track.getSettings() : {};
-        const capabilities = track.getCapabilities ? track.getCapabilities() : {};
+        const capabilities = track.getCapabilities
+          ? track.getCapabilities()
+          : {};
         console.log(`[WebRTC Telemetry] ${prefix} Track Details:`, {
           id: track.id,
           kind: track.kind,
@@ -87,49 +89,71 @@ const AudioCalling = forwardRef(
           console.log(`[WebRTC Telemetry] ${prefix} Track ENDED:`, track.id);
         };
       } catch (err) {
-        console.error(`[WebRTC Telemetry] Error logging track details for ${prefix}:`, err);
+        console.error(
+          `[WebRTC Telemetry] Error logging track details for ${prefix}:`,
+          err,
+        );
       }
     };
 
     const setupPeerConnectionListeners = (pc) => {
-      console.log("[WebRTC Telemetry] Setting up listeners on RTCPeerConnection");
+      console.log(
+        "[WebRTC Telemetry] Setting up listeners on RTCPeerConnection",
+      );
 
       pc.oniceconnectionstatechange = () => {
         const state = pc.iceConnectionState;
-        console.log(`[WebRTC Telemetry] ICE Connection State changed to: ${state}`);
+        console.log(
+          `[WebRTC Telemetry] ICE Connection State changed to: ${state}`,
+        );
         if (state === "failed" || state === "disconnected") {
-          console.warn("[WebRTC Telemetry] ICE Connection is in failed/disconnected state.");
+          console.warn(
+            "[WebRTC Telemetry] ICE Connection is in failed/disconnected state.",
+          );
         }
         // ! belt-and-suspenders: when ICE confirms a live path, re-trigger audio element play()
         // ! in case ontrack fired before ICE and the initial play() hit silence
         if (state === "connected" || state === "completed") {
           const el = document.getElementById("remote-hidden-audio-element");
           if (el && el.srcObject) {
-            console.log("[WebRTC Telemetry] ICE connected - re-triggering audio element play()");
+            console.log(
+              "[WebRTC Telemetry] ICE connected - re-triggering audio element play()",
+            );
             el.muted = false;
             el.volume = 1.0;
-            el.play().catch((err) => console.error("[WebRTC Telemetry] Play on ICE connect failed:", err));
+            el.play().catch((err) =>
+              console.error(
+                "[WebRTC Telemetry] Play on ICE connect failed:",
+                err,
+              ),
+            );
           }
         }
       };
 
       pc.onsignalingstatechange = () => {
-        console.log(`[WebRTC Telemetry] Signaling State changed to: ${pc.signalingState}`);
+        console.log(
+          `[WebRTC Telemetry] Signaling State changed to: ${pc.signalingState}`,
+        );
       };
 
       pc.onconnectionstatechange = () => {
-        console.log(`[WebRTC Telemetry] Connection State changed to: ${pc.connectionState}`);
+        console.log(
+          `[WebRTC Telemetry] Connection State changed to: ${pc.connectionState}`,
+        );
       };
 
       pc.onicegatheringstatechange = () => {
-        console.log(`[WebRTC Telemetry] ICE Gathering State changed to: ${pc.iceGatheringState}`);
+        console.log(
+          `[WebRTC Telemetry] ICE Gathering State changed to: ${pc.iceGatheringState}`,
+        );
       };
 
       pc.onicecandidateerror = (e) => {
         console.error("[WebRTC Telemetry] ICE Candidate Error:", {
           errorCode: e.errorCode,
           errorText: e.errorText,
-          url: e.url
+          url: e.url,
         });
       };
     };
@@ -156,7 +180,6 @@ const AudioCalling = forwardRef(
         });
         localStream.current = null;
       }
-
 
       // tearing down the hidden audio served element for tracks
       const remoteAudioElement = document.getElementById(
@@ -197,7 +220,10 @@ const AudioCalling = forwardRef(
     // Incoming call accept handler
     const acceptCall = async () => {
       try {
-        console.log("[WebRTC Accept] Accepting incoming call from:", incomingCallFrom);
+        console.log(
+          "[WebRTC Accept] Accepting incoming call from:",
+          incomingCallFrom,
+        );
         if (!incomingOfferSdp) {
           console.warn("[WebRTC Accept] No incomingOfferSdp available!");
           return;
@@ -208,7 +234,12 @@ const AudioCalling = forwardRef(
         if (el) {
           el.muted = false;
           el.volume = 1.0;
-          el.play().catch((err) => console.log("[WebRTC Accept] Pre-play gesture activation:", err.message));
+          el.play().catch((err) =>
+            console.log(
+              "[WebRTC Accept] Pre-play gesture activation:",
+              err.message,
+            ),
+          );
         }
 
         // peer connection is stored in current state <- created by new RTCPeerConnection(passingInIceStunServersConfig)
@@ -219,23 +250,27 @@ const AudioCalling = forwardRef(
         peerConnection.current.onicecandidate = (e) => {
           //**  sending payload of audio_type payload of context - e.candidate => if e.candidate exists in peerConn. here --
           if (e.candidate && sendNotifications) {
-            console.log("[WebRTC Accept] Generated local ICE Candidate (Acceptor):", {
-              candidate: e.candidate.candidate,
-              sdpMid: e.candidate.sdpMid,
-              sdpMLineIndex: e.candidate.sdpMLineIndex
-            });
+            console.log(
+              "[WebRTC Accept] Generated local ICE Candidate (Acceptor):",
+              {
+                candidate: e.candidate.candidate,
+                sdpMid: e.candidate.sdpMid,
+                sdpMLineIndex: e.candidate.sdpMLineIndex,
+              },
+            );
 
-            const targetID = incomingCallFrom ? incomingCallFrom : targetPeerID.current
-            console.log("call is accepted;recieverID", targetID)
+            const peerId = targetPeerID.current || incomingCallFrom;
+
             sendNotifications({
               sender_id: Number(passedCurrentUserID),
-              reciever_id: Number(targetID),
+              reciever_id: Number(peerId),
               type: "ice-candidate",
               audio_payload_only: e.candidate,
             });
-
           } else {
-            console.log("[WebRTC Accept] ICE Candidate Gathering complete (Acceptor)");
+            console.log(
+              "[WebRTC Accept] ICE Candidate Gathering complete (Acceptor)",
+            );
           }
         };
 
@@ -250,7 +285,7 @@ const AudioCalling = forwardRef(
             trackKind: track.kind,
             trackId: track.id,
             trackMuted: track.muted,
-            trackReadyState: track.readyState
+            trackReadyState: track.readyState,
           });
           logTrackDetails("Remote (Accept)", track);
 
@@ -269,7 +304,9 @@ const AudioCalling = forwardRef(
           if (remoteHiddenAudioElement) {
             // ! setting {src} of this hidden el to play this audio track steam from the candidate
             if (remoteHiddenAudioElement.srcObject !== remoteAudioStream) {
-              console.log("[WebRTC Accept] Setting remoteHiddenAudioElement.srcObject to remoteAudioStream");
+              console.log(
+                "[WebRTC Accept] Setting remoteHiddenAudioElement.srcObject to remoteAudioStream",
+              );
               remoteHiddenAudioElement.srcObject = remoteAudioStream;
             }
             remoteHiddenAudioElement.autoplay = true;
@@ -279,14 +316,20 @@ const AudioCalling = forwardRef(
             // ! critical: ontrack fires BEFORE ICE connects - track starts muted, play() hits silence.
             // ! bind onunmute to restart playback the moment ICE connects and audio starts flowing
             track.onunmute = () => {
-              console.log("[WebRTC Accept] Track UNMUTED (ICE connected, audio flowing) - restarting play()");
+              console.log(
+                "[WebRTC Accept] Track UNMUTED (ICE connected, audio flowing) - restarting play()",
+              );
               remoteHiddenAudioElement.play().catch((err) => {
-                console.error("[WebRTC Accept] Audio playback failed on unmute:", err);
+                console.error(
+                  "[WebRTC Accept] Audio playback failed on unmute:",
+                  err,
+                );
               });
             };
 
             console.log("[WebRTC Accept] Playing remote audio...");
-            remoteHiddenAudioElement.play()
+            remoteHiddenAudioElement
+              .play()
               .then(() => {
                 console.log("[WebRTC Accept] Playback started successfully.");
               })
@@ -297,7 +340,9 @@ const AudioCalling = forwardRef(
         };
 
         // setting session description to be from recieved 'offer' payload from ws connection
-        console.log("[WebRTC Accept] Setting remote description (Offer SDP)...");
+        console.log(
+          "[WebRTC Accept] Setting remote description (Offer SDP)...",
+        );
         await peerConnection.current.setRemoteDescription(
           new RTCSessionDescription(incomingOfferSdp),
         );
@@ -310,18 +355,31 @@ const AudioCalling = forwardRef(
           );
           for (const candidate of iceCandidatesQueue.current) {
             // ! skip null/end-of-gathering candidates
-            if (!candidate || (!candidate.candidate && candidate.sdpMid == null && candidate.sdpMLineIndex == null)) {
-              console.log("[WebRTC Accept] Skipping null/end-of-gathering queued ICE candidate");
+            if (
+              !candidate ||
+              (!candidate.candidate &&
+                candidate.sdpMid == null &&
+                candidate.sdpMLineIndex == null)
+            ) {
+              console.log(
+                "[WebRTC Accept] Skipping null/end-of-gathering queued ICE candidate",
+              );
               continue;
             }
             try {
-              console.log("[WebRTC Accept] Adding queued candidate:", candidate);
+              console.log(
+                "[WebRTC Accept] Adding queued candidate:",
+                candidate,
+              );
               await peerConnection.current.addIceCandidate(
                 new RTCIceCandidate(candidate),
               );
               console.log("[WebRTC Accept] Added queued candidate SUCCESS");
             } catch (err) {
-              console.error("[WebRTC Accept] Failed to add queued ICE candidate:", err);
+              console.error(
+                "[WebRTC Accept] Failed to add queued ICE candidate:",
+                err,
+              );
             }
           }
           iceCandidatesQueue.current = [];
@@ -333,36 +391,51 @@ const AudioCalling = forwardRef(
           audio: true,
           video: false,
         });
-        console.log("[WebRTC Accept] Local microphone acquired, stream ID:", localStream.current?.id);
+        console.log(
+          "[WebRTC Accept] Local microphone acquired, stream ID:",
+          localStream.current?.id,
+        );
         localStream.current.getTracks().forEach((track, i) => {
           logTrackDetails(`Local [${i}]`, track);
         });
 
         // add local tracks
         localStream.current.getTracks().forEach((track) => {
-          console.log("[WebRTC Accept] Adding local track to connection:", track.id);
+          console.log(
+            "[WebRTC Accept] Adding local track to connection:",
+            track.id,
+          );
           peerConnection.current.addTrack(track, localStream.current);
         });
 
         // now sending answer payload to the caller with sdp block and audio_payload, this time sending 'answer' payload,
         console.log("[WebRTC Accept] Creating answer...");
-        const createdAnsSdpPayload =
-          await peerConnection.current.createAnswer({ offerToReceiveAudio: true }); //sdp answer audio payload, sending to caller with type "answer" for connection
-        console.log("[WebRTC Accept] Create answer SUCCESS. Setting local description...");
+        const createdAnsSdpPayload = await peerConnection.current.createAnswer({
+          offerToReceiveAudio: true,
+        }); //sdp answer audio payload, sending to caller with type "answer" for connection
+        console.log(
+          "[WebRTC Accept] Create answer SUCCESS. Setting local description...",
+        );
         await peerConnection.current.setLocalDescription(createdAnsSdpPayload);
         console.log("[WebRTC Accept] Set local description SUCCESS");
 
         // * every offer/ans/candidate_req payload is sent to ws, attaching audio_payload based off context of outbound requests
         if (sendNotifications) {
-          console.log("[WebRTC Accept] Sending answer notification via WS to targetPeerID:", targetPeerID.current);
+          console.log(
+            "[WebRTC Accept] Sending answer notification via WS to targetPeerID:",
+            targetPeerID.current,
+          );
+          const peerId = targetPeerID.current || incomingCallFrom;
           sendNotifications({
             sender_id: Number(passedCurrentUserID),
-            reciever_id: Number(targetPeerID.current), // senderId - id of the user whose 'offer' request was intercepted and in response 'answer' is created for him wiht ans audio_payload attached inside
+            reciever_id: Number(peerId), // senderId - id of the user whose 'offer' request was intercepted and in response 'answer' is created for him wiht ans audio_payload attached inside
             type: "answer", // sending ans payload to the ws with type being "answer" -> by unmarshaling it would know what is incoming audio_payload and what needs to be published & shipped to consume by the reciever
             audio_payload_only: createdAnsSdpPayload,
           });
         } else {
-          console.warn("[WebRTC Accept] sendNotifications is not available to send ANSWER");
+          console.warn(
+            "[WebRTC Accept] sendNotifications is not available to send ANSWER",
+          );
         }
 
         setCallState("active");
@@ -381,14 +454,17 @@ const AudioCalling = forwardRef(
         if (!audioPayload) return;
 
         switch (
-        audioPayload.type //& when call 'offer' is recieved <- for cal connection => reciever get that request with peerID being the senderID as sender is one who is sending call request
+          audioPayload.type //& when call 'offer' is recieved <- for cal connection => reciever get that request with peerID being the senderID as sender is one who is sending call request
         ) {
           case "offer": {
-            console.log(`[WebRTC WS] Received OFFER from sender: ${audioPayload.sender_id}`, {
-              type: audioPayload.type,
-              sdpLength: audioPayload.audio_payload_only?.sdp?.length || 0,
-              sdpType: audioPayload.audio_payload_only?.type
-            });
+            console.log(
+              `[WebRTC WS] Received OFFER from sender: ${audioPayload.sender_id}`,
+              {
+                type: audioPayload.type,
+                sdpLength: audioPayload.audio_payload_only?.sdp?.length || 0,
+                sdpType: audioPayload.audio_payload_only?.type,
+              },
+            );
             targetPeerID.current = audioPayload.sender_id; // sender_id is what supplied by hub from reciever attaching -> the senderID ;reciever sends the sender id as peerID
             setIncomingCallFrom(audioPayload.sender_id);
             setIncomingOfferSdp(audioPayload.audio_payload_only);
@@ -396,20 +472,27 @@ const AudioCalling = forwardRef(
             break;
           }
           case "answer": {
-            console.log(`[WebRTC WS] Received ANSWER from sender: ${audioPayload.sender_id}`, {
-              type: audioPayload.type,
-              sdpLength: audioPayload.audio_payload_only?.sdp?.length || 0,
-              sdpType: audioPayload.audio_payload_only?.type
-            });
+            console.log(
+              `[WebRTC WS] Received ANSWER from sender: ${audioPayload.sender_id}`,
+              {
+                type: audioPayload.type,
+                sdpLength: audioPayload.audio_payload_only?.sdp?.length || 0,
+                sdpType: audioPayload.audio_payload_only?.type,
+              },
+            );
             // &when call is either approved or not <- 'answering' call => reciever gets 'answer''s audio_payload
             if (!peerConnection.current) {
-              console.warn("[WebRTC WS] Received ANSWER but peerConnection.current is null!");
+              console.warn(
+                "[WebRTC WS] Received ANSWER but peerConnection.current is null!",
+              );
               break;
             }
             // ! guard: only set remote description if we're in the right signaling state
             // ! if 3 handlers fire for this same message, 2nd and 3rd would throw "wrong state" without this check
             if (peerConnection.current.signalingState !== "have-local-offer") {
-              console.warn(`[WebRTC WS] Skipping setRemoteDescription(answer) - wrong signalingState: ${peerConnection.current.signalingState}`);
+              console.warn(
+                `[WebRTC WS] Skipping setRemoteDescription(answer) - wrong signalingState: ${peerConnection.current.signalingState}`,
+              );
               break;
             }
             try {
@@ -427,18 +510,33 @@ const AudioCalling = forwardRef(
                 );
                 for (const candidate of iceCandidatesQueue.current) {
                   // ! skip null/end-of-gathering candidates
-                  if (!candidate || (!candidate.candidate && candidate.sdpMid == null && candidate.sdpMLineIndex == null)) {
-                    console.log("[WebRTC WS] Skipping null/end-of-gathering queued ICE candidate");
+                  if (
+                    !candidate ||
+                    (!candidate.candidate &&
+                      candidate.sdpMid == null &&
+                      candidate.sdpMLineIndex == null)
+                  ) {
+                    console.log(
+                      "[WebRTC WS] Skipping null/end-of-gathering queued ICE candidate",
+                    );
                     continue;
                   }
                   try {
-                    console.log("[WebRTC WS] Adding queued ICE candidate:", candidate);
+                    console.log(
+                      "[WebRTC WS] Adding queued ICE candidate:",
+                      candidate,
+                    );
                     await peerConnection.current.addIceCandidate(
                       new RTCIceCandidate(candidate),
                     );
-                    console.log("[WebRTC WS] Added queued ICE candidate SUCCESS");
+                    console.log(
+                      "[WebRTC WS] Added queued ICE candidate SUCCESS",
+                    );
                   } catch (err) {
-                    console.error("[WebRTC WS] Failed to add queued ICE candidate:", err);
+                    console.error(
+                      "[WebRTC WS] Failed to add queued ICE candidate:",
+                      err,
+                    );
                   }
                 }
                 iceCandidatesQueue.current = [];
@@ -451,12 +549,22 @@ const AudioCalling = forwardRef(
           case "ice-candidate": {
             //& when both gets connected
             const candidate = audioPayload.audio_payload_only;
-            console.log(`[WebRTC WS] Received ICE-CANDIDATE from sender: ${audioPayload.sender_id}`, candidate);
+            console.log(
+              `[WebRTC WS] Received ICE-CANDIDATE from sender: ${audioPayload.sender_id}`,
+              candidate,
+            );
 
             // ! guard: null candidate = end-of-gathering signal from the browser, not a real candidate
             // ! constructing RTCIceCandidate from it throws "sdpMid and sdpMLineIndex are both null"
-            if (!candidate || (!candidate.candidate && candidate.sdpMid == null && candidate.sdpMLineIndex == null)) {
-              console.log("[WebRTC WS] Skipping null/end-of-gathering ICE candidate");
+            if (
+              !candidate ||
+              (!candidate.candidate &&
+                candidate.sdpMid == null &&
+                candidate.sdpMLineIndex == null)
+            ) {
+              console.log(
+                "[WebRTC WS] Skipping null/end-of-gathering ICE candidate",
+              );
               break;
             }
 
@@ -465,7 +573,9 @@ const AudioCalling = forwardRef(
               peerConnection.current.remoteDescription // since we store connection when answered <- if that exists
             ) {
               try {
-                console.log("[WebRTC WS] Adding ICE candidate directly to peerConnection...");
+                console.log(
+                  "[WebRTC WS] Adding ICE candidate directly to peerConnection...",
+                );
                 await peerConnection.current.addIceCandidate(
                   new RTCIceCandidate(candidate),
                 );
@@ -476,12 +586,17 @@ const AudioCalling = forwardRef(
             } else {
               // Queue candidate for later
               iceCandidatesQueue.current.push(candidate);
-              console.log("[WebRTC WS] Queued ICE candidate (remoteDescription not set yet):", candidate);
+              console.log(
+                "[WebRTC WS] Queued ICE candidate (remoteDescription not set yet):",
+                candidate,
+              );
             }
             break;
           }
           case "hangup": {
-            console.log(`[WebRTC WS] Received HANGUP from sender: ${audioPayload.sender_id}`);
+            console.log(
+              `[WebRTC WS] Received HANGUP from sender: ${audioPayload.sender_id}`,
+            );
             //& handle hangup state <- when peerID becomes unavailable -> hangup the call // asking reciever client to hang up the calling connection and media devices as peer has been disconnected
             handleHangup();
             break;
@@ -541,7 +656,10 @@ const AudioCalling = forwardRef(
       try {
         //! Calling flow
         // current state would store essential things
-        console.log("[WebRTC Call] Initializing calling to recieverID:", recieverID);
+        console.log(
+          "[WebRTC Call] Initializing calling to recieverID:",
+          recieverID,
+        );
         setCallState("calling");
 
         // ! pre-activate the remote audio element with the user click gesture to bypass autoplay policy blocks
@@ -549,7 +667,12 @@ const AudioCalling = forwardRef(
         if (el) {
           el.muted = false;
           el.volume = 1.0;
-          el.play().catch((err) => console.log("[WebRTC Call] Pre-play gesture activation:", err.message));
+          el.play().catch((err) =>
+            console.log(
+              "[WebRTC Call] Pre-play gesture activation:",
+              err.message,
+            ),
+          );
         }
 
         // 1. grab mic/permissions first
@@ -566,10 +689,13 @@ const AudioCalling = forwardRef(
           enabled: checktrack?.enabled,
           muted: checktrack?.muted,
           readyState: checktrack?.readyState,
-          kind: checktrack?.kind
-        })
+          kind: checktrack?.kind,
+        });
 
-        console.log("[WebRTC Call] Local microphone acquired, stream ID:", localStream.current?.id);
+        console.log(
+          "[WebRTC Call] Local microphone acquired, stream ID:",
+          localStream.current?.id,
+        );
         localStream.current.getTracks().forEach((track, i) => {
           logTrackDetails(`Local [${i}]`, track);
         });
@@ -581,7 +707,10 @@ const AudioCalling = forwardRef(
 
         // 3. attach~connect the permitted microphone to reciever side {peer}
         localStream.current.getTracks().forEach((track) => {
-          console.log("[WebRTC Call] Adding local track to connection:", track.id);
+          console.log(
+            "[WebRTC Call] Adding local track to connection:",
+            track.id,
+          );
           peerConnection.current.addTrack(track, localStream.current);
         });
 
@@ -590,16 +719,20 @@ const AudioCalling = forwardRef(
           if (e.candidate) {
             // if they exists, in rtcConnection clients exists as candidates
             // sending 'ice-candidate' type of payload to the ws connection so that to be published and consumed by the reciever with peerID being the calling partner who had made 'offer' request
-            console.log("[WebRTC Call] Generated local ICE Candidate (Caller):", {
-              candidate: e.candidate.candidate,
-              sdpMid: e.candidate.sdpMid,
-              sdpMLineIndex: e.candidate.sdpMLineIndex
-            });
+            console.log(
+              "[WebRTC Call] Generated local ICE Candidate (Caller):",
+              {
+                candidate: e.candidate.candidate,
+                sdpMid: e.candidate.sdpMid,
+                sdpMLineIndex: e.candidate.sdpMLineIndex,
+              },
+            );
             if (sendNotifications) {
               // if ws.send is available
+              const peerId = targetPeerID.current || incomingCallFrom;
               const payload = {
                 sender_id: Number(passedCurrentUserID),
-                reciever_id: Number(targetPeerID.current), // stored in its current state, we can use ref to store things dynamically throughout the application
+                reciever_id: Number(peerId), // stored in its current state, we can use ref to store things dynamically throughout the application
                 type: "ice-candidate",
                 audio_payload_only: e.candidate,
               };
@@ -608,7 +741,9 @@ const AudioCalling = forwardRef(
               console.log(peerConnection.current?.getSenders(), "sender");
             }
           } else {
-            console.log("[WebRTC Call] ICE Candidate Gathering complete (Caller)");
+            console.log(
+              "[WebRTC Call] ICE Candidate Gathering complete (Caller)",
+            );
           }
         };
         // streaming incoming stream from peerRtcConnection
@@ -622,7 +757,7 @@ const AudioCalling = forwardRef(
             trackKind: track.kind,
             trackId: track.id,
             trackMuted: track.muted,
-            trackReadyState: track.readyState
+            trackReadyState: track.readyState,
           });
           logTrackDetails("Remote (Call)", track);
 
@@ -641,7 +776,9 @@ const AudioCalling = forwardRef(
           if (remoteHiddenAudioElement) {
             // ! setting {src} of this hidden el to play this audio track steam from the candidate
             if (remoteHiddenAudioElement.srcObject !== remoteAudioStream) {
-              console.log("[WebRTC Call] Setting remoteHiddenAudioElement.srcObject to remoteAudioStream");
+              console.log(
+                "[WebRTC Call] Setting remoteHiddenAudioElement.srcObject to remoteAudioStream",
+              );
               remoteHiddenAudioElement.srcObject = remoteAudioStream;
             }
             remoteHiddenAudioElement.autoplay = true;
@@ -651,14 +788,20 @@ const AudioCalling = forwardRef(
             // ! critical: ontrack fires BEFORE ICE connects - track starts muted, play() hits silence.
             // ! bind onunmute to restart playback the moment ICE connects and audio starts flowing
             track.onunmute = () => {
-              console.log("[WebRTC Call] Track UNMUTED (ICE connected, audio flowing) - restarting play()");
+              console.log(
+                "[WebRTC Call] Track UNMUTED (ICE connected, audio flowing) - restarting play()",
+              );
               remoteHiddenAudioElement.play().catch((err) => {
-                console.error("[WebRTC Call] Audio playback failed on unmute:", err);
+                console.error(
+                  "[WebRTC Call] Audio playback failed on unmute:",
+                  err,
+                );
               });
             };
 
             console.log("[WebRTC Call] Playing remote audio...");
-            remoteHiddenAudioElement.play()
+            remoteHiddenAudioElement
+              .play()
               .then(() => {
                 console.log("[WebRTC Call] Playback started successfully.");
               })
@@ -670,8 +813,12 @@ const AudioCalling = forwardRef(
 
         // 6. if both parties are okay, create a sdp offer,send to ws handler
         console.log("[WebRTC Call] Creating offer...");
-        const offerRequest = await peerConnection.current.createOffer({ offerToReceiveAudio: true }); // starts a remote rtc connection to the peer, explicitly requesting bidirectional audio
-        console.log("[WebRTC Call] Create offer SUCCESS. Setting local description...");
+        const offerRequest = await peerConnection.current.createOffer({
+          offerToReceiveAudio: true,
+        }); // starts a remote rtc connection to the peer, explicitly requesting bidirectional audio
+        console.log(
+          "[WebRTC Call] Create offer SUCCESS. Setting local description...",
+        );
         await peerConnection.current.setLocalDescription(offerRequest); //* sets the session description in peerConn to be this offer request between candidates
         console.log("[WebRTC Call] Set local description SUCCESS");
 
@@ -680,17 +827,23 @@ const AudioCalling = forwardRef(
           // @ note -> every audio_payload_only is generated from peerConn methods -> all we did is checking the flow and sending candidate req with e.candidate from the peer connection to send that tyoe of payload
           // @ - like this, also attaching payload "offer" created from same peerConnection n <=- every needy thing is created from peerConnection which holds all the things for setting up calling connection
           // @ - which the peerConnection is created from rtc
+          const peerId = targetPeerID.current || incomingCallFrom;
           const payload = {
             sender_id: Number(passedCurrentUserID),
-            reciever_id: Number(targetPeerID.current), // stored in its current state, we can use ref to store things dynamically throughout the application
+            reciever_id: Number(peerId), // stored in its current state, we can use ref to store things dynamically throughout the application
             type: "offer",
             audio_payload_only: offerRequest,
           };
 
-          console.log("[WebRTC Call] Sending offer notification via WS to targetPeerID:", targetPeerID.current);
+          console.log(
+            "[WebRTC Call] Sending offer notification via WS to targetPeerID:",
+            targetPeerID.current,
+          );
           sendNotifications(payload);
         } else {
-          console.warn("[WebRTC Call] sendNotifications is not available to send OFFER");
+          console.warn(
+            "[WebRTC Call] sendNotifications is not available to send OFFER",
+          );
         }
       } catch (err) {
         console.error("[WebRTC Call] Failed to start calling:", err);
@@ -745,12 +898,13 @@ const AudioCalling = forwardRef(
           />
           {/* Pulsating avatar placeholder */}
           <div
-            className={`audiocall-avatar ${callState === "calling" || callState === "active"
-              ? "pulse-calling"
-              : callState === "incoming"
-                ? "pulse-incoming"
-                : ""
-              }`}
+            className={`audiocall-avatar ${
+              callState === "calling" || callState === "active"
+                ? "pulse-calling"
+                : callState === "incoming"
+                  ? "pulse-incoming"
+                  : ""
+            }`}
           >
             {String(peerLabel).substring(0, 2).toUpperCase()}
           </div>
