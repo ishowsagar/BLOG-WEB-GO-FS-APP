@@ -752,8 +752,8 @@ export default function MainLayout() {
       <AudioCalling 
         ref={audioCallingRef} 
         passedCurrentUserID={currentUserId} 
-        subscribeNotifications={subscribeNotifications}
-        sendNotifications={sendNotifications}
+        subscribeNotifications={subscribeDm}
+        sendNotifications={sendDm}
       />
       <WebSocketDebug token={token} />
     </>
