@@ -218,20 +218,21 @@ const AudioCalling = forwardRef(
         // before setting up connection,adding this to candidate for ipLookup by stun servers and candidate path matching for interconnection
         peerConnection.current.onicecandidate = (e) => {
           //**  sending payload of audio_type payload of context - e.candidate => if e.candidate exists in peerConn. here --
-          if (e.candidate) {
+          if (e.candidate && sendNotifications) {
             console.log("[WebRTC Accept] Generated local ICE Candidate (Acceptor):", {
               candidate: e.candidate.candidate,
               sdpMid: e.candidate.sdpMid,
               sdpMLineIndex: e.candidate.sdpMLineIndex
             });
-            if (sendNotifications) {
-              sendNotifications({
-                sender_id: Number(passedCurrentUserID),
-                reciever_id: Number(incomingCallFrom),
-                type: "ice-candidate",
-                audio_payload_only: e.candidate,
-              });
-            }
+
+            const targetID = incomingCallFrom ? incomingCallFrom : targetPeerID.current
+            sendNotifications({
+              sender_id: Number(passedCurrentUserID),
+              reciever_id: Number(targetID),
+              type: "ice-candidate",
+              audio_payload_only: e.candidate,
+            });
+
           } else {
             console.log("[WebRTC Accept] ICE Candidate Gathering complete (Acceptor)");
           }

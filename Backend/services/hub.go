@@ -240,16 +240,16 @@ func (h *Hub) RunService() {
 
 				// Track/Untrack PeerID{connected_partner} on receiver end - so reciever also have information on who is connected
 				switch audioPayload.Type {
-					// % peer is his partner for calling <- 
+				// % peer is his partner for calling <-
 				case "offer":
 					reciever.PeerID = audioPayload.SenderID
-					slog.Info("reciever found his peer for calling📞.","peerID",reciever.PeerID)
+					slog.Info("reciever found his peer for calling📞.", "peerID", reciever.PeerID)
 				case "answer":
-					reciever.PeerID = audioPayload.SenderID				
-					slog.Info("reciever found his peer for calling📞.","peerID",reciever.PeerID)
+					reciever.PeerID = audioPayload.SenderID
+					slog.Info("reciever found his peer for calling📞.", "peerID", reciever.PeerID)
 				case "hangup":
 					reciever.PeerID = 0
-					slog.Info("reciever could not found peer for calling❌.","peerID",reciever.PeerID)
+					slog.Info("reciever could not found peer for calling❌.", "peerID", reciever.PeerID)
 				}
 
 				// redirecting chunk to the reciever end
@@ -766,7 +766,7 @@ func (h *Hub) RunService() {
 
 		// tracking online-offline activity
 		case currentClient := <-h.Online:
-			
+
 			statusPayload := StatusPayload{
 				Status: "online🟢",
 				UserID: currentClient.ID, // passing id of current client which is active
@@ -931,7 +931,7 @@ func (h *Hub) RunService() {
 			slog.Info("successfully sent notification to the client✅", "recieverID", notifyPayload.RecieverID)
 
 		case currentDisconnectedClient := <-h.Offline:
-			
+
 			statusPayload := StatusPayload{
 				UserID: currentDisconnectedClient.ID,
 				Status: "offline🔴",

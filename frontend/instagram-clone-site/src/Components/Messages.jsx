@@ -450,6 +450,7 @@ export default function Messages() {
                     objectFit: "cover",
                     border: "2px solid rgba(148, 163, 184, 0.18)",
                     boxShadow: "0 8px 18px rgba(0,0,0,0.22)",
+                    flexShrink: 0,
                   }}
                 />
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -476,6 +477,7 @@ export default function Messages() {
                     cursor: "pointer",
                     fontSize: "1.15rem",
                     transition: "all 0.2s ease",
+                    flexShrink: 0,
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = "rgba(59, 130, 246, 0.3)";
