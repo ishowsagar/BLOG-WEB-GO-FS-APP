@@ -135,17 +135,6 @@ const AudioCalling = forwardRef(({
         }
       };
 
-      // get his mics and all and store in localStream as streamingMic
-      localStream.current = await window.navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: false,
-      });
-
-      // add local tracks
-      localStream.current.getTracks().forEach((track) => {
-        peerConnection.current.addTrack(track, localStream.current);
-      });
-
       // setting session description to be from recieved 'offer' payload from ws connection
       await peerConnection.current.setRemoteDescription(
         new RTCSessionDescription(incomingOfferSdp),
@@ -163,6 +152,17 @@ const AudioCalling = forwardRef(({
         }
         iceCandidatesQueue.current = [];
       }
+
+      // get his mics and all and store in localStream as streamingMic
+      localStream.current = await window.navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: false,
+      });
+
+      // add local tracks
+      localStream.current.getTracks().forEach((track) => {
+        peerConnection.current.addTrack(track, localStream.current);
+      });
 
       // now sending answer payload to the caller with sdp block and audio_payload, this time sending 'answer' payload,
       const createdAnsSdpPayload = await peerConnection.current.createAnswer(); //sdp answer audio payload, sending to caller with type "answer" for connection
