@@ -226,6 +226,7 @@ const AudioCalling = forwardRef(
             });
 
             const targetID = incomingCallFrom ? incomingCallFrom : targetPeerID.current
+            console.log("call is accepted;recieverID", targetID)
             sendNotifications({
               sender_id: Number(passedCurrentUserID),
               reciever_id: Number(targetID),
