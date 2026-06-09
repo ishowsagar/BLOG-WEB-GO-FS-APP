@@ -293,7 +293,7 @@ func (h *Hub) RunService() {
 						slog.Info("audio channels are full right", "error", "please try again later to send call answer, all lines are busy right now", "senderOD", audioPayload.SenderID)
 					} //..select
 
-				case "ice_candidate", "ice-candidate":
+				case "ice-candidate":
 					// if this payload is for candidate for call approval for client connection
 					select {
 					case reciever.Send <- audioPayload:
@@ -1136,7 +1136,7 @@ func (c *Client) MessageReader(db *gorm.DB) {
 
 		// * audio signaling payloads (offer/answer/ice-candidate/hangup) must NOT go through the DB write path
 		// * they have empty Content which would break the reader loop on a NOT NULL constraint error
-		isAudioPayload := msg.Type == "offer" || msg.Type == "answer" || msg.Type == "ice-candidate" || msg.Type == "ice_candidate" || msg.Type == "hangup"
+		isAudioPayload := msg.Type == "offer" || msg.Type == "answer" || msg.Type == "ice-candidate" || msg.Type == "hangup"
 
 		if !isAudioPayload {
 			// * if recieving msg is correct of type inBMsg - making query to store in db
@@ -1268,7 +1268,7 @@ func (c *Client) MessageReader(db *gorm.DB) {
 				c.Hub.Publish(audioChunkPayload.RecieverID, audioChunkPayload)
 				slog.Info("successfully received and published the delivery of answer", "receiverID", audioChunkPayload.RecieverID)
 
-			case "ice_candidate", "ice-candidate":
+			case "ice-candidate":
 				// whatever struct type data sent to client <- reader msg's recieved payload has that field which carries payload, we just here checking if on unmarshaling if populates into desired type, we got that in out hand
 				var candidate models.AudioIceCandidate //* candidate holds type of data sent from client for candidate
 				err := json.Unmarshal(audioChunkPayload.AudioPayloadOnly, &candidate)

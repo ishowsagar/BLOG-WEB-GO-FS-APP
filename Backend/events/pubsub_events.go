@@ -265,9 +265,9 @@ func (p *PubSubBroker) StartConsumingDeliveries() error {
 				default:
 					slog.Info("CONSUMER is unable to send to GeminiAIResponseOnly", "error", "channel is either full or blocked", "recieverID", payload.SenderID)
 				}
-			} else if (payload.Type == "offer" || payload.Type == "answer" || payload.Type == "ice_candidate" || payload.Type == "ice-candidate" || payload.Type == "hangup") && payload.SenderID != 0 && payload.RoomID == 0 && payload.RecieverID != 0 && payload.RecieverID != payload.SenderID {
+			} else if (payload.Type == "offer" || payload.Type == "answer" || payload.Type == "ice-candidate" || payload.Type == "hangup") && payload.SenderID != 0 && payload.RoomID == 0 && payload.RecieverID != 0 && payload.RecieverID != payload.SenderID {
 				select {
-					// redirecting this payload to the hub's h.AudioCallingOnly chan to send response <- hub has access to the all clients
+				// redirecting this payload to the hub's h.AudioCallingOnly chan to send response <- hub has access to the all clients
 				case p.hub.AudioCallingOnly <- &payload:
 					slog.Info("audio calling payload is successfully sent to hub's AudioCallingOnly chan", "receiverID", payload.RecieverID, "type", payload.Type)
 				default:
@@ -275,8 +275,8 @@ func (p *PubSubBroker) StartConsumingDeliveries() error {
 				}
 			}
 			slog.Debug("forwarded to hub", "sender_id", payload.SenderID, "receiver_id", payload.RecieverID)
-			}
-		}()
+		}
+	}()
 
 	return nil
 }
