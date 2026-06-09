@@ -1,7 +1,11 @@
 import React, { useEffect, useRef, useState, useImperativeHandle, forwardRef } from "react";
 import { useOutletContext } from "react-router-dom";
 
-const AudioCalling = forwardRef(({ passedCurrentUserID }, ref) => {
+const AudioCalling = forwardRef(({ 
+  passedCurrentUserID, 
+  subscribeNotifications: propSubscribeNotifications, 
+  sendNotifications: propSendNotifications 
+}, ref) => {
   // states
   const [callState, setCallState] = useState("idle"); //["idle","calling","hangup","active"."incoming"]
   const [incomingCallFrom, setIncomingCallFrom] = useState(null); //* for tracking who is calling
@@ -28,8 +32,8 @@ const AudioCalling = forwardRef(({ passedCurrentUserID }, ref) => {
   };
 
   const outletContext = useOutletContext();
-  const { sendNotifications } = useOutletContext() || {};
-  const subscribeNotifications = outletContext?.subscribeNotifications;
+  const sendNotifications = propSendNotifications || outletContext?.sendNotifications;
+  const subscribeNotifications = propSubscribeNotifications || outletContext?.subscribeNotifications;
 
   // Cleanup/Hangup handling
   const handleHangup = () => {

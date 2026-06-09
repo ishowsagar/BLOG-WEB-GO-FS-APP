@@ -749,7 +749,12 @@ export default function MainLayout() {
           </section>
         </postDataContext.Provider>
       </RealtimeContext.Provider>
-      <AudioCalling ref={audioCallingRef} passedCurrentUserID={currentUserId} />
+      <AudioCalling 
+        ref={audioCallingRef} 
+        passedCurrentUserID={currentUserId} 
+        subscribeNotifications={subscribeNotifications}
+        sendNotifications={sendNotifications}
+      />
       <WebSocketDebug token={token} />
     </>
   );
