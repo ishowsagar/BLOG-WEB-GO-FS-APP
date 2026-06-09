@@ -98,7 +98,7 @@ func IntializeNewHubInstance() *Hub {
 		RegisterRoomClient:                  make(chan *Client),
 		ChatRoomClients:                     make(map[uint]map[*Client]bool),
 		ClientStore:                         make(map[uint]*Client),
-		TargettedClientNotificationTypeOnly: make(chan *ClientNotifyPayload),
+		TargettedClientNotificationTypeOnly: make(chan *ClientNotifyPayload,10),
 		// DirectMessagesHub: make(chan *models.DirectMessage),
 		GeminiAIResponseOnly: make(chan *ClientNotifyPayload, 20),
 		AudioCallingOnly:     make(chan *ClientNotifyPayload, 10), //max 10 buffers allowed for call rn

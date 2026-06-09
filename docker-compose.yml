@@ -107,7 +107,7 @@ services:
     environment:
       - DB_HOST=postgres_instagram_db
       - SERVER_PORT=8080
-      - REDIS_HOST_ADDR=redis_cache_micro_service:6379xx
+      - REDIS_HOST_ADDR=redis_cache_micro_service:6379
     depends_on:
       - postgres_instagram_db
       - rabbit_mq_notifications_micro_service
