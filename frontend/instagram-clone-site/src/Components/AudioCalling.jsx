@@ -36,7 +36,32 @@ const AudioCalling = forwardRef(
       // type of AudioPayload sending for calling config to determine things when request is either<- "offer" or "answer"
 
       // must follow this native configuration naming conventions
-      iceServers: [{ urls: `stun:stun.l.google.com:19302` }],
+      // using multiple STUN servers as fallback in case primary times out (errorCode 701)
+      // + a free public TURN relay so ICE always has a working path even behind strict NAT
+      iceTransportPolicy: "all", // try host candidates even if STUN/TURN fails
+      iceServers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun1.l.google.com:19302" },
+        { urls: "stun:stun2.l.google.com:19302" },
+        { urls: "stun:stun3.l.google.com:19302" },
+        { urls: "stun:stun4.l.google.com:19302" },
+        // free public TURN relay for local dev & NAT-blocked environments
+        {
+          urls: "turn:openrelay.metered.ca:80",
+          username: "openrelayproject",
+          credential: "openrelayproject",
+        },
+        {
+          urls: "turn:openrelay.metered.ca:443",
+          username: "openrelayproject",
+          credential: "openrelayproject",
+        },
+        {
+          urls: "turn:openrelay.metered.ca:443?transport=tcp",
+          username: "openrelayproject",
+          credential: "openrelayproject",
+        },
+      ],
     };
 
     const outletContext = useOutletContext();
@@ -305,7 +330,7 @@ const AudioCalling = forwardRef(
         // now sending answer payload to the caller with sdp block and audio_payload, this time sending 'answer' payload,
         console.log("[WebRTC Accept] Creating answer...");
         const createdAnsSdpPayload =
-          await peerConnection.current.createAnswer(); //sdp answer audio payload, sending to caller with type "answer" for connection
+          await peerConnection.current.createAnswer({ offerToReceiveAudio: true }); //sdp answer audio payload, sending to caller with type "answer" for connection
         console.log("[WebRTC Accept] Create answer SUCCESS. Setting local description...");
         await peerConnection.current.setLocalDescription(createdAnsSdpPayload);
         console.log("[WebRTC Accept] Set local description SUCCESS");
@@ -598,7 +623,7 @@ const AudioCalling = forwardRef(
 
         // 6. if both parties are okay, create a sdp offer,send to ws handler
         console.log("[WebRTC Call] Creating offer...");
-        const offerRequest = await peerConnection.current.createOffer(); // starts a remote rtc connection to the peer
+        const offerRequest = await peerConnection.current.createOffer({ offerToReceiveAudio: true }); // starts a remote rtc connection to the peer, explicitly requesting bidirectional audio
         console.log("[WebRTC Call] Create offer SUCCESS. Setting local description...");
         await peerConnection.current.setLocalDescription(offerRequest); //* sets the session description in peerConn to be this offer request between candidates
         console.log("[WebRTC Call] Set local description SUCCESS");
