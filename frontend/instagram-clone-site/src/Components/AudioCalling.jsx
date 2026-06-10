@@ -340,6 +340,7 @@ const AudioCalling = forwardRef(
             "successfully accessing already added media streams in the p.c✅;ready to play⏳...",
           );
 
+
           let remoteHiddenAudioElement = remoteAudioRef.current;
 
           // if element exists and cause it would be hidden, sourcing the recieved stream from peerConnection rtc to source in from e.streams[at0thPlace]
@@ -364,6 +365,14 @@ const AudioCalling = forwardRef(
               });
             };
 
+            console.log("active audio element state:", {
+              muted: remoteAudioRef.current.muted,
+              volume: remoteAudioRef.current.volume,
+              srcObject: remoteAudioRef.current.srcObject
+                ? "has stream"
+                : "NO STREAM",
+              paused: remoteAudioRef.current.paused,
+            });
             console.log(
               " Playing remote audio stream which was added in p.c...",
             );
@@ -886,6 +895,15 @@ const AudioCalling = forwardRef(
           );
           logTrackDetails("Remote (Call)", track);
 
+          console.log("active audio element state:", {
+            muted: remoteAudioRef.current.muted,
+            volume: remoteAudioRef.current.volume,
+            srcObject: remoteAudioRef.current.srcObject
+              ? "has stream"
+              : "NO STREAM",
+            paused: remoteAudioRef.current.paused,
+          });
+
           const remoteHiddenAudioElement = remoteAudioRef.current; // ohhh, this would be played in hidden side but hearble track
 
           // if element exists and cause it would be hidden, sourcing the recieved stream from peerConnection rtc to source in from e.streams[at0thPlace]
@@ -1036,7 +1054,9 @@ const AudioCalling = forwardRef(
               {callState === "hangup" && finalDuration && (
                 <div className="audiocall-duration">
                   Call Duration:{" "}
-                  <span className="audiocall-duration-value">{finalDuration}</span>
+                  <span className="audiocall-duration-value">
+                    {finalDuration}
+                  </span>
                 </div>
               )}
 
