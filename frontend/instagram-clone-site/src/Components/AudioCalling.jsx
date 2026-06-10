@@ -30,6 +30,7 @@ const AudioCalling = forwardRef(
     const localStream = useRef(null); //* storing active client's media's audio track continuous stream
     const targetPeerID = useRef(null); //* the one current user is connected to <- sent by the backend answer
     const iceCandidatesQueue = useRef([]); //* adding ice-candidate means routes are known and ready for p2p connection -> added when reciever is yet to set remote desc -> untill then candidates are queued
+    const remoteAudioRef = useRef(null);
 
     // * Stun/turn servers for locating client's internet location
     // * client phone asks what's my location on internet -> findable -> once found -> ice candidate is completed -> ready to connect and exchange audio streams from p.c
@@ -150,7 +151,7 @@ const AudioCalling = forwardRef(
         // ! belt-and-suspenders: when ICE confirms a live path, re-trigger audio element play()
         // ! in case ontrack fired before ICE and the initial play() hit silence
         if (state === "connected" || state === "completed") {
-          const el = document.getElementById("remote-hidden-audio-element");
+          const el = remoteAudioRef.current;
           if (el && el.srcObject) {
             console.log(
               "[WebRTC Telemetry] ICE connected - re-triggering audio element play()",
@@ -221,9 +222,7 @@ const AudioCalling = forwardRef(
       }
 
       // tearing down the hidden audio served element for tracks
-      const remoteAudioElement = document.getElementById(
-        "remote-hidden-audio-element",
-      );
+      const remoteAudioElement = remoteAudioRef.current;
       if (remoteAudioElement) {
         remoteAudioElement.srcObject = null;
         console.log("teared down srcObj audio source; srcObj is null now🛑");
@@ -341,9 +340,7 @@ const AudioCalling = forwardRef(
             "successfully accessing already added media streams in the p.c✅;ready to play⏳...",
           );
 
-          let remoteHiddenAudioElement = document.getElementById(
-            "remote-hidden-audio-element",
-          );
+          let remoteHiddenAudioElement = remoteAudioRef.current;
 
           // if element exists and cause it would be hidden, sourcing the recieved stream from peerConnection rtc to source in from e.streams[at0thPlace]
           if (remoteHiddenAudioElement) {
@@ -774,7 +771,7 @@ const AudioCalling = forwardRef(
         setCallState("calling");
 
         // ! pre-activate the remote audio element with the user click gesture to bypass autoplay policy blocks
-        const el = document.getElementById("remote-hidden-audio-element");
+        const el = remoteAudioRef.current;
         if (el) {
           el.muted = false;
           el.volume = 1.0;
@@ -889,9 +886,7 @@ const AudioCalling = forwardRef(
           );
           logTrackDetails("Remote (Call)", track);
 
-          const remoteHiddenAudioElement = document.getElementById(
-            "remote-hidden-audio-element",
-          ); // ohhh, this would be played in hidden side but hearble track
+          const remoteHiddenAudioElement = remoteAudioRef.current; // ohhh, this would be played in hidden side but hearble track
 
           // if element exists and cause it would be hidden, sourcing the recieved stream from peerConnection rtc to source in from e.streams[at0thPlace]
 
@@ -902,6 +897,7 @@ const AudioCalling = forwardRef(
             remoteHiddenAudioElement.srcObject = remoteAudioStream; //* sourcing audio from media stream added in p.c
             remoteHiddenAudioElement.autoplay = true;
             remoteHiddenAudioElement.playsInline = true;
+            remoteHiddenAudioElement.muted = false; //* added explicit muted state off
             // ! critical: ontrack fires BEFORE ICE connects - track starts muted, play() hits silence.
             // ! bind onunmute to restart playback the moment ICE connects and audio starts flowing
 
@@ -981,17 +977,6 @@ const AudioCalling = forwardRef(
       return `${mins}:${secs}`;
     };
 
-    if (callState === "idle") {
-      return (
-        <audio
-          id="remote-hidden-audio-element"
-          autoPlay
-          playsInline
-          style={{ display: "none" }}
-        />
-      );
-    }
-
     const getStatusText = () => {
       switch (callState) {
         case "calling":
@@ -1010,81 +995,86 @@ const AudioCalling = forwardRef(
     const peerLabel = targetPeerID.current || incomingCallFrom || "User";
 
     return (
-      <div className="audiocall-overlay">
-        <div className="audiocall-card">
-          <audio
-            id="remote-hidden-audio-element"
-            autoPlay
-            playsInline
-            style={{ display: "none" }}
-          />
-          {/* Pulsating avatar placeholder */}
-          <div
-            className={`audiocall-avatar ${
-              callState === "calling" || callState === "active"
-                ? "pulse-calling"
-                : callState === "incoming"
-                  ? "pulse-incoming"
-                  : ""
-            }`}
-          >
-            {String(peerLabel).substring(0, 2).toUpperCase()}
-          </div>
+      <>
+        <audio
+          ref={remoteAudioRef}
+          id="remote-hidden-audio-element"
+          autoPlay
+          playsInline
+          style={{ display: "none" }}
+        />
+        {callState !== "idle" && (
+          <div className="audiocall-overlay">
+            <div className="audiocall-card">
+              {/* Pulsating avatar placeholder */}
+              <div
+                className={`audiocall-avatar ${
+                  callState === "calling" || callState === "active"
+                    ? "pulse-calling"
+                    : callState === "incoming"
+                      ? "pulse-incoming"
+                      : ""
+                }`}
+              >
+                {String(peerLabel).substring(0, 2).toUpperCase()}
+              </div>
 
-          <h3 className="audiocall-name">User #{peerLabel}</h3>
+              <h3 className="audiocall-name">User #{peerLabel}</h3>
 
-          <p
-            className={`audiocall-status ${callState === "active" ? "is-active" : "is-pending"}`}
-          >
-            {getStatusText()}
-          </p>
+              <p
+                className={`audiocall-status ${callState === "active" ? "is-active" : "is-pending"}`}
+              >
+                {getStatusText()}
+              </p>
 
-          {/* Dynamic call timer */}
-          {callState === "active" && (
-            <div className="audiocall-timer">{getFormattedTime()}</div>
-          )}
+              {/* Dynamic call timer */}
+              {callState === "active" && (
+                <div className="audiocall-timer">{getFormattedTime()}</div>
+              )}
 
-          {/* Final Talk duration display */}
-          {callState === "hangup" && finalDuration && (
-            <div className="audiocall-duration">
-              Call Duration:{" "}
-              <span className="audiocall-duration-value">{finalDuration}</span>
+              {/* Final Talk duration display */}
+              {callState === "hangup" && finalDuration && (
+                <div className="audiocall-duration">
+                  Call Duration:{" "}
+                  <span className="audiocall-duration-value">{finalDuration}</span>
+                </div>
+              )}
+
+              {/* Action Controls */}
+              <div className="audiocall-actions">
+                {callState === "incoming" ? (
+                  <>
+                    {/* Accept button */}
+                    <button
+                      onClick={acceptCall}
+                      className="audiocall-btn audiocall-btn-accept"
+                    >
+                      📞
+                    </button>
+                    {/* Decline button */}
+                    <button
+                      onClick={() => triggerHangup(true)}
+                      className="audiocall-btn audiocall-btn-decline"
+                    >
+                      ✖
+                    </button>
+                  </>
+                ) : (
+                  callState !== "hangup" && (
+                    /* Hangup action button */
+                    <button
+                      onClick={() => triggerHangup(true)}
+                      className="audiocall-btn audiocall-btn-decline"
+                    >
+                      🛑
+                    </button>
+                  )
+                )}
+              </div>
             </div>
-          )}
-
-          {/* Action Controls */}
-          <div className="audiocall-actions">
-            {callState === "incoming" ? (
-              <>
-                {/* Accept button */}
-                <button
-                  onClick={acceptCall}
-                  className="audiocall-btn audiocall-btn-accept"
-                >
-                  📞
-                </button>
-                {/* Decline button */}
-                <button
-                  onClick={() => triggerHangup(true)}
-                  className="audiocall-btn audiocall-btn-decline"
-                >
-                  ✖
-                </button>
-              </>
-            ) : (
-              callState !== "hangup" && (
-                /* Hangup action button */
-                <button
-                  onClick={() => triggerHangup(true)}
-                  className="audiocall-btn audiocall-btn-decline"
-                >
-                  🛑
-                </button>
-              )
-            )}
           </div>
-        </div>
-      </div>
+        )}
+      </>
     );
   },
 );
