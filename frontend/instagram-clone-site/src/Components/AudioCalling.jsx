@@ -365,23 +365,20 @@ const AudioCalling = forwardRef(
               });
             };
 
-            console.log("active audio element state:", {
-              muted: remoteAudioRef.current.muted,
-              volume: remoteAudioRef.current.volume,
-              srcObject: remoteAudioRef.current.srcObject
-                ? "has stream"
-                : "NO STREAM",
-              paused: remoteAudioRef.current.paused,
-            });
-            console.log(
-              " Playing remote audio stream which was added in p.c...",
-            );
             remoteHiddenAudioElement
               .play()
               .then(() => {
                 console.log(
                   "succesfully played remote mic stream;already added to the p.c✅.",
                 );
+                console.log("active audio element state (Receiver):", {
+                  muted: remoteAudioRef.current.muted,
+                  volume: remoteAudioRef.current.volume,
+                  srcObject: remoteAudioRef.current.srcObject
+                    ? "has stream"
+                    : "NO STREAM",
+                  paused: remoteAudioRef.current.paused,
+                });
               })
               .catch((err) => {
                 console.error(
@@ -760,6 +757,7 @@ const AudioCalling = forwardRef(
 
     // fires up calling and sending offer to the reciever
     const IntialiseCalling = async (recieverID) => {
+      console.log("ref check at start:", remoteAudioRef.current);
       // 1. sending a constructed payload via ws connection to let reader's publisher publish the payload to the exchange ->
       // 2. as always consumer keep chekcing for the incoming delivery in the exchange, if there is any delivery stamped for the reciever with type "offer" ->
       // 3. redirects the constructed payload with audio_payload to the hub's audio chan which ->
@@ -871,6 +869,7 @@ const AudioCalling = forwardRef(
         };
         // streaming incoming stream from peerRtcConnection
         peerConnection.current.ontrack = (e) => {
+          console.log("ref check in ontrack:", remoteAudioRef.current);
           // **all stored/added media streams are available in this propery
 
           const track = e.track; // always use the track directly, not e.streams[0] which can be muted/empty on first fire
@@ -894,16 +893,6 @@ const AudioCalling = forwardRef(
             "successfully accessing already added media streams in the p.c✅;ready to play⏳...",
           );
           logTrackDetails("Remote (Call)", track);
-
-          console.log("active audio element state:", {
-            muted: remoteAudioRef.current.muted,
-            volume: remoteAudioRef.current.volume,
-            srcObject: remoteAudioRef.current.srcObject
-              ? "has stream"
-              : "NO STREAM",
-            paused: remoteAudioRef.current.paused,
-          });
-
           const remoteHiddenAudioElement = remoteAudioRef.current; // ohhh, this would be played in hidden side but hearble track
 
           // if element exists and cause it would be hidden, sourcing the recieved stream from peerConnection rtc to source in from e.streams[at0thPlace]
@@ -937,6 +926,14 @@ const AudioCalling = forwardRef(
               .play()
               .then(() => {
                 console.log("[WebRTC Call] Playback started successfully.");
+                console.log("active audio element state (Sender):", {
+                  muted: remoteAudioRef.current.muted,
+                  volume: remoteAudioRef.current.volume,
+                  srcObject: remoteAudioRef.current.srcObject
+                    ? "has stream"
+                    : "NO STREAM",
+                  paused: remoteAudioRef.current.paused,
+                });
               })
               .catch((err) => {
                 console.error("[WebRTC Call] Audio playback failed:", err);
