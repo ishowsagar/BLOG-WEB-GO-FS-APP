@@ -86,9 +86,9 @@ const AudioCalling = forwardRef(
     // desc are set to notify peers as they are ready to share media streams
 
     // $ local v/s remote flow
-    // 1. Setting local descrption -> like locally setting description of our streams,codecs and information -> what it needs to proccess incoming audio
-    // 2. Setting remote description -> means like setting remote description to reciever side -> this is my description of stream,codecs and outgoing audio information -> what it needs to let reciever side knows
-    // that it tells other side -> i also supports these codecs and configuration -> so other side knows what is incoming and what audio to decode
+    // 1. Setting local descrption -> like what local stream setting description ,codecs and information needs to be sent -> what it needs to proccess incoming audio on other side
+    // 2. Setting remote description -> means like setting remote description of incoming streams -> this is my description of stream,codecs and incoming remotely as audio information -> what it needs to let browser side knows
+    // that it tells ' what would be incoming and ready for decoding incoming streams'  -> it also supports these codecs and configuration -> so from other side knows what is incoming and what audio to decode
     // 3. then when local decription of stream and remote are set, both knows about each other streams and codec configs -> fires on track to access and play the incoming audio
 
     // ** end ** //
@@ -259,7 +259,7 @@ const AudioCalling = forwardRef(
       },
     }));
 
-    // Incoming call accept handler
+    //! Incoming call accept handler - invokes when call is accpeted
     const acceptCall = async () => {
       try {
         console.log(" Accepting incoming call offer from:", incomingCallFrom);
@@ -270,18 +270,23 @@ const AudioCalling = forwardRef(
           return;
         }
 
-        // ! pre-activate the remote audio element with the user click gesture to bypass autoplay policy blocks
-        // const el = document.getElementById("remote-hidden-audio-element");
-        // if (el) {
-        //   el.muted = false;
-        //   el.volume = 1.0;
-        //   el.play().catch((err) =>
-        //     console.log(
-        //       "[WebRTC Accept] Pre-play gesture activation:",
-        //       err.message,
-        //     ),
-        //   );
-        // }
+        // findme
+        //  opening p.c connection from stun config -> onicecandidate to add candidate for networking ->
+        // ->  ontrack for sourcing recieved remote stream to the client -> setting up remote desc -> queuped up candidates proccessing ->
+        // -> local media audio stream opening -> adding stream to p.c connection -> create ans sdp ->
+        // -> setting up local desc for proccessing incoming stream -> sending ans payload
+
+        //**  correct flow
+        // 1. rtc conn setup
+        // parralelly adding and setting up ice candidates for routing and networking for p2p calling
+        // 2. handle incoming streaming by labeling and locking incoming remote stream description with setRemoteDes
+        // queued candidates
+        // 3. open client's media stream
+        // 4. Grab local mic stream and add to the p.c
+        // 5. create ans sdp
+        // 6. construct payload
+        // 7. send via ws connection
+        //**  **//
 
         // peer connection is stored in current state <- created by new RTCPeerConnection(passingInIceStunServersConfig)
         peerConnection.current = new RTCPeerConnection(rtcConfig); // just remember everything is stored in current state by the use of ref
@@ -291,6 +296,8 @@ const AudioCalling = forwardRef(
         setupPeerConnectionListeners(peerConnection.current);
 
         // before setting up connection,adding this to candidate for ipLookup by stun servers and candidate path matching for interconnection
+
+        // * configuring and adding icecandidates/queuing up
         peerConnection.current.onicecandidate = (e) => {
           //**  sending payload of audio_type payload of context - e.candidate => if e.candidate exists in peerConn. here --
           if (e.candidate && sendNotifications) {
@@ -313,7 +320,7 @@ const AudioCalling = forwardRef(
           }
         };
 
-        // streaming incoming stream from peerRtcConnection
+        // * streaming remote already added media tracks streams
         peerConnection.current.ontrack = (e) => {
           const track = e.track; // always use the track directly, not e.streams[0] which can be muted/empty on first fire
           // on track property gives us remotely recieved stream <- in streams array being the 0th as first element being the recieved stream
@@ -383,6 +390,8 @@ const AudioCalling = forwardRef(
         console.log(
           "Setting remote description (Offer); so other side would know about incoming stream and configs ...",
         );
+
+        // * setting up remote description for -> decoding and acknowleding incoming remote stream
         await peerConnection.current.setRemoteDescription(
           new RTCSessionDescription(incomingOfferSdp),
         );
@@ -390,7 +399,7 @@ const AudioCalling = forwardRef(
           "successfully setted up remote description of stream; other side would know what is being sent and its configuration for playing incoming stream✅",
         );
 
-        // Process queued candidates
+        // * queued candidates processing when remote description from other side are not set
         if (iceCandidatesQueue.current.length > 0) {
           console.log(
             `[WebRTC Accept] Processing ${iceCandidatesQueue.current.length} queued ICE candidates on accept`,
@@ -429,6 +438,8 @@ const AudioCalling = forwardRef(
 
         // get his mics and all and store in localStream as streamingMic
         console.log("trying to request media stream of client⏳...");
+
+        // * mic stream grabbing
         localStream.current = await window.navigator.mediaDevices.getUserMedia({
           audio: true,
           video: false,
@@ -437,11 +448,12 @@ const AudioCalling = forwardRef(
         console.log(
           "successfully recieved media stream✅; mic audio stream is now available to be added to the peer connection⏳...",
         );
+
         localStream.current.getTracks().forEach((track, i) => {
           logTrackDetails(`Local [${i}]`, track);
         });
 
-        // add local tracks
+        //* adding mic stream to the pc connection
         localStream.current.getTracks().forEach((track) => {
           console.log(
             "grabbing client already accessed mic stream, trackID:",
@@ -456,18 +468,24 @@ const AudioCalling = forwardRef(
 
         // now sending answer payload to the caller with sdp block and audio_payload, this time sending 'answer' payload,
         console.log(" Creating answer repsonse...");
+
+        // * creating answer sdp
         const createdAnsSdpPayload = await peerConnection.current.createAnswer({
           offerToReceiveAudio: true,
         }); //sdp answer audio payload, sending to caller with type "answer" for connection
         console.log(
           "answer sdp is created successfully✅; Setting local description to decode incoming stream...;other side must have setted up remote desc so local description would know about decoding and playing incoming media stream...",
         );
+
+        // * setting local description for -> sending information about sending stream configs
         await peerConnection.current.setLocalDescription(createdAnsSdpPayload);
         console.log(
           "local description is setted up successfully;ready to recieve streams to play✅;other side must have setted up remote descriotion for local description to know incoming stream to handle and play",
         );
 
-        // * every offer/ans/candidate_req payload is sent to ws, attaching audio_payload based off context of outbound requests
+        //  every offer/ans/candidate_req payload is sent to ws, attaching audio_payload based off context of outbound requests
+
+        // * sending answer sdp attached payload to the ws
         if (sendNotifications) {
           console.log(
             "Sending answer notification via WS to targetPeerID:",
@@ -492,7 +510,7 @@ const AudioCalling = forwardRef(
         console.error("failed to accept incoming call:", error);
         triggerHangup(true);
       }
-    };
+    }; //..accept call
 
     // ws connection is already there, just subcribing to it and retreving information
 
