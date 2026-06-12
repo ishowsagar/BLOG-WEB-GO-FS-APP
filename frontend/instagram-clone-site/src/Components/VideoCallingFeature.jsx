@@ -411,8 +411,17 @@ const VideoCalling = forwardRef(
           );
         }
 
-        //3.grab local media streams
-        const mediaStream = await navigator.mediaDevices.getUserMedia({
+        // ~ constrains -> custom constraint for video configurations
+        const maxQualityMediaConstraints = {
+          audio: true,
+          video: {
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+            frameRate: { ideal: 30 }
+          }
+        };
+
+        const standardMediaConstraints = {
           audio: true,
           video: {
             width: {
@@ -431,7 +440,10 @@ const VideoCalling = forwardRef(
               max: 60,
             },
           },
-        });
+        };
+
+        //3.grab local media streams
+        const mediaStream = await navigator.mediaDevices.getUserMedia(maxQualityMediaConstraints);
         // store in localstream.current
         //   ! bug - can't use optional chaining on left side
         //   fixed - removed '? '
