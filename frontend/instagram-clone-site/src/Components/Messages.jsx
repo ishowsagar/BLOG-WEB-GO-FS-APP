@@ -17,7 +17,7 @@ export default function Messages() {
   const [profilesErr, setProfilesErr] = useState(null);
 
   // realtime context (ws send for DM)
-  const { sendDm, subscribeDm, currentUserId, startAudioCall } =
+  const { sendDm, subscribeDm, currentUserId, startAudioCall, startVideoCall } =
     useContext(RealtimeContext) || {};
 
   const [messages, setMessages] = useState([]);
@@ -461,35 +461,64 @@ export default function Messages() {
                     {formatLastSeen(activePeer)}
                   </div>
                 </div>
-                <button
-                  onClick={() => startAudioCall && startAudioCall(activePeer)}
-                  title="Start Audio Call"
-                  style={{
-                    marginLeft: "auto",
-                    background: "rgba(59, 130, 246, 0.15)",
-                    border: "1px solid rgba(59, 130, 246, 0.3)",
-                    borderRadius: "50%",
-                    width: "40px",
-                    height: "40px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    cursor: "pointer",
-                    fontSize: "1.15rem",
-                    transition: "all 0.2s ease",
-                    flexShrink: 0,
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "rgba(59, 130, 246, 0.3)";
-                    e.currentTarget.style.transform = "scale(1.05)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "rgba(59, 130, 246, 0.15)";
-                    e.currentTarget.style.transform = "scale(1)";
-                  }}
-                >
-                  📞
-                </button>
+                <div style={{ marginLeft: "auto", display: "flex", gap: "8px", alignItems: "center" }}>
+                  <button
+                    onClick={() => startAudioCall && startAudioCall(activePeer)}
+                    title="Start Audio Call"
+                    style={{
+                      background: "rgba(59, 130, 246, 0.15)",
+                      border: "1px solid rgba(59, 130, 246, 0.3)",
+                      borderRadius: "50%",
+                      width: "40px",
+                      height: "40px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: "pointer",
+                      fontSize: "1.15rem",
+                      transition: "all 0.2s ease",
+                      flexShrink: 0,
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "rgba(59, 130, 246, 0.3)";
+                      e.currentTarget.style.transform = "scale(1.05)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "rgba(59, 130, 246, 0.15)";
+                      e.currentTarget.style.transform = "scale(1)";
+                    }}
+                  >
+                    📞
+                  </button>
+                  <button
+                    onClick={() => startVideoCall && startVideoCall(activePeer)}
+                    title="Start Video Call"
+                    style={{
+                      background: "rgba(16, 185, 129, 0.15)",
+                      border: "1px solid rgba(16, 185, 129, 0.3)",
+                      borderRadius: "50%",
+                      width: "40px",
+                      height: "40px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: "pointer",
+                      fontSize: "1.15rem",
+                      transition: "all 0.2s ease",
+                      flexShrink: 0,
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "rgba(16, 185, 129, 0.3)";
+                      e.currentTarget.style.transform = "scale(1.05)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "rgba(16, 185, 129, 0.15)";
+                      e.currentTarget.style.transform = "scale(1)";
+                    }}
+                  >
+                    📹
+                  </button>
+                </div>
               </>
             ) : (
               <div style={{ fontWeight: 700, color: "#f8fafc" }}>

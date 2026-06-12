@@ -6,6 +6,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import { useEffect, useRef, useState, createContext, useContext } from "react";
 import { useWebSocket } from "../hooks/useWebSocket";
 import AudioCalling from "../Components/AudioCalling";
+import VideoCalling from "../Components/VideoCallingFeature";
 import sendIcon from "../assets/icons/send.png";
 import { apiUrl } from "../Services/apiConfig";
 
@@ -51,10 +52,17 @@ export default function MainLayout() {
   );
 
   const audioCallingRef = useRef(null);
+  const videoCallingRef = useRef(null);
 
   const startAudioCall = (peerId) => {
     if (audioCallingRef.current) {
       audioCallingRef.current.initialiseCalling(peerId);
+    }
+  };
+
+  const startVideoCall = (peerId) => {
+    if (videoCallingRef.current) {
+      videoCallingRef.current.initialiseCalling(peerId);
     }
   };
 
@@ -449,7 +457,7 @@ export default function MainLayout() {
 
   return (
     <>
-      <RealtimeContext.Provider value={{ subscribeDm, sendDm, currentUserId, startAudioCall }}>
+      <RealtimeContext.Provider value={{ subscribeDm, sendDm, currentUserId, startAudioCall, startVideoCall }}>
         <postDataContext.Provider
           value={{ postBatch, SetPostBatch, bottomRef }}
         >
@@ -741,7 +749,7 @@ export default function MainLayout() {
                 <Sidebar globalNotification={globalNotification} />
               </div>
               <main>
-                <Outlet context={{ subscribeNotifications, sendNotifications, globalNotification, setGlobalNotifications, startAudioCall }} />
+                <Outlet context={{ subscribeNotifications, sendNotifications, globalNotification, setGlobalNotifications, startAudioCall, startVideoCall }} />
               </main>
             </div>
 
@@ -751,6 +759,12 @@ export default function MainLayout() {
       </RealtimeContext.Provider>
       <AudioCalling 
         ref={audioCallingRef} 
+        passedCurrentUserID={currentUserId} 
+        subscribeNotifications={subscribeDm}
+        sendNotifications={sendDm}
+      />
+      <VideoCalling 
+        ref={videoCallingRef} 
         passedCurrentUserID={currentUserId} 
         subscribeNotifications={subscribeDm}
         sendNotifications={sendDm}

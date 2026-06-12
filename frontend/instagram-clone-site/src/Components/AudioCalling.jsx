@@ -340,7 +340,6 @@ const AudioCalling = forwardRef(
             "successfully accessing already added media streams in the p.c✅;ready to play⏳...",
           );
 
-
           let remoteHiddenAudioElement = remoteAudioRef.current;
 
           // if element exists and cause it would be hidden, sourcing the recieved stream from peerConnection rtc to source in from e.streams[at0thPlace]
@@ -416,7 +415,7 @@ const AudioCalling = forwardRef(
                 candidate.sdpMLineIndex == null)
             ) {
               console.log(
-                "could not find any ice-candidates;candidate information for tracking and connecting peer is unknown or ❌",
+                "could not find any ice-candidates;candidate information for tracking and connecting peer is unknown ❌",
               );
               continue;
             }
