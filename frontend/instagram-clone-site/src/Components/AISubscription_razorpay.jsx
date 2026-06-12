@@ -13,7 +13,7 @@ export default function AISubscription_razorpay() {
       key: rzrpayID,
 
       // *PHASE 1 - onboarding information
-      amount: 299,
+      amount: 29900, // in paise , 100 paise = 1rupee
       currency: "INR",
       name: "ayush kumar",
       description: "1-Month DenverAI premium subscription",
