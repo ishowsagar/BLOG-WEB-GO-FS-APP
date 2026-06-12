@@ -291,7 +291,7 @@ const VideoCalling = forwardRef(
 
       try {
         // 1. get rtc conn, loaded from rtc config
-
+        setCallState("active")
         const pconn = new RTCPeerConnection(rtcConfig);
         peerConnection.current = pconn;
         if (peerConnection.current) {
@@ -462,6 +462,7 @@ const VideoCalling = forwardRef(
 
       try {
         targetPeerID.current = receiverID;
+        setCallState("calling"); //* for loading ui instantly
         console.log(
           "caller has found targetted userID for intiating video call :",
           targetPeerID.current,
