@@ -90,11 +90,14 @@ const VideoCalling = forwardRef(
       }
 
       // stopping opened local streams
-      localstream.current.getTracks().forEach((eachTrackStream) => {
-        console.log("stopping all local media streams...");
-        eachTrackStream.stop();
-        console.log("cleared up and stopped all the opened local streams🛑.");
-      });
+      if (localstream.current) {
+        // * only do cleanup if they exists -: avoid cleaning up when does not exists
+        localstream.current.getTracks().forEach((eachTrackStream) => {
+          console.log("stopping all local media streams...");
+          eachTrackStream.stop();
+          console.log("cleared up and stopped all the opened local streams🛑.");
+        });
+      }
 
       localstream.current = null;
       console.log("localstream ref is now null again🛑.");
@@ -126,6 +129,7 @@ const VideoCalling = forwardRef(
           sender_id: Number(passedCurrentUserID),
           reciever_id: Number(targetPeerID.current),
           type: "hangup",
+          content: "video",
         });
       }
 
@@ -147,6 +151,15 @@ const VideoCalling = forwardRef(
           console.log(
             "nothing is sent from hub; no payloads have been intercepted for calling requests❌",
           );
+          return;
+        }
+
+        // Ignore audio calling notifications
+        if (
+          ["offer", "answer", "ice-candidate", "hangup"].includes(p.type) &&
+          p.content !== "video"
+        ) {
+          console.log("VideoCalling ignoring incoming audio call payload:", p.type);
           return;
         }
 
@@ -291,7 +304,7 @@ const VideoCalling = forwardRef(
 
       try {
         // 1. get rtc conn, loaded from rtc config
-        setCallState("active")
+        setCallState("active");
         const pconn = new RTCPeerConnection(rtcConfig);
         peerConnection.current = pconn;
         if (peerConnection.current) {
@@ -308,6 +321,7 @@ const VideoCalling = forwardRef(
               type: "ice-candidate",
               sender_id: passedCurrentUserID,
               reciever_id: targetPeerID.current,
+              content: "video",
               audio_payload_only: candidatesdp,
             };
 
@@ -443,6 +457,7 @@ const VideoCalling = forwardRef(
           sender_id: passedCurrentUserID,
           reciever_id: targetPeerID.current, // need to set it first reffdly
           type: "answer",
+          content: "video",
           audio_payload_only: ansSdp,
         };
         // 8. sending event via ws connection
@@ -486,6 +501,7 @@ const VideoCalling = forwardRef(
               type: "ice-candidate",
               sender_id: Number(passedCurrentUserID),
               reciever_id: Number(targetPeerID.current),
+              content: "video",
               audio_payload_only: candidatesdp,
             };
 
@@ -628,6 +644,7 @@ const VideoCalling = forwardRef(
           sender_id: passedCurrentUserID,
           reciever_id: targetPeerID.current,
           type: "offer",
+          content: "video",
           audio_payload_only: offerSdp,
         };
         //** 7. send offer attached payload via ws connection

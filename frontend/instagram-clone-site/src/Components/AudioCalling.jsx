@@ -527,6 +527,15 @@ const AudioCalling = forwardRef(
           return;
         }
 
+        // Ignore video call notifications
+        if (
+          ["offer", "answer", "ice-candidate", "hangup"].includes(audioPayload.type) &&
+          audioPayload.content === "video"
+        ) {
+          console.log("AudioCalling ignoring incoming video call payload:", audioPayload.type);
+          return;
+        }
+
         switch (
           audioPayload.type //& when call 'offer' is recieved <- for cal connection => reciever get that request with peerID being the senderID as sender is one who is sending call request
         ) {
