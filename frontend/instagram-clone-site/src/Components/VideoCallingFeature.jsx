@@ -165,7 +165,10 @@ const VideoCalling = forwardRef(
           ["offer", "answer", "ice-candidate", "hangup"].includes(p.type) &&
           p.content !== "video"
         ) {
-          console.log("VideoCalling ignoring incoming audio call payload:", p.type);
+          console.log(
+            "VideoCalling ignoring incoming audio call payload:",
+            p.type,
+          );
           return;
         }
 
@@ -417,8 +420,8 @@ const VideoCalling = forwardRef(
           video: {
             width: { ideal: 1920 },
             height: { ideal: 1080 },
-            frameRate: { ideal: 30 }
-          }
+            frameRate: { ideal: 30 },
+          },
         };
 
         const standardMediaConstraints = {
@@ -443,7 +446,9 @@ const VideoCalling = forwardRef(
         };
 
         //3.grab local media streams
-        const mediaStream = await navigator.mediaDevices.getUserMedia(maxQualityMediaConstraints);
+        const mediaStream = await navigator.mediaDevices.getUserMedia(
+          standardMediaConstraints,
+        );
         // store in localstream.current
         //   ! bug - can't use optional chaining on left side
         //   fixed - removed '? '
