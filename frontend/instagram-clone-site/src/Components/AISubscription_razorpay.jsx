@@ -4,7 +4,7 @@ export default function AISubscription_razorpay() {
 
   // # registering handlers
   const rzrpayID = import.meta.env.VITE_RZRPAY_ACCESS_KEY_ID;
-
+  //   const {};
   //** when fired -> it triggers the payment (in sandbox)
   const handleTestPayment = () => {
     // 1. configuring the poped up payload firstly
