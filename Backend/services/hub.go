@@ -1177,6 +1177,7 @@ func (c *Client) MessageReader(db *gorm.DB) {
 				RecieverID:       msg.RecieverID,
 				RoomID:           0, // explicitly set 0 for to non-clash in consumer routing
 				CreatedAt:        msg.CreatedAt,
+				Content:          msg.Content,
 				AudioPayloadOnly: msg.AudioPayloadOnly, // wharver json raw msg payload is sent to reader <- inject in here
 			}
 		}
