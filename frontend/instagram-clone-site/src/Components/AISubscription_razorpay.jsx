@@ -3,7 +3,8 @@ export default function AISubscription_razorpay() {
   // mocking payment integration - with test keys only
 
   // # registering handlers
-  const rzrpayID = import.meta.env.VITE_RZRPAY_ACCESS_KEY_ID;
+  const rzrpayID =
+    import.meta.env.VITE_RZRPAY_ACCESS_KEY_ID || "rzp_test_T0iz587aGLSrzC";
   //   const {};
   //** when fired -> it triggers the payment (in sandbox)
   const handleTestPayment = () => {
