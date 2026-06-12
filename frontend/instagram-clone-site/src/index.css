@@ -107,8 +107,8 @@
       gap: 0.65rem;
     }
     .header_logo {
-      width: 36px;
-      height: 36px;
+      width: 56px;
+      height: 56px;
       border-radius: 0;
       background: transparent;
       padding: 0;
@@ -219,8 +219,8 @@
     }
 
     .header_logo {
-      width: 32px;
-      height: 32px;
+      width: 48px;
+      height: 48px;
       border-radius: 0;
       background: transparent;
       padding: 0;
@@ -510,8 +510,8 @@
   }
 
   .header_logo {
-    width: 42px;
-    height: 42px;
+    width: 72px;
+    height: 72px;
     object-fit: contain;
     border-radius: 0;
     background: transparent;
