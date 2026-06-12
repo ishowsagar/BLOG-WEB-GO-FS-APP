@@ -1136,9 +1136,9 @@ func (c *Client) MessageReader(db *gorm.DB) {
 
 		// * audio signaling payloads (offer/answer/ice-candidate/hangup) must NOT go through the DB write path
 		// * they have empty Content which would break the reader loop on a NOT NULL constraint error
-		isAudioPayload := msg.Type == "offer" || msg.Type == "answer" || msg.Type == "ice-candidate" || msg.Type == "hangup"
+		webRTCPayload := msg.Type == "offer" || msg.Type == "answer" || msg.Type == "ice-candidate" || msg.Type == "hangup"
 
-		if !isAudioPayload {
+		if !webRTCPayload {
 			// * if recieving msg is correct of type inBMsg - making query to store in db
 			err = db.Create(&models.Message{
 				// we not storing name just we will send result back with name
@@ -1168,10 +1168,10 @@ func (c *Client) MessageReader(db *gorm.DB) {
 			RecieverName: recieverName,
 		}
 
-		var audioChunkPayload *ClientNotifyPayload
-		if isAudioPayload {
+		var rtcNegotiationPayload *ClientNotifyPayload
+		if webRTCPayload {
 			// & 3 - publishing audio offer "whether to join or not" -> to the reciever || also make payload for ice-candidate
-			audioChunkPayload = &ClientNotifyPayload{
+			rtcNegotiationPayload = &ClientNotifyPayload{
 				Type:             msg.Type,
 				SenderID:         msg.SenderID,
 				RecieverID:       msg.RecieverID,
@@ -1182,9 +1182,9 @@ func (c *Client) MessageReader(db *gorm.DB) {
 			}
 		}
 
-		if audioChunkPayload != nil {
+		if rtcNegotiationPayload != nil {
 			//*now offerpayload holds the call offer payload data that has to be published by the publisher
-			slog.Info("audio payload is ready✅", "type", audioChunkPayload.Type)
+			slog.Info("webRTCPayload event is ready✅", "type", rtcNegotiationPayload.Type)
 		}
 
 		// uncomment for prod ack if used
@@ -1206,7 +1206,7 @@ func (c *Client) MessageReader(db *gorm.DB) {
 		// }()
 
 		// & 2 - mark delivery in "notifications" exchange for this userID when its not nil
-		if !isAudioPayload && msg.RecieverID != 0 && payload.RoomID == 0 {
+		if !webRTCPayload && msg.RecieverID != 0 && payload.RoomID == 0 {
 			//* checked by consumer which -> redirects to targetted chan of hub -> which sends to targetted client only for reciever send chan
 			c.Hub.Publish(msg.RecieverID, payload) //payload of type being "dm" publishes to the exchange
 			// todo - when successfully published also store in the db - dm message
@@ -1215,13 +1215,13 @@ func (c *Client) MessageReader(db *gorm.DB) {
 		}
 
 		// & 3 - publishing audio offer "whether to join or not" -> to the reciever
-		if audioChunkPayload != nil {
+		if rtcNegotiationPayload != nil {
 
-			switch audioChunkPayload.Type {
+			switch rtcNegotiationPayload.Type {
 			case "offer":
-				// audioChunkPayload.AudioPayloadOnly
-				var offer models.AudioOffer //* offer holds type of data sent from client for offer
-				err := json.Unmarshal(audioChunkPayload.AudioPayloadOnly, &offer)
+				// rtcNegotiationPayload.AudioPayloadOnly
+				var offer models.OfferSdp //* offer holds type of data sent from client for offer
+				err := json.Unmarshal(rtcNegotiationPayload.AudioPayloadOnly, &offer)
 				if err != nil {
 					slog.Error("failed to unmarshal offer", "error", err)
 					c.WebsocketConnection.WriteJSON(utils.ErrResponse{
@@ -1241,14 +1241,14 @@ func (c *Client) MessageReader(db *gorm.DB) {
 				}
 
 				// Track peer
-				c.PeerID = audioChunkPayload.RecieverID
+				c.PeerID = rtcNegotiationPayload.RecieverID
 
-				c.Hub.Publish(audioChunkPayload.RecieverID, audioChunkPayload) //* stamping delivery of the event on the reciverID for consumer to route it
-				slog.Info("successfully recieved and published the delivery of this audioChunkPayload to the consumer", "recieverID", audioChunkPayload.RecieverID)
+				c.Hub.Publish(rtcNegotiationPayload.RecieverID, rtcNegotiationPayload) //* stamping delivery of the event on the reciverID for consumer to route it
+				slog.Info("successfully recieved and published the delivery of this rtcNegotiationPayload to the consumer", "recieverID", rtcNegotiationPayload.RecieverID)
 
 			case "answer":
-				var answer models.AudioOffer
-				err := json.Unmarshal(audioChunkPayload.AudioPayloadOnly, &answer)
+				var answer models.AnswerSdp
+				err := json.Unmarshal(rtcNegotiationPayload.AudioPayloadOnly, &answer)
 				if err != nil {
 					slog.Error("failed to unmarshal answer", "error", err)
 					c.WebsocketConnection.WriteJSON(utils.ErrResponse{
@@ -1264,15 +1264,15 @@ func (c *Client) MessageReader(db *gorm.DB) {
 				}
 
 				// Track peer
-				c.PeerID = audioChunkPayload.RecieverID
+				c.PeerID = rtcNegotiationPayload.RecieverID
 
-				c.Hub.Publish(audioChunkPayload.RecieverID, audioChunkPayload)
-				slog.Info("successfully received and published the delivery of answer", "receiverID", audioChunkPayload.RecieverID)
+				c.Hub.Publish(rtcNegotiationPayload.RecieverID, rtcNegotiationPayload)
+				slog.Info("successfully received and published the delivery of answer", "receiverID", rtcNegotiationPayload.RecieverID)
 
 			case "ice-candidate":
 				// whatever struct type data sent to client <- reader msg's recieved payload has that field which carries payload, we just here checking if on unmarshaling if populates into desired type, we got that in out hand
-				var candidate models.AudioIceCandidate //* candidate holds type of data sent from client for candidate
-				err := json.Unmarshal(audioChunkPayload.AudioPayloadOnly, &candidate)
+				var candidate models.IceCandidate //* candidate holds type of data sent from client for candidate
+				err := json.Unmarshal(rtcNegotiationPayload.AudioPayloadOnly, &candidate)
 				if err != nil {
 					slog.Error("failed to unmarashal candidate", "error", err)
 					c.WebsocketConnection.WriteJSON(utils.ErrResponse{
@@ -1289,15 +1289,15 @@ func (c *Client) MessageReader(db *gorm.DB) {
 				}
 
 				// if present publish this event
-				c.Hub.Publish(audioChunkPayload.RecieverID, audioChunkPayload) //* stamping delivery of the event on the reciverID for consumer to route it
-				slog.Info("successfully recieved and published the delivery of this audioChunkPayload to the consumer", "recieverID", audioChunkPayload.RecieverID, "type", audioChunkPayload.Type)
+				c.Hub.Publish(rtcNegotiationPayload.RecieverID, rtcNegotiationPayload) //* stamping delivery of the event on the reciverID for consumer to route it
+				slog.Info("successfully recieved and published the delivery of this rtcNegotiationPayload to the consumer", "recieverID", rtcNegotiationPayload.RecieverID, "type", rtcNegotiationPayload.Type)
 
 			case "hangup":
 				// Clear peer tracking
 				c.PeerID = 0
 
-				c.Hub.Publish(audioChunkPayload.RecieverID, audioChunkPayload)
-				slog.Info("successfully received and published the delivery of hangup to consumer", "receiverID", audioChunkPayload.RecieverID)
+				c.Hub.Publish(rtcNegotiationPayload.RecieverID, rtcNegotiationPayload)
+				slog.Info("successfully received and published the delivery of hangup to consumer", "receiverID", rtcNegotiationPayload.RecieverID)
 			} //..swtich
 
 		} //..audioPayloadNotNilCheck

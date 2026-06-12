@@ -235,7 +235,7 @@ export default function EachPost() {
     }
   }
 
-  const displayUsername = eachPost.user_id && `insta-user-${eachPost.user_id}`;
+  const displayUsername = eachPost.user_id && `denver-user-${eachPost.user_id}`;
   const displayImage = resolvePostImage(eachPost);
   const avatarImg = eachPost.user_id
     ? `https://i.pravatar.cc/150?img=${eachPost.user_id}`
@@ -333,7 +333,7 @@ export default function EachPost() {
               ) : (
                 postComments.map((comment) => {
                   const commentAuthor =
-                    comment.name || `insta-user-${comment.user_id}`;
+                    comment.name || `denver-user-${comment.user_id}`;
                   const commentAvatarSeed =
                     (comment.user_id || comment.id || 1) % 70;
                   const commentAvatar = `https://i.pravatar.cc/150?img=${commentAvatarSeed || 1}`;

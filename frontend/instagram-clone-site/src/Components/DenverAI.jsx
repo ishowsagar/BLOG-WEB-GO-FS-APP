@@ -8,12 +8,12 @@ const SUGGESTED_PROMPTS = [
   {
     icon: "✍️",
     label: "Draft a travel post",
-    text: "Draft an engaging Instagram post about a weekend escape to the mountains.",
+    text: "Draft an engaging Denvergram post about a weekend escape to the mountains.",
   },
   {
     icon: "💡",
     label: "Generate bio ideas",
-    text: "Generate 3 professional yet creative Instagram bios for a web developer.",
+    text: "Generate 3 professional yet creative Denvergram bios for a web developer.",
   },
   {
     icon: "🚀",
@@ -29,10 +29,10 @@ const SUGGESTED_PROMPTS = [
 
 // Mock answers database for realistic prompt interactions
 const MOCK_ANSWERS = {
-  "Draft an engaging Instagram post about a weekend escape to the mountains.":
+  "Draft an engaging Denvergram post about a weekend escape to the mountains.":
     "🌲 **Mountain Air & Quiet Paths** 🏔️\n\nSometimes, the best way to move forward is to unplug and head high. Spent the weekend escaping the city noise and trading it for whispering pines and crisp mountain peaks. \n\nThere's something incredibly centering about being surrounded by heights that have stood for thousands of years. It reminds you how small our daily worries are in the grand scheme.\n\n*📍 Alpine Peaks*\n\n🎒 **Pack list essentials:**\n- Good boots 🥾\n- Hot coffee in a flask ☕\n- Zero cellular connection 📵\n\n#MountainEscape #AlpsTravel #Unplugged #NatureVibes #Wanderlust #HikingLife",
 
-  "Generate 3 professional yet creative Instagram bios for a web developer.":
+  "Generate 3 professional yet creative Denvergram bios for a web developer.":
     "Here are 3 unique bio options for your profile:\n\n**Option 1: Tech + Creative**\n💻 Web Developer | Transforming caffeine into clean, interactive code ☕\n✨ Building pixel-perfect, accessible web experiences\n📂 Check out my latest project below!\n👇 [github.com/developer]\n\n**Option 2: Minimalist**\n🚀 Code. Deploy. Repeat.\n🛠️ Crafting the modern web with React & Go\n🌱 Lifelong learner & open-source contributor\n✉️ DM for collaborations!\n\n**Option 3: Storyteller**\n🌐 Designing digital spaces where code meets human interaction\n🎨 Full Stack Developer by day, tinkerer by night\n⛰️ Outdoors enthusiast when the screen is closed\n🔗 Portfolio: [yourdomain.com]",
 
   "Give a simple, visual explanation of how channels work in Go.":

@@ -51,7 +51,7 @@ export default function About() {
       icon: "📖",
       title: "Stories",
       description:
-        "View user stories with green Instagram-style outline avatars",
+        "View user stories with green Denvergram-style outline avatars",
     },
     {
       icon: "🔐",
@@ -91,7 +91,7 @@ export default function About() {
         {/* Hero Section */}
         <section className="about_hero">
           <div className="about_hero_content">
-            <h1 className="about_title">Instagram Clone</h1>
+            <h1 className="about_title">Denvergram</h1>
             <p className="about_subtitle">
               A beautiful, modern social media platform built with React and Go
             </p>

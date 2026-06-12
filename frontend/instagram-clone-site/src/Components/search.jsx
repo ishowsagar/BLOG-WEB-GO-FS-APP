@@ -19,7 +19,7 @@ const SUGGESTIONS = [
 ];
 
 const RECENT_SEARCHES = [
-  "instagram clone",
+  "denvergram",
   "ui ideas",
   "reels trend",
   "dark theme",
@@ -181,7 +181,7 @@ export default function Search() {
           <div>
             <p className="search_page_kicker">Explore</p>
             <h1 className="search_page_title">
-              Search Instagram-style content.
+              Search Denvergram-style content.
             </h1>
             <p className="search_page_subtitle">
               Find accounts, reels, hashtags, and posts with a clean discover
@@ -257,7 +257,7 @@ export default function Search() {
                     user?.name || user?.username || "Unknown User";
                   const handle = user?.username || user?.email || "user";
                   const subText =
-                    user?.nickname || user?.bio || "Instagram user";
+                    user?.nickname || user?.bio || "Denvergram user";
                   const avatarText = displayName.charAt(0).toUpperCase();
 
                   return (

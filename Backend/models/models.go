@@ -222,14 +222,20 @@ type GeminiResponse struct {
 }
 
 // audio chunks determinors for inbounds & outbounds
-type AudioOffer struct {
+type OfferSdp struct {
+	Type string `json:"type"`
+	Sdp string `json:"sdp"`
+	Platform string `json:"platform"`
+}
+
+type AnswerSdp struct {
 	Type string `json:"type"`
 	Sdp string `json:"sdp"`
 	Platform string `json:"platform"`
 }
 
 // audio chunks determinors for inbounds & outbounds
-type AudioIceCandidate struct {
+type IceCandidate struct {
 	Candidate     string `json:"candidate"`
 	SdpMLineIndex int    `json:"sdpMLineIndex"`
 	SdpMid        string `json:"sdpMid"` // ! was missing - without this sdpMid is silently dropped when forwarded to receiver
