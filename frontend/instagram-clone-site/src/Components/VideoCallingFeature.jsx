@@ -70,6 +70,11 @@ const VideoCalling = forwardRef(
     function handleCleanup() {
       console.log("hanging up call...");
 
+      setIsVideoOff(false);
+      setIsMuted(false);
+      setIncomingOfferSdp(null);
+      targetPeerID.current = null;
+
       // first notify other side too, we are gonna hang up call
       // so other side case executes to do the same ->
 
@@ -135,6 +140,7 @@ const VideoCalling = forwardRef(
 
       // call cleanup now -> because then sent hangup will only do the cleanup part
       handleCleanup();
+      setCallState("idle");
     }
 
     // ** loading ws shared connection when components mounts -> payloads are intercepted here
@@ -281,7 +287,7 @@ const VideoCalling = forwardRef(
 
             handleCleanup(); //* invoking this to cleanup
 
-            setCallState("hangup");
+            setCallState("idle");
             console.log(
               "user has been successfully disconnected from the p2p calling connection and all cleanup is done✅.",
             );
