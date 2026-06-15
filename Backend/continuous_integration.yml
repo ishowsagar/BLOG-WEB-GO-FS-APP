@@ -1,0 +1,53 @@
+#& Goal => When ever code is pushed, before serving the latest code, unit tests are fired to if see this newer code still
+# & satisfies the testing conditions -> if yes, then only do update the change in the codebase.
+
+# ** flow
+# 1. define name
+# 2. when this triggers/invokes -> on push [ target ]
+# 3. declare to do these jobs - checking out codebase, spin up in ubuntu machine
+# 4. pull latest files and do the testing
+# 5. same as cd -> just job internal flow changes, rest stays the same
+name: Go continuous Integration
+
+# when code is pushed to this target branch - invoke this functionality jobs
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  # ! job's description
+  # defining what would happen after push is detected on the main branch - this job with title is comes into action
+  test-suite:
+    # what it do - and where it runs on
+    name: Run Aggressive Unit Tests
+    runs-on: ubuntu-latest
+
+    # ! defining what job would do actually - defining "steps" after defining the job's description
+    steps:
+      ## 1. spin up machine for repo
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      ## 2. setup go environment
+      - name: Setup Go Environment
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.0"
+
+      ## 3. provionsing a cached env so rest pushes uses that in superfast speed
+      - name: Restore/Cache Go Modules
+        uses: actions/cache@v4
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+    ## 4. installed required dependicies
+      - name : Install Dependencies
+        run : go mod download
+
+    ## 5. run tests
+      - name : Execute Unit Tests  
+        run : go test -v ./...

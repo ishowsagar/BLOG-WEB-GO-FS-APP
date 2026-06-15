@@ -1,4 +1,4 @@
-package unit_testor
+package testor
 
 import (
 	"fmt"
@@ -192,3 +192,7 @@ func TestValidPassword(t *testing.T) {
 	}
 
 } 
+
+
+
+

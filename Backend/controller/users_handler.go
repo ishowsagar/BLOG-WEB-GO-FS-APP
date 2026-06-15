@@ -14,7 +14,7 @@ import (
 	"github.com/ishowsagar/go-blog-web-application/metrics"
 	"github.com/ishowsagar/go-blog-web-application/models"
 	"github.com/ishowsagar/go-blog-web-application/services"
-	unit_testor "github.com/ishowsagar/go-blog-web-application/testing"
+	"github.com/ishowsagar/go-blog-web-application/testor"
 	"github.com/ishowsagar/go-blog-web-application/utils"
 )
 
@@ -581,7 +581,7 @@ func(u *UserController) UpdateUserPassword(c *gin.Context) {
 	// ** Now,since that covers all cases and return expected errors we could match or directly get them based off boolean to early stop client and send response
 	
 	// executing password validator function
-	validityStatus,isValid :=unit_testor.ValidPasswordTesting(updateRequest.Password,updateRequest.Email)
+	validityStatus,isValid :=testor.ValidPasswordTesting(updateRequest.Password,updateRequest.Email)
 	if !isValid {
 		// ! when it executes and finds password is not valid -> abort this operation early
 		c.AbortWithStatusJSON(http.StatusBadRequest,utils.ErrResponse{
