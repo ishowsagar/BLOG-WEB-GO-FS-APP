@@ -9,7 +9,7 @@ import (
 )
 
 //@ Unit testing => testing a single unit\component out of the system to check its working in a isolated space.
-
+// this file name must end with - "_test"
 //*types
 
 // type struct for user details data for unit testing

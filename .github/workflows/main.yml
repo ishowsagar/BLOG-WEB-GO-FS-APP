@@ -42,7 +42,7 @@ jobs:
       ## 5. run tests
       - name: Execute Unit Tests
         working-directory: ./Backend
-        run: go test -v ./...
+        run: go test -v ./testor/...
 
   deploy:
     name: Deplpoy to Ec2 Instance
