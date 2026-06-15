@@ -48,6 +48,7 @@ type Client struct {
 // @ Interface that stores method -> which belongs to the hub which -> when called calls publisher method
 type HubBroker interface {
 	PublishEvents(userID uint, payload *ClientNotifyPayload) error
+	PublishMediaEvents(userID uint, payload *models.MediaEventPayload) error
 }
 
 // centre point for all operations - all clients connection/disconnection,msg are redirected here and then handled
@@ -98,7 +99,7 @@ func IntializeNewHubInstance() *Hub {
 		RegisterRoomClient:                  make(chan *Client),
 		ChatRoomClients:                     make(map[uint]map[*Client]bool),
 		ClientStore:                         make(map[uint]*Client),
-		TargettedClientNotificationTypeOnly: make(chan *ClientNotifyPayload,10),
+		TargettedClientNotificationTypeOnly: make(chan *ClientNotifyPayload, 10),
 		// DirectMessagesHub: make(chan *models.DirectMessage),
 		GeminiAIResponseOnly: make(chan *ClientNotifyPayload, 20),
 		AudioCallingOnly:     make(chan *ClientNotifyPayload, 10), //max 10 buffers allowed for call rn
@@ -1220,7 +1221,7 @@ func (c *Client) MessageReader(db *gorm.DB) {
 			switch rtcNegotiationPayload.Type {
 			case "offer":
 				// rtcNegotiationPayload.AudioPayloadOnly
-				var offer models.OfferSdp //* offer holds type of data sent from client for offer
+				var offer models.InboundOfferDesc //* offer holds type of data sent from client for offer
 				err := json.Unmarshal(rtcNegotiationPayload.AudioPayloadOnly, &offer)
 				if err != nil {
 					slog.Error("failed to unmarshal offer", "error", err)
@@ -1231,6 +1232,7 @@ func (c *Client) MessageReader(db *gorm.DB) {
 					continue
 				}
 
+				// ** validating incoming desc -> so other side would get desired desc for to set in its remote desc
 				//* if we successfully recieved offer but if validation check did not pass
 				if offer.Sdp == "" {
 					slog.Error("rejecting client audio calling offer", "error", "sdp string is missing!.")
@@ -1247,7 +1249,9 @@ func (c *Client) MessageReader(db *gorm.DB) {
 				slog.Info("successfully recieved and published the delivery of this rtcNegotiationPayload to the consumer", "recieverID", rtcNegotiationPayload.RecieverID)
 
 			case "answer":
-				var answer models.AnswerSdp
+				var answer models.InboundAnswerDesc
+				
+				//** validating incoming desc, if they are not nill and as it is was when generated
 				err := json.Unmarshal(rtcNegotiationPayload.AudioPayloadOnly, &answer)
 				if err != nil {
 					slog.Error("failed to unmarshal answer", "error", err)
@@ -1322,6 +1326,267 @@ func (c *Client) MessageReader(db *gorm.DB) {
 		// }
 
 	}
+}
+
+// for specially handeling media ws reader only
+func (c *Client) MediaReader() {
+
+	// deferred cleanup function
+	defer func() {
+
+		// cleanup loose ws connection / fatal early return conn
+		c.WebsocketConnection.Close()
+		close(c.Send)
+		// close client chan - no go routine + memory  leak
+
+	}()
+
+	// token verification - client would be already created <- if thinking of adding seperate handler for this
+
+	// ** infinite loop as go routine is fired -> keeps running in bg with for {}
+	for {
+
+		var incomingPayload *models.MediaEventPayload
+
+		// ** read/write handled with wsConn.read/writeJSON() fncs
+
+		// 1.read incoming payload
+		payloadReadErr := c.WebsocketConnection.ReadJSON(&incomingPayload) //* reads this type of incoming payload
+		if payloadReadErr != nil {
+			// send res that invalid payload
+			c.WebsocketConnection.WriteJSON(utils.WsConnReadErrResponse{
+				Ok:     false,
+				Status: "Invalid incoming rtc event payload ",
+			})
+			break
+
+		}
+
+		//** 2.  check payload type, based off type -> do validation if it is coming with required data & non-empty sdp
+		// we do validation check on -> incoming payload's streamDesc {sdp} -> only send (local desc set ) desc attached payload if it is coming fully loaded
+
+		// only incoming payload with set these types are allowed
+		allowedPayloadTypesOnly := map[string]bool{
+			"offer":         true,
+			"answer":        true,
+			"ice-candidate": true,
+			"hangup":        true,
+		}
+
+		
+
+		// checking if incoming payload.type exists in map [key], if found -> ready for publishing and consumer routing
+		_, exists := allowedPayloadTypesOnly[incomingPayload.Type]
+
+		if !exists {
+			//todo - add structured slog logging later
+			c.WebsocketConnection.WriteJSON(utils.WsConnReadErrResponse{
+				// todo - might add block/goal field later to notify what it was tring to do, what it could have done
+				Ok:     false,
+				Status: "Invalid payload type ❌; only '[offer,answer,ice-candidate,hangup] are allowed' ",
+			})
+			break
+		}
+
+		// at this point ->  payload condition woulda been satisfied and successfully retrieved it
+
+		//** 3. rtcEventDescriptions validation check
+		switch incomingPayload.Type {
+		case "offer":
+			slog.Info("offer payload is recieved;getting ready for published by the publisher.")
+
+			slog.Info("request arrived at the client reader ",
+						slog.Group("OfferDescripted Payload",
+							slog.String("Via", "c.Client")),
+						slog.Group("payload",
+							slog.String("status", "offer sdp has been recieved successfully"),
+							slog.Uint64("clientID", uint64(incomingPayload.RecieverID)),
+						),
+						slog.Group("meta",
+							slog.Time("requested_at", time.Now()),
+						),
+					)
+
+			var dispatchedOfferDesc models.InboundOfferDesc
+			descUnmarshalingErr := json.Unmarshal(incomingPayload.StreamDesc, &dispatchedOfferDesc)
+			if descUnmarshalingErr != nil {
+				slog.Info("request arrived at the client reader",
+						slog.Group("OfferDescripted Payload",
+							slog.String("Via", "c.Reader")),
+						slog.Group("payload",
+							slog.String("status", "could not fan-out activity status to broadcast chan;chan is full"),
+							slog.Uint64("clientID", uint64(incomingPayload.RecieverID)),
+						),
+						slog.Group("meta",
+							slog.Time("requested_at", time.Now()),
+						),
+					)
+				c.WebsocketConnection.WriteJSON(utils.WsConnReadErrResponse{
+					// todo - might add block/goal field later to notify what it was tring to do, what it could have done
+					Ok: false,
+				})
+				continue //! continue immediatly out of switch
+			}
+
+			// offer is sent by caller with set localDesc (lettin other side know what would be incoming and codec configs)
+			if dispatchedOfferDesc.Platform == "web" {
+				slog.Info("handeling web based peer connection handshake")
+			}
+
+			if dispatchedOfferDesc.Sdp == "" {
+				slog.Error("sdp string is missing", "error", "dispatched offer set description sdp string is missing")
+				c.WebsocketConnection.WriteJSON(utils.WsConnReadErrResponse{
+					Ok:     false,
+					Status: "sdp string is missing",
+				})
+				continue //
+			}
+
+			// if dispatched offer desc is verified and correct -> ready for routing to the consumer
+			slog.Info("dispatched offer description is successfully verified;payload is ready for publishing✅")
+
+			//** calling seperately made method for publishing payload of type *mediaEventPayload
+			// as that method belongs to psubbroker type -> that method also stored in interface which have methods belongs to the type -> pubbsubbroker
+			// implemented by the type -> *pubsubBroker type struct
+
+			// * attach peer
+			c.PeerID = incomingPayload.RecieverID
+
+			publshingErr := c.Hub.BrokerInterface.PublishMediaEvents(incomingPayload.RecieverID, incomingPayload)
+			if publshingErr != nil {
+				c.WebsocketConnection.WriteJSON(utils.WsConnReadErrResponse{
+					Ok:     false,
+					Status: "failed to publish media event to the exchange❌",
+				})
+				continue //
+			}
+
+			// if successfully published.✅ -> ready for consumer routing
+			slog.Info("successfully published  offer media event to the exchange")
+
+		// & answer case
+		case "answer":
+			slog.Info("answer payload is recieved;getting ready for published by the publisher.")
+
+			var dispatchedAnswerDesc models.InboundAnswerDesc
+			descUnmarshalingErr := json.Unmarshal(incomingPayload.StreamDesc, &dispatchedAnswerDesc)
+			if descUnmarshalingErr != nil {
+				c.WebsocketConnection.WriteJSON(utils.WsConnReadErrResponse{
+					Ok:     false,
+					Status: "failed to decode SDP offer details ",
+				})
+				continue //! continue immediatly out of switch
+			}
+
+			// answer is sent by reciever with set localDesc (lettin caller side know what would be incoming and codec configs)
+			// ! but more importantly - it has set localDesc and confirmed its remote desc -> so when ans sdp is recieved -> caller's remote desc is set up
+			if dispatchedAnswerDesc.Platform == "web" {
+				slog.Info("handeling web based peer connection handshake")
+			}
+
+			if dispatchedAnswerDesc.Sdp == "" {
+				slog.Error("sdp string is missing", "error", "dispatched answer description configured 's sdp string is missing")
+				c.WebsocketConnection.WriteJSON(utils.WsConnReadErrResponse{
+					Ok:     false,
+					Status: "sdp string is missing",
+				})
+				continue //
+			}
+
+			// if dispatched answer desc is verified and correct -> ready for routing to the consumer
+			slog.Info("dispatched answer description is successfully verified;payload is ready for publishing✅")
+
+			// * attach peer
+			c.PeerID = incomingPayload.RecieverID
+
+			//** calling seperately made method for publishing payload of type *mediaEventPayload
+			publshingErr := c.Hub.BrokerInterface.PublishMediaEvents(incomingPayload.RecieverID, incomingPayload)
+			if publshingErr != nil {
+				c.WebsocketConnection.WriteJSON(utils.WsConnReadErrResponse{
+					Ok:     false,
+					Status: "failed to publish media event to the exchange❌",
+				})
+				continue //
+			}
+
+			// if successfully published.✅ -> ready for consumer routing
+			slog.Info("successfully published  answer media event to the exchange")
+
+			// & case ice-candidate -> when call is accepted, once,gathered ice is sent automatically and queued up untill peerConn.remote desc is mot
+			// untill remote is not set, reciever would not know offer stream -> delaying untill that only to make sure rest things goes smoothly for p2p calling connection
+		case "ice-candidate":
+			slog.Info("answer payload is recieved;getting ready for published by the publisher.")
+
+			var dispatchedGatheredIce models.InboundIce
+			descUnmarshalingErr := json.Unmarshal(incomingPayload.StreamDesc, &dispatchedGatheredIce)
+			if descUnmarshalingErr != nil {
+				c.WebsocketConnection.WriteJSON(utils.WsConnReadErrResponse{
+					Ok:     false,
+					Status: "failed to decode ice candidate details",
+				})
+				continue //! continue immediatly out of switch
+			}
+
+			// answer is sent by reciever with set localDesc (lettin caller side know what would be incoming and codec configs)
+			// ! but more importantly - it has set localDesc and confirmed its remote desc -> so when ans sdp is recieved -> caller's remote desc is set up
+			if dispatchedGatheredIce.Candidate == "" {
+				slog.Info("ice candidate is missing")
+				continue
+			}
+
+			if dispatchedGatheredIce.SdpMid == "" {
+				slog.Error("sdp mid string is missing", "error", "ice has no sdpMid string gathered in it")
+				c.WebsocketConnection.WriteJSON(utils.WsConnReadErrResponse{
+					Ok:     false,
+					Status: "Ice sdpMid string is missing",
+				})
+				continue //
+			}
+
+			// if dispatched answer desc is verified and correct -> ready for routing to the consumer
+			slog.Info("dispatched ice is configured correctly;payload is ready for publishing✅")
+
+			// * attach peer
+			c.PeerID = incomingPayload.RecieverID // reciever is peer {partner} -> now c.coming with having peerID info that peer exists
+
+			//** calling seperately made method for publishing payload of type *mediaEventPayload
+			publshingErr := c.Hub.BrokerInterface.PublishMediaEvents(incomingPayload.RecieverID, incomingPayload)
+			if publshingErr != nil {
+				c.WebsocketConnection.WriteJSON(utils.WsConnReadErrResponse{
+					Ok:     false,
+					Status: "failed to publish media event to the exchange❌",
+				})
+				continue //
+			}
+
+			// if successfully published.✅ -> ready for consumer routing
+			slog.Info("successfully published  ice media event to the exchange")
+
+		case "hangup":
+			c.PeerID = 0 // set 0 cause peer is no more, notify call has been disconnected
+			// since this does not involves descriptions,publishing directly
+			c.Hub.BrokerInterface.PublishMediaEvents(incomingPayload.RecieverID, incomingPayload)
+
+		} //.. switch statement
+
+		// ! changes needed to fully inntegrate this reader and writer to hub so it reuse all logic
+		// 1 - add seperate client's writer chan, so hub redirected rtcEventPayloads could be written of type *MediaEventPayload
+		// this fixes stress to implement seperate func
+		// 2 - way to handle incoming deliveries matches *MediaEventPayload -> which had to be sent to hub -> writing to client -> writer writes response to the client -> intercepted by the opened wsConn.onmessage
+		// 3 - hub's station - for *M.E.payload only chan -> recieving mediaEvents from consumer which would be published by the mediaReader
+		// 4 - maybe we would need seperate writer but since it belongs to writer, we could gracefully add chan for recieved redirected data from hub to the targettedReciever
+
+		// &potential risks
+		// 1 - diff handlers clash
+		// as our app shares single ws connection throughout the app,so this would be conflicting
+		// 2 - either we could have a totally seperate mini hub for media streaming clients only
+
+		// & hypothetical models
+		// 1- declaring seperate exchange for handeling these events
+		// this would reduce complexity of loading all events into one single exchange/topic
+
+	} //..for {infinite loop}
+
 }
 
 // method that belongs to the type *Client which w-> checks for chan data coming in client's send chan -> write it to the ws writer

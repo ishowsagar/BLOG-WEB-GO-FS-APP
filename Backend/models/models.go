@@ -1,6 +1,7 @@
 package models
 
 import (
+	"encoding/json"
 	"time"
 )
 
@@ -239,4 +240,36 @@ type IceCandidate struct {
 	Candidate     string `json:"candidate"`
 	SdpMLineIndex int    `json:"sdpMLineIndex"`
 	SdpMid        string `json:"sdpMid"` // ! was missing - without this sdpMid is silently dropped when forwarded to receiver
+}
+
+
+// type for media stream payload only { limited and compact on puurpose} 
+type MediaEventPayload struct {
+	SenderID         	 uint            `json:"sender_id"`
+	RecieverID       	 uint            `json:"reciever_id"`
+	Type       	    	 string          `json:"type"`
+	StreamType       	 string          `json:"content"`
+	StreamDesc 			 json.RawMessage `json:"stream_desc"` //* incoming sdp's validation on arrival 
+	CreatedAt        	 time.Time       `json:"created_at"`
+}
+
+// type struct for incoming offer's sent offer webrtc internal desc -> if its matching this -> confirms offer was created and local desc was set by webrtc peer connection
+type InboundOfferDesc struct {
+	Type string `json:"type"`
+	Sdp string `json:"sdp"`
+	Platform string `json:"platform"`
+}
+
+// type struct for incoming answer desc setted up by the reciever that he would be sending ans webrtc recognized desc -> other side would know what is incoming
+type InboundAnswerDesc struct {
+	Type string `json:"type"`
+	Sdp string `json:"sdp"`
+	Platform string `json:"platform"`
+}
+
+// type struct for dealing with incoming ice
+type InboundIce struct {
+	Candidate     string `json:"candidate"`
+	SdpMLineIndex int    `json:"sdpMLineIndex"`
+	SdpMid        string `json:"sdpMid"`
 }

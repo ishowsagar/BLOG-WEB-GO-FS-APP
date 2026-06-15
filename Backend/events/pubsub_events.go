@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/ishowsagar/go-blog-web-application/models"
 	"github.com/ishowsagar/go-blog-web-application/services"
 	"github.com/rabbitmq/amqp091-go"
 )
@@ -104,6 +105,37 @@ func (p *PubSubBroker) PublishEvents(userID uint, payload *services.ClientNotify
 
 	slog.Debug("published message", "routing_key", routingKey, "user_id", userID)
 	return nil
+}
+
+// func that belongs to the type PubSubBroker <- brokerInterface stores method which belong to this type
+func(p *PubSubBroker) PublishMediaEvents(userID uint,payload *models.MediaEventPayload) error {
+
+	if p.ch == nil {
+		return fmt.Errorf("broker not connected; p.ch is nil❌")
+	}
+
+	routingKey := fmt.Sprintf("user.%d",userID) // routing key where payload would be marked shipping for
+
+	marshalledPayload,err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("failed to marshal passed payload event")
+	}
+
+	//** ch.Publish publishes payload on the set routingID
+	err = p.ch.Publish(notificationsExchangeName,routingKey,false,false,amqp091.Publishing{
+		ContentType: "application/json",
+		Body:marshalledPayload,
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to publish payload event to the exchange")
+	}
+
+	// ** if successfully published payload and marked delivery on the routingKey being the userID
+	slog.Info("successfully published payload and marked delivery","recieverID",userID)
+	return nil
+
+	
 }
 
 // BindUser binds this instance's queue to receive messages for a specific user

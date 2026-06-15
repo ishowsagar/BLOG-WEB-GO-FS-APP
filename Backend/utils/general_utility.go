@@ -105,3 +105,10 @@ type S3UploadSuccessResponse struct{
 	Status string
 	ImageURL string
 }
+
+
+// type for sending err responses
+type WsConnReadErrResponse struct {
+	Ok bool
+	Status string
+}

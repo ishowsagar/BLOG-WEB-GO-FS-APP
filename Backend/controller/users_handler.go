@@ -14,6 +14,7 @@ import (
 	"github.com/ishowsagar/go-blog-web-application/metrics"
 	"github.com/ishowsagar/go-blog-web-application/models"
 	"github.com/ishowsagar/go-blog-web-application/services"
+	unit_testor "github.com/ishowsagar/go-blog-web-application/testing"
 	"github.com/ishowsagar/go-blog-web-application/utils"
 )
 
@@ -572,6 +573,25 @@ func(u *UserController) UpdateUserPassword(c *gin.Context) {
 		})
 		return 
 	}
+
+	// ** after we have successfully retrieved body payload from the client ->
+	// ** we execute the provem "TestValidPassword" function { derived from unit testing of looped data under t.Run subtests passing this validator function}
+
+	// ** we do unit testing to test function in isolated space first, if working as intended and proved, we integrate into the project
+	// ** Now,since that covers all cases and return expected errors we could match or directly get them based off boolean to early stop client and send response
+	
+	// executing password validator function
+	validityStatus,isValid :=unit_testor.ValidPasswordTesting(updateRequest.Password,updateRequest.Email)
+	if !isValid {
+		// ! when it executes and finds password is not valid -> abort this operation early
+		c.AbortWithStatusJSON(http.StatusBadRequest,utils.ErrResponse{
+			Ok: false,
+			Status: validityStatus,
+		})
+		slog.Error("failed to update password;returned early🛑","error",validityStatus)
+		return
+	}
+
 
 	
 

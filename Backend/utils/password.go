@@ -31,3 +31,5 @@ func CheckHashedPass(clientPass string,storedHash []byte)(bool,error) {
 	}
 	return true,nil
 }
+
+

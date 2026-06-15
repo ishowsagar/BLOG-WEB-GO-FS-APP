@@ -48,6 +48,7 @@ export default function DenverAI() {
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
 
+
   const outletContext = useOutletContext();
   const subscribeNotifications = outletContext?.subscribeNotifications;
 

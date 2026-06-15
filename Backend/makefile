@@ -33,3 +33,9 @@ stop :
 
 
 
+# ./backend/testing/unit_tests/... -> everything inside this dir (...) - testing utility
+run_test :
+	@echo "launching testing infrasture..."
+	
+	go test -v ./testing/unit_tests/...
+	
