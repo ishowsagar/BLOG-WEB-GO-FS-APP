@@ -580,8 +580,8 @@ func(u *UserController) UpdateUserPassword(c *gin.Context) {
 	// ** we do unit testing to test function in isolated space first, if working as intended and proved, we integrate into the project
 	// ** Now,since that covers all cases and return expected errors we could match or directly get them based off boolean to early stop client and send response
 	
-	// executing password validator function
-	validityStatus,isValid :=testor.ValidPasswordTesting(updateRequest.Password,updateRequest.Email)
+	// executing password validator function - must be declared in go files, not in test files
+	validityStatus,isValid := testor.ValidPasswordTesting(updateRequest.Password,updateRequest.Email)
 	if !isValid {
 		// ! when it executes and finds password is not valid -> abort this operation early
 		c.AbortWithStatusJSON(http.StatusBadRequest,utils.ErrResponse{
