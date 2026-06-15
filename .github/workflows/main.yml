@@ -36,10 +36,12 @@ jobs:
 
       ## 4. installed required dependicies
       - name: Install Dependencies
+        working-directory: ./Backend
         run: go mod download
 
       ## 5. run tests
       - name: Execute Unit Tests
+        working-directory: ./Backend
         run: go test -v ./...
 
   deploy:
