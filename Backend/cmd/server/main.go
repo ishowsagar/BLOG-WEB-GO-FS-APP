@@ -25,6 +25,11 @@ import (
 
 func main() {
 
+	// err := aiagent.ReadFileContent()
+	// if err != nil {
+	// 	return
+	// }
+
 	// tracking time when it fired main
 	mainFiresAt := time.Now()
 
