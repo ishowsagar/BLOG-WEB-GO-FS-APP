@@ -1,7 +1,13 @@
 package main
 
-import "log"
+import (
+	"encoding/json"
+	"fmt"
+	"log"
+	"os"
+)
 
+// builds prompt based on provided mode ["docs"...] and append content to it for sending request
 func BuildPrompt(mode, content string) string {
 
 	// * goal - return desired prompts based on mode selection
@@ -38,3 +44,58 @@ func BuildPrompt(mode, content string) string {
 	return prompt +"\n\n" + content //* returning both with line seperation  
 	
 }
+
+// func that checks if history already exists or not
+func CheckConvoHistoryFILE(filename string)(historyExists bool,State error) {
+	
+	// checks if this file has stats -> eventually checks if file exists
+	_,err := os.Stat(filename)
+
+	// if hit err to get info and err was that file does not exists -> return false that it does not exists
+	if err != nil && os.IsNotExist(err) {
+		return false,nil // err nil cause its just state
+	}
+
+	// otherwise true if exists
+	return true,nil
+}
+
+
+// writes history conversation to the history.json <- keep full history of the conversation
+func HandleHistoryWrites(writeToFile string,history []byte)(error) {
+	err := os.WriteFile(writeToFile,history,0644)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("conversation has been added to history.")
+	return nil
+
+}
+
+
+
+func HandleHistoryReads(history []byte)([]*ContentsSliceKeyWrapperGem,error) {
+	// parts := &PartsSliceKeyWrapperGem{
+	// 	Text: content,
+	// }
+	// cnts := &ContentsSliceKeyWrapperGem{
+	// 	Role: "s",
+	// 	Parts: []*PartsSliceKeyWrapperGem{parts},
+	// }
+	// history := OutboundPayloadGem{
+	// 	Contents: []*ContentsSliceKeyWrapperGem{
+	// 		cnts,
+	// 	},
+	// }
+
+	var payload []*ContentsSliceKeyWrapperGem
+	err := json.Unmarshal(history,&payload)
+	if err != nil {
+		return nil,fmt.Errorf("failed to unmarshal history")
+	}
+	return  payload,nil
+}
+
+
+

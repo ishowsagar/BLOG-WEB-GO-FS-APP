@@ -108,6 +108,7 @@ func main() {
 	// they must be parsed before getting used -> attached to the application
 	// !IMP - must be declared and parsed ( ready to be use in prod ) before manual args are being declared
 	Mode := flag.String("mode","review","choose agent response mode for better desired output")
+	Deeplearning := flag.Bool("deeplearning",false,"letting agent undergo beast mode with deep intelligence and conversation history")
 	flag.Parse()
 
 	// switch on *Mode val for AI meantime response - as it telling to use switch instead
@@ -204,6 +205,7 @@ func main() {
 	parts=append(parts, part)
 
 	contents := &ContentsSliceKeyWrapperGem{
+		Role: "user", //* while requesting, telling it has user role - user req
 		Parts: parts,
 	}
 
@@ -231,6 +233,160 @@ func main() {
 	req.Header.Set("Content-Type","application/json") // header key is **case-sensi 
 	req.Header.Set("x-goog-api-key", apiKEY) // Pass your Gemini key here
 
+
+	// before sending req,manage history if enabled
+	// ** conversation history with --mode deeplearning **//
+
+	deeplearningEnabled := *Deeplearning == true
+	// check if history already exists
+	if deeplearningEnabled {
+	fmt.Println("unlocking full potential of agent and powered by deep intelligence⚡")
+
+	
+	historyFile := "history.json"
+	historyExists,_ :=CheckConvoHistoryFILE(historyFile)
+
+	// if history does not exists already
+	if !historyExists {
+		// create new file
+		err =os.WriteFile(historyFile,[]byte("[]"),0644)
+		if err != nil {
+			return
+		}
+	}
+
+	// if yes,retrieve historyData in form of []byte -> unmarshal into pqyload -> append new message to it
+	
+	//* stores contents slice{user,model...}
+	var historyGem []*ContentsSliceKeyWrapperGem
+	historyData,err := os.ReadFile(historyFile) 
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	err = json.Unmarshal(historyData,&historyGem)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	// append new user message data to it
+	userparts := &PartsSliceKeyWrapperGem{
+				Text: BuildPrompt(*Mode,cnt),
+	}
+	newUserHistory := &ContentsSliceKeyWrapperGem{
+		Role: "user",
+		Parts: []*PartsSliceKeyWrapperGem{
+			userparts,
+		},
+	}
+
+	// !stores content slice - where contentwrappers are pushes 
+	historyGem = append(historyGem,newUserHistory)
+
+
+	
+	reqURL :="https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+
+	// ! sending full contents history 
+	deepOutByteBuffer :=  &OutboundPayloadGem{
+		Contents: historyGem,
+	}
+	var deepBodyBuf bytes.Buffer //storing bytes data
+	
+	// storing in bytes in buffer
+	err = json.NewEncoder(&deepBodyBuf).Encode(deepOutByteBuffer)
+	if err != nil {
+		log.Fatal("failed to encode history")
+	}
+	// if history is encoded successfully, send to the gemini for collective response
+
+	// 3. creating request for sending 
+	deepReq,err :=http.NewRequest("POST",reqURL,&deepBodyBuf)
+	if err != nil {
+		log.Fatalf("failed to request AI,err - %v",err)
+	}
+
+	deepReq.Header.Set("Content-Type","application/json") // header key is **case-sensi 
+	deepReq.Header.Set("x-goog-api-key", apiKEY) // Pass your Gemini key here
+
+	// send to gemini 
+	deepRes,err := client.Do(deepReq)
+	if err != nil {
+		return
+	}
+	
+	// intercept response - get res - write data to the history with role "model" this time
+	deepBody := deepRes.Body
+	defer deepBody.Close() //deferred call to close reader
+
+	
+	// read incoming body data into byte  
+	deepResByte,err := io.ReadAll(deepBody)
+	if err != nil {
+		return
+	}
+
+	var deepInbound *InboundPayloadGem
+	err = json.Unmarshal(deepResByte,&deepInbound)
+	if err != nil {
+		return
+	}
+
+	
+	// parsed response validation check
+	if len(deepInbound.Candidates) == 0 {
+		log.Fatal("API returned a successful deep response, but the 'Candidates' array was empty.")
+	}
+	
+	if deepInbound.Candidates[0].ContentWrapperGem == nil || len(deepInbound.Candidates[0].ContentWrapperGem.Parts) == 0 {
+		log.Fatal("API returned deep candidates, but the 'Parts' array was empty or nil.")
+	}
+	
+
+	AIResponseContent := deepInbound.Candidates[0].ContentWrapperGem.Parts[0].Text
+	if len(AIResponseContent) == 0 {
+		log.Fatal("empty deep response from AI, must have hit some unexpected error",)
+	}
+
+	// if res is validated and good -> contruct content with gemini response with role attached
+	deepAIResponse := deepInbound.Candidates[0].ContentWrapperGem.Parts[0].Text
+	
+	deepPartsGem := &PartsSliceKeyWrapperGem{
+		Text: deepAIResponse, //* attaching deep gemini response to it
+	}
+	deepContentGem := &ContentsSliceKeyWrapperGem{
+		Role: "model", //* attaching role
+		Parts: []*PartsSliceKeyWrapperGem{deepPartsGem},
+	}
+
+	
+	// ! appending res content to the history contents
+	// appending this to the history - keeping both histories intact
+	historyGem = append(historyGem, deepContentGem)
+	
+	//* now new history would be added to the history file but we also have to get back now full updated history and write to the file
+	
+	// ! grabbing full history {content : [usercontents,geminicontents]}
+	updatedHistoryBytes,err := json.Marshal(historyGem)
+	if err != nil {
+		return
+	}
+
+	// writing to the both file - {content - write full encoded contents in history} , res to the output file
+	err = WriteToFile(writeToFileArg,AIResponseContent)
+	if err != nil {
+		return
+	}
+	err = WriteToFile(historyFile,string(updatedHistoryBytes))
+	if err != nil {
+		return
+	}
+	fmt.Printf("deep response is recieved in %s file",writeToFileArg)
+	
+	}else {
+
+	
+	// ** end //
 
 	//4. initiates the request
 	res,err := client.Do(req)
@@ -295,6 +451,6 @@ func main() {
 		case "qa" :
 			fmt.Println("questions Success⚡")	
 	}//..switch
-
+	}//..else
 }
 
