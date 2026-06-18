@@ -72,7 +72,11 @@ func ReadFileContent(fileRelPath,fileToReadFrom string)(string,error) {
 		
 		// & this is how, each time it reads chunk into buffer -> returns n upto what slice length it has wrote bytes into buffer, acculamte it in content variable to store chunks
 		// 3.converting succcessfully read bytes data into strings 
-		content = string(buffer[:currentChunkWrittenBytes])
+		// bug - content was assigned to the current buffer's slice of bytes (bytes could be anything here - string) <- had to keep accumulating untill it hits EOF
+		// fix - now content is being accumulated, it means we taking the current buffered read but untill it has stored bytes n, how much was written in each chunk
+		// now it is accumulating as intended
+
+		content += string(buffer[:currentChunkWrittenBytes])
 		// * since buffer would have been populated by , but we don't know how much file has written to the buffer which accepts bytes data 
 		//* so we are taking buffer upto that slice length till it had successfully written bytes data
 	}
