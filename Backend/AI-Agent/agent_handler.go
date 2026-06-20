@@ -107,6 +107,8 @@ func BuildGitPrompt(gitMode, content string) string {
 	switch gitMode {
 	case "status":
 		prompt = "You are an expert coding mentor, review the provided code and give me the short output summary what is current git status and what needs to be done"  
+	case "add" :
+		prompt = "You are an expert coding mentor, review the provided added files git ouput and " + commitContext
 	case "commit":
 		prompt = "You are an expert coding mentor, analyse the provided code and generate beautiful humanized relavant commit message" + commitContext 
 	case "diff":
@@ -385,4 +387,141 @@ func WatchDirChanges(dirToWatchOut,fileSuffix,Mode,APIKEY,OutputFileName string)
 	}(watcher,fileSuffix,Mode,APIKEY,OutputFileName)//.. go-func
 
 	return
+}
+
+
+// Call when needed to get git based res only <- pass selected mode and gitOut to work with
+func GetGitResponse(clientSelectedGitMode,gitOutToSend,reqURL,API_KEY,writeToFileArg string,s *spinner.Spinner,client *http.Client)(string,error) {
+	// build req
+		var parts []*PartsSliceKeyWrapperGem
+		part := &PartsSliceKeyWrapperGem{
+			// ! adding conditional mode prompt + content
+			Text: BuildGitPrompt(clientSelectedGitMode,gitOutToSend), 
+		}
+		parts=append(parts, part)
+
+		contents := &ContentsSliceKeyWrapperGem{
+			Role: "user", //* while requesting, telling it has user role - user req
+			Parts: parts,
+		}
+
+		out := &OutboundPayloadGem{
+			Contents: []*ContentsSliceKeyWrapperGem{contents},
+		}
+
+		// encoding out into bytes (ofc in []byte)
+		outByteBuffer,err := json.Marshal(out)
+		if err != nil {
+			return "",fmt.Errorf("failed to encode outgoing payload,err -%v",err)
+		}
+
+		// wrapping payload into io reader -> let servers recieves data in chunks
+		body := bytes.NewBuffer(outByteBuffer)  // buffer.buffer auto handles read/writes internally
+
+
+		// 3. creating request for sending 
+		req,err :=http.NewRequest("POST",reqURL,body)
+		if err != nil {
+			return "",fmt.Errorf("failed to request AI,err - %v",err)
+		}
+
+		req.Header.Set("Content-Type","application/json") // header key is **case-sensi 
+		req.Header.Set("x-goog-api-key", API_KEY) // Pass your Gemini key here
+
+
+		// added spinner
+		// 1. Initialize the spinner
+		// CharSets[14] is a cool dot-bouncing animation, but there are dozens of options
+		
+		var spinnerText string//notifi dynamically
+		switch clientSelectedGitMode {
+		case "status" :
+			spinnerText = "Agent checking status..."
+		case "commit" :
+			// verbose for now
+			// later - add timing funcitonality based spinners
+			spinnerText = "Agent commiting changes..."
+		case "diff" :
+			spinnerText = "Agent checking repo changes..."
+		}
+
+		s.Suffix = spinnerText // assigns the spinner suffix text to be this 
+		s.Color("cyan") // Optional: give it some color!
+
+		// 2. Start the spinner
+		s.Start()
+
+		//4. initiates the request
+		res,err := client.Do(req)
+		if err != nil {
+			return "",fmt.Errorf("failed to get res, err - %v",err)
+		}
+
+		// 4. Stop the spinner immediately after the request finishes!
+		s.Stop()
+		//5. intercepting response
+		// deferred calling when sorrounding everything else has fired -> invoke this to get response
+		
+		// ! response recieved in body - satisfies io Reader - let []byte chunks read by reciever 
+		defer res.Body.Close() // also wraps []byte in ioreader <- 
+		
+		// !full res validation to avoid errors when [0] errorJson[1] is returned only
+		if res.StatusCode != 200 {
+			return "",fmt.Errorf("API returned a non-200 status code: %d", res.StatusCode)
+		}
+
+
+		// fetch retrieved data too in ioreader in chunks
+		bodyReader := res.Body
+		r,err := io.ReadAll(bodyReader) // read at once and tells how much is read
+		if err != nil {
+			return "",fmt.Errorf("failed to read response body byte data, err- %v",err)
+		}
+
+
+		var inboundResponse InboundPayloadGem
+		err = json.Unmarshal(r,&inboundResponse)
+		if err != nil {
+			return "",fmt.Errorf("failed to unmarshal recieved response, err- %v",err)
+		}
+		
+		// parsed response validation check
+		if len(inboundResponse.Candidates) == 0 {
+			return "",fmt.Errorf("API returned a successful response, but the 'Candidates' array was empty.")
+		}
+
+		// as res is srved on [0] -> checking if it is coming nill
+		if inboundResponse.Candidates[0].ContentWrapperGem == nil || len(inboundResponse.Candidates[0].ContentWrapperGem.Parts) == 0 {
+			return "",fmt.Errorf("API returned candidates, but the 'Parts' array was empty or nil.")
+		}
+
+
+		AIResponseContent := inboundResponse.Candidates[0].ContentWrapperGem.Parts[0].Text
+		if len(AIResponseContent) == 0 {
+			return "",fmt.Errorf("empty response from AI, must have hit some unexpected error",)
+		}
+
+
+		// 5. write res for now <- if untill this everything works -> fire git to do requested work
+		err = WriteToFile(writeToFileArg,AIResponseContent)
+		if err != nil {
+			return "",fmt.Errorf("failed to write to the file, err - %v",err)
+		}
+		
+		
+		// 6. notifying client with res 
+		var resMsg string
+		switch clientSelectedGitMode {
+		case "status" :
+			resMsg = fmt.Sprintf("Agent has done checking status & response awaits your essence in %s file📂",writeToFileArg)
+		case "commit" :
+			// verbose for now
+			// later - add timing funcitonality based spinners
+			resMsg = fmt.Sprintf("Agent has commited changes & response awaits your essence in %s file📂",writeToFileArg)
+		case "diff" :
+			resMsg = "Agent has analysed working tree and response awaits your essence in %s file📂 "
+		}
+		
+		fmt.Println(resMsg)
+		return  AIResponseContent,nil
 }
