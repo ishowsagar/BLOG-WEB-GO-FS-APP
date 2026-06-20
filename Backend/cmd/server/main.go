@@ -36,6 +36,7 @@ func main() {
 	// slog logger for entire application
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger) //* default logger set for whole app
+// testing changes if it shows this line being written to the main.go
 
 	// custom logger
 	f, err := os.Create("server_logs")
