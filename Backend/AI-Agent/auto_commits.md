@@ -1,1 +1,0 @@
-feat(git): Elevate your commit message workflow with intelligent AI-powered suggestions, ensuring full user control through confirmation and safe rollback.

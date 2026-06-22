@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -20,6 +19,17 @@ import (
 // entry point for client calling deepseek
 
 // @types declaration
+// type struct for storing agent needed data
+	type AgentConfig struct {
+		Mode string // agent prompt mode selection
+		Deeplearning bool // deeplearing bool for turining on memory or not
+		Target	string // TargetDirEntry - for selection dir mode, if given dir -> executes dir entries and prompt based off mode + dir entries
+		Git string // git selected mode for working with git automations - works with non dir and supports review,status,commit
+		FilenameArg string // file for context prompt in normal mode
+		writeToFileArg string //  output file name
+		selectedDirPathArg string // dir path for scan context
+		dirSubFileTypesArg string // dir sub entries files selection for scan
+	}
 
 // io.Reader/Writer => these are interfaces which both -> needs a method which intakes ( []byte) and do the desired work based on the context.
 // ** io.Reader -> This interface is implemented & satisfied by the method which -> wraps []byte data and constructs a reader source from where data in bytes chunk could be read gracefully
@@ -119,21 +129,21 @@ func main() {
 	// while defining a flag it-> takes in key under which it'd be defined, a default value, it's description when invoked help on it
 	// they must be parsed before getting used -> attached to the application
 	// !IMP - must be declared and parsed ( ready to be use in prod ) before manual args are being declared
-	Mode := flag.String("mode", "review", "choose agent response mode for better desired output")
-	Deeplearning := flag.Bool("deeplearning", false, "letting agent undergo beast mode with deep intelligence and conversation history")
-	Target := flag.String("type", "file", "choose agent either reads content from file or directory")
-	Git := flag.String("git", "status", "choose what agent to do with respect to git automations") //* for capturing git command from user
-	flag.Parse()
+	// Mode := flag.String("mode", "review", "choose agent response mode for better desired output")
+	// Deeplearning := flag.Bool("deeplearning", false, "letting agent undergo beast mode with deep intelligence and conversation history")
+	// Target := flag.String("type", "file", "choose agent either reads content from file or directory")
+	// Git := flag.String("git", "status", "choose what agent to do with respect to git automations") //* for capturing git command from user
+	// flag.Parse()
 
 	// switch on *Mode val for AI meantime response - as it telling to use switch instead
-	switch *Mode {
-	case "docs":
-		fmt.Println("documentation is in process...")
-	case "review":
-		fmt.Println("reviewing code...")
-	case "qa":
-		fmt.Println(" started code analysis to ask question based on it...")
-	} //..switch
+	// switch *Mode {
+	// case "docs":
+	// 	fmt.Println("documentation is in process...")
+	// case "review":
+	// 	fmt.Println("reviewing code...")
+	// case "qa":
+	// 	fmt.Println(" started code analysis to ask question based on it...")
+	// } //..switch
 
 	// must use pointer * -> to get stored val on that addr
 	// fmt.Println("flag - ",*Mode) // if not given address it would print addr, when addrs is given it prints the stored val on that addr
@@ -162,19 +172,174 @@ func main() {
 	// then arg defined with -> flag.Args()[positionedAt] takes up the arg place they -> take exact place and provide val to the codebase
 
 	// args validation to prevent crash
-	declaredArgs := flag.Args()
-	if len(declaredArgs) < 4 {
-		log.Fatalf("Expected 4 arguments, but got %d. Usage: [filename] [output_file] [dir_path] [file_type]", len(declaredArgs))
+	// declaredArgs := flag.Args() // only gives us provided args
+
+	//! upgrade -  Switching to user prompted selections and replacing them from args
+	// ** Reason -> imagine asking user to provide all the things upfront when they all needed is to run program first and then provide needy things when prompted
+	// ** this makes it robust and better user experience and better domain expansion and showing purpose of each arg
+
+	// * arg replacer - user input { process comes with stdin <- pulling bytes from there }
+	// now all these variables would be filled by user input
+
+	// get these from proccess's stdin stream capturing user input bytes
+
+	
+
+	var hasDeeplearningModeSelected bool;
+
+
+	// & user input access
+	s.Suffix = "Booting up agent✨..."
+	s.Color("cyan")
+	s.Start()
+	time.Sleep(time.Second * 2)
+	
+	s.Stop() // stop after 2 sec delay
+	fmt.Println("---- Agent booted up successfully 🚀 -----")
+	
+	// user provides input <-= captured by stdin from terminal -> reader streaming to process
+	modeSelection := "Select Agent Response Mode - [review,docs,qa] : "
+	selectedMode := CaptureInputFromShell(modeSelection)
+
+	DeeplearningSelection := "Do you want to learn with memory intelligence (premium✨) - [Y,N] : " //turn into bool based off ans
+	selectedDeeplearningMode := CaptureInputFromShell(DeeplearningSelection)
+	
+	// returns true if var's val matches provided value
+	hasDeeplearningModeSelected  = strings.EqualFold(selectedDeeplearningMode,"Y")	
+
+	TargetSelection := "Select what agent could access- [file,dir] for scans : "
+	selectedTarget := CaptureInputFromShell(TargetSelection)
+
+
+	// todo - add if target is file -> ask for file to scan for + validations for all fields later
+	// todo 2 - dynamically ask for input based off prior inputs
+
+	var selectedFile string
+	if TargetSelection == "file" {
+		fileSelection := "Provide file name : "
+		selectedFile = CaptureInputFromShell(fileSelection)
 	}
+	
+	// bug => need guard for git - it fires git mode cause we selects none or "" 
+	// fix - asks for git operations mode only if prior user wants git mode -> also don't prompt if dir mode is selected
+	
+	
+	gitAutomationSelection := "Select Y if you want git automations - [Y/N] : "
+	selectedGitAutomation := CaptureInputFromShell(gitAutomationSelection)
+	
+	// tracks selected modes
+	var selectedGitOperation string //tracks git modes
+	var hasGitEnabled bool // true if git enabled 
+
+	// if user wants git mode
+	if selectedGitAutomation == "Y" || selectedGitAutomation == "y" {
+		GitOperationSelection := "Select what agent git operation do automatically - [Status,Commit,Review,None] : "
+		selectedGitOperation = CaptureInputFromShell(GitOperationSelection)
+		hasGitEnabled = strings.EqualFold(selectedGitAutomation,"Y")
+	} else {
+		selectedGitOperation = "none" 
+	}
+
+	outputFileSelection := "Enter filename where agent write response to (auto-created if not exists already) : "
+	selectedOutputFile := CaptureInputFromShell(outputFileSelection)
+
+	dirPathSelection := "Provide dir path to scan for (relative path only 🚨) : "
+	selectedDirPath := CaptureInputFromShell(dirPathSelection)
+	
+	subfileTypeSelection := "Select which files should be focusedly scanned (premium✨) : "
+	selectedSubFileType := CaptureInputFromShell(subfileTypeSelection)
+
+
+	s.Suffix = "gathering user selections✨..."
+	s.Color("cyan")
+	s.Start()
+	time.Sleep(time.Second * 2)
+	
+	s.Stop() // stop after 2 sec delay
+	agentConfig := &AgentConfig{
+		Mode: selectedMode,
+		Deeplearning: hasDeeplearningModeSelected,
+		Target: selectedTarget,
+		FilenameArg: selectedFile,
+		writeToFileArg: selectedOutputFile,
+		Git: selectedGitOperation,
+		dirSubFileTypesArg: selectedSubFileType,
+		selectedDirPathArg: selectedDirPath,
+	}
+	fmt.Printf(`User selections :
+		mode : %s,
+		deeplearning? : %v,
+		target : %s,
+		git : %s,
+		dirPath : %s,
+		subFileType : %s,
+		outputFile :%s,
+		filenameArg :%s,
+	`,agentConfig.Mode,agentConfig.Deeplearning,agentConfig.Target,agentConfig.Git,agentConfig.selectedDirPathArg,agentConfig.dirSubFileTypesArg,agentConfig.writeToFileArg,agentConfig.FilenameArg)
+	
+
+	confirmation := "Do you want to proceed with this ? (y/n) :"
+	// adding confirmation so user can rollback or commit input
+	userConfirmation := CaptureInputFromShell(confirmation)
+	proceed :=userConfirmation == "Y" || userConfirmation == "Yes" || userConfirmation == "YES" || userConfirmation == "YeS"
+	
+	// if any of condition is matched -> proceed to do work -> invoke agent otherwise rollback to empty state and restart the operation
+	// todo - might need robust way to handle this better
+	if proceed{
+		s.Suffix = "agent thinking..."
+		s.Color("red")
+		s.Start()
+		time.Sleep(time.Second * 4)
+		s.Stop()
+		// rest logic upon retrieval of user input
+	}else {
+		s.Suffix = "agent rolling back changes..."
+		s.Color("cyan")
+		s.Start()
+		time.Sleep(time.Second * 4)
+		s.Stop()
+		agentConfig = nil
+		fmt.Println("operation aborted gracefully🛑")
+		return
+	}
+	
+	// os.Exit(0)
+
+
+	// fmt.Println(declaredArgs)
+	// var argCount int
+	// if len(declaredArgs) < 4 {
+
+	// 	// implementing by reading about streams attached to proccesses, piping and os
+
+	// 	for i,currentArg := range declaredArgs {
+	// 		argCount += i
+	// 		fmtdArg := fmt.Sprintf("found '%s' arg at '%d' position",currentArg,i)
+	// 		fmt.Println(fmtdArg)
+	// 	}
+		// first finds what args are not passed
+		// capture them progessively with prompted message -> capture inputs and store them
+		
+
+		// integrate them into the program
+		// ** we would capture args as stdin piped streamed to program,as talker to user
+		// todo - later make this robust when spinned up => prompts for every arg with detailed msg
+		
+	
+	
+	// fmt.Println("args count",argCount)
+	// os.Exit(0)
 	// bug - always access after validation
 	// fix - as they are already declared, they are being just accessed here
-	filenameArg := flag.Args()[0]        //* tracks which file is being selected for reading context from single file only for -> deep + normal <- "none" dir mode
-	writeToFileArg := flag.Args()[1]     //* where we wanna write response into which file
-	selectedDirPathArg := flag.Args()[2] //* giving context which dir to read form <- dymamically giving info
-	dirSubFileTypesArg := flag.Args()[3] //* which specific types to ask for in the selected dir
-	if filenameArg == "" {
-		log.Fatalf("could not find required arguement - '%s' that must be specified on '%s' position during execution.", filenameArg, "1st")
-	}
+
+	// ** Upragde - agrs have been upgraded into user input based selection
+	// FilenameArg := flag.Args()[0]        //* tracks which file is being selected for reading context from single file only for -> deep + normal <- "none" dir mode
+	// writeToFileArg := flag.Args()[1]     //* where we wanna write response into which file
+	// selectedDirPathArg := flag.Args()[2] //* giving context which dir to read form <- dymamically giving info
+	// dirSubFileTypesArg := flag.Args()[3] //* which specific types to ask for in the selected dir
+	// if FilenameArg == "" {
+	// 	log.Fatalf("could not find required arguement - '%s' that must be specified on '%s' position during execution.", FilenameArg, "1st")
+	// }
 
 	// & universal utility
 	// ** flow
@@ -208,12 +373,12 @@ func main() {
 
 	//! client selected git mode early validation - only allow available modes only
 
-	clientSelectedGitMode := *Git
+	clientSelectedGitMode := agentConfig.Git
 
 	// todo - make mode more robust and clear by refactoring into selection first and then firing operations based off that
 
 	// git mode is enabled when this non-position parsed flag is non-empty cause if not specified -> becomes empty
-	gitEnabled := *Git != "" && *Deeplearning == false && *Target != "dir"
+	gitEnabled := hasGitEnabled && agentConfig.Target != "dir" && agentConfig.FilenameArg != "none" && selectedGitOperation != "none"
 
 	// when these conditons met => git enabled cause we don't want other cases to be fired regardlessly
 	if gitEnabled {
@@ -238,7 +403,7 @@ func main() {
 		// 1. add files - later implement which files to add for commit
 
 		// get all files which user wanna commit
-		repo, err := os.ReadDir(selectedDirPathArg)
+		repo, err := os.ReadDir(agentConfig.selectedDirPathArg)
 		if err != nil {
 			slog.Error("failed to read repo", "error", err)
 			return
@@ -286,7 +451,7 @@ func main() {
 		}
 
 		// 2. send files git ouput to get response - get commit message auto generated { might need prompt work}
-		commitMsg, err := GetGitResponse(clientSelectedGitMode, string(diffFileReadBytes), reqURL, apiKEY, writeToFileArg, s, client)
+		commitMsg, err := GetGitResponse(clientSelectedGitMode, string(diffFileReadBytes), reqURL, apiKEY, agentConfig.writeToFileArg, s, client)
 		if err != nil {
 			msg := "failed to get commit message"
 			slog.Error(msg, "error", err)
@@ -335,7 +500,7 @@ func main() {
 
 			// 3. build content to send to gem
 			gitOut := string(gitOutByte)
-			_, err = GetGitResponse(clientSelectedGitMode, gitOut, reqURL, apiKEY, writeToFileArg, s, client)
+			_, err = GetGitResponse(clientSelectedGitMode, gitOut, reqURL, apiKEY, agentConfig.writeToFileArg, s, client)
 			if err != nil {
 				slog.Error("failed to get commit details", "error", err)
 				return
@@ -361,7 +526,7 @@ func main() {
 			// rolling back changes - no need to invoke ai - do custom res
 			unstagedChanges := string(rmByteRes)
 
-			err = WriteToFile(writeToFileArg, unstagedChanges)
+			err = WriteToFile(agentConfig.writeToFileArg, unstagedChanges)
 			if err != nil {
 				slog.Error("failed to write res to the file", "error", err)
 				return
@@ -381,10 +546,10 @@ func main() {
 	// if these condition meet -> then only proccess the dir work <- intentionally doing now so first make it work -> then dynamic + robust later
 
 	// when Target is "dir" -> we need to get context of which dir + file type inside the dir
-	dirSelection := *Target == "dir" &&
-		*Deeplearning == false &&
-		selectedDirPathArg == "." &&
-		dirSubFileTypesArg == ".go" //! go for now , for other have to add explicit validtion,so early temp return check here
+	dirSelection := agentConfig.Target == "dir" &&
+		agentConfig.Deeplearning == false &&
+		agentConfig.selectedDirPathArg == "." &&
+		agentConfig.dirSubFileTypesArg == ".go" //! go for now , for other have to add explicit validtion,so early temp return check here
 
 	// if target dir is selected and context of dirPath ( where to look in files ) and files type context is given -> then only do the dir operation
 	if dirSelection {
@@ -402,13 +567,13 @@ func main() {
 		s.Start()
 		var dirCount int
 		var nestedDirEntriesCount int
-		info, err := os.Stat(".")
+		info, err := os.Stat(agentConfig.selectedDirPathArg)
 		if err != nil {
 			return
 		}
 		if info.IsDir() == true {
 			dirCount += 1
-			dir, err := os.ReadDir(".")
+			dir, err := os.ReadDir(agentConfig.selectedDirPathArg)
 			if err != nil {
 				return
 			}
@@ -420,8 +585,8 @@ func main() {
 					if err != nil {
 						return
 					}
-					for i, entry := range nestedDir {
-						nestedDirEntriesCount += i
+					for _, entry := range nestedDir {
+						nestedDirEntriesCount ++
 						fmt.Printf("nestedDir file is found!,filename - %s", entry.Name())
 					}
 				}
@@ -436,13 +601,13 @@ func main() {
 			fmt.Println("nested dir file count", nestedDirEntriesCount)
 		}
 
-		fileInfo, err := os.Stat(selectedDirPathArg)
+		fileInfo, err := os.Stat(agentConfig.selectedDirPathArg)
 		if err != nil && os.IsNotExist(err) {
 			slog.Debug("file/dir does not exists", "error", err)
 			return
 		}
 
-		slog.Info("File metadata", "isDir?", fileInfo.IsDir(), "name", fileInfo.Name(), "size", fileInfo.Size())
+		slog.Info("File metadata", "isDir?", fileInfo.IsDir(), "name", fileInfo.Name())
 
 		isdir := fileInfo.IsDir() == true //* if this conditions meets -> it is dir,true cause it could return false too that for file but we dont want that
 		// var dirSubFilesEntriesCount int
@@ -467,7 +632,7 @@ func main() {
 			s.Color("cyan")
 			s.Start()
 			// if it is confirmed it is a director -> reading files of that dir via os.ReadDir (needs dir path as name for locating it)
-			parentDir, err := os.ReadDir(selectedDirPathArg)
+			parentDir, err := os.ReadDir(agentConfig.selectedDirPathArg)
 			if err != nil {
 				slog.Error("failed to read dir entries", "error", err)
 				return
@@ -491,11 +656,11 @@ func main() {
 				if currentDirEntry.IsDir() != true {
 					// * checking if this current iteration (as it would be file's whose file has this suffix) -> if yes then only proceed
 					// 4. Read each file content with specifics file type selected
-					if !strings.HasSuffix(currentDirEntry.Name(), dirSubFileTypesArg) {
+					if !strings.HasSuffix(currentDirEntry.Name(), agentConfig.dirSubFileTypesArg) {
 						continue //* we just need to skip current iteration, continue to the next iteration, don't execute code furthur
 					}
 					// yes if it has suffix,it won't skip and run this block of code as upper condition is ignored as it has suffix
-					eachGoFileContent, err := ReadFileContent(selectedDirPathArg, currentDirEntry.Name())
+					eachGoFileContent, err := ReadFileContent(agentConfig.selectedDirPathArg, currentDirEntry.Name())
 					if err != nil {
 						slog.Error("failed to read file content", "error", err)
 						return
@@ -593,7 +758,7 @@ func main() {
 
 		//5. create req with http.NewReq() - need to send data of outboundPayloadGem only
 		dirParts := &PartsSliceKeyWrapperGem{
-			Text: BuildDirPrompt(*Mode, goFilesDataAccumulator),
+			Text: BuildDirPrompt(agentConfig.Mode, goFilesDataAccumulator),
 		}
 		dirContents := &ContentsSliceKeyWrapperGem{
 			Role:  "user",
@@ -693,7 +858,7 @@ func main() {
 		dirAIResponse := dirInbound.Candidates[0].ContentWrapperGem.Parts[0].Text
 
 		// 8.write response to the file
-		err = WriteToFile(writeToFileArg, dirAIResponse)
+		err = WriteToFile(agentConfig.writeToFileArg, dirAIResponse)
 		if err != nil {
 			slog.Error("failed to write client data", "error", err)
 			return
@@ -701,8 +866,8 @@ func main() {
 		s.Stop()
 
 		//9. send responsifying response
-		// switch on *Mode val for response - as it telling to use switch instead
-		switch *Mode {
+		// switch on *agentConfig.Mode val for response - as it telling to use switch instead
+		switch agentConfig.Mode {
 		case "docs":
 			fmt.Println("Successfully analysed repository & Documentation Success⚡")
 		case "review":
@@ -734,14 +899,14 @@ func main() {
 
 	// before sending req,manage history if enabled
 	// ** conversation history with --mode deeplearning **//
-	deeplearningEnabled := *Deeplearning == true
+	deeplearningEnabled := agentConfig.Deeplearning == true
 	// check if history already exists
 	if deeplearningEnabled {
 		slog.Info("entered dir mode...")
 		fmt.Println("unlocking full potential of agent and powered by deep intelligence⚡")
 
 		//1. read file content
-		cnt, err := ReadFileContent("./", filenameArg)
+		cnt, err := ReadFileContent("./", agentConfig.FilenameArg)
 		if err != nil {
 			log.Fatalf("failed to read file content, err- %v", err)
 		}
@@ -774,7 +939,7 @@ func main() {
 
 		// append new user message data to it
 		userparts := &PartsSliceKeyWrapperGem{
-			Text: BuildPrompt(*Mode, cnt),
+			Text: BuildPrompt(agentConfig.Mode, cnt),
 		}
 		newUserHistory := &ContentsSliceKeyWrapperGem{
 			Role: "user",
@@ -886,7 +1051,7 @@ func main() {
 		}
 
 		// writing to the both file - {content - write full encoded contents in history} , res to the output file
-		err = WriteToFile(writeToFileArg, AIResponseContent)
+		err = WriteToFile(agentConfig.writeToFileArg, AIResponseContent)
 		if err != nil {
 			return
 		}
@@ -894,7 +1059,7 @@ func main() {
 		if err != nil {
 			return
 		}
-		fmt.Printf("deep response is recieved in %s file", writeToFileArg)
+		fmt.Printf("deep response is recieved in %s file", agentConfig.writeToFileArg)
 
 		return
 	}
@@ -904,7 +1069,7 @@ func main() {
 	// check empty first if works otherwise check on set like if it "none" dont do this
 
 	// using none as it would be stillnon nil -> so check if not "none" - then only proceed
-	// if filenameArg != "none" && *Deeplearning == false && *Target != "dir" {
+	// if agentConfig.FilenameArg != "none" && *Deeplearning == false && *Target != "dir" {
 
 	slog.Info("entered normal prompting mode...")
 
@@ -927,14 +1092,14 @@ func main() {
 	// }
 
 	//1. read file content
-	cnt, err := ReadFileContent("./", filenameArg)
+	cnt, err := ReadFileContent("./", agentConfig.FilenameArg)
 	if err != nil {
 		log.Fatalf("failed to read file content, err- %v", err)
 	}
 	var parts []*PartsSliceKeyWrapperGem
 	part := &PartsSliceKeyWrapperGem{
 		// ! adding conditional mode prompt + content
-		Text: BuildPrompt(*Mode, cnt),
+		Text: BuildPrompt(agentConfig.Mode, cnt),
 	}
 	parts = append(parts, part)
 
@@ -1022,13 +1187,13 @@ func main() {
 	}
 
 	// since choices is a slice -> access its element's msg
-	err = WriteToFile(writeToFileArg, AIResponseContent)
+	err = WriteToFile(agentConfig.writeToFileArg, AIResponseContent)
 	if err != nil {
 		log.Fatalf("failed to write to the file, err - %v", err)
 	}
 
-	// switch on *Mode val for response - as it telling to use switch instead
-	switch *Mode {
+	// switch on *agentConfig.Mode val for response - as it telling to use switch instead
+	switch agentConfig.Mode {
 	case "docs":
 		fmt.Println("Documentation Success⚡")
 	case "review":
@@ -1040,8 +1205,8 @@ func main() {
 
 	// bug - but we need a way to make this agent running forever and don't let main func exit
 	// * Watcher ( detects file writes change - call agent to review it) -> review for now
-	slog.Info("starting watcher", "dir", selectedDirPathArg, "suffix", dirSubFileTypesArg)
-	go WatchDirChanges(selectedDirPathArg, dirSubFileTypesArg, *Mode, apiKEY, writeToFileArg)
+	slog.Info("starting watcher", "dir", agentConfig.selectedDirPathArg, "suffix", agentConfig.dirSubFileTypesArg)
+	go WatchDirChanges(agentConfig.selectedDirPathArg, agentConfig.dirSubFileTypesArg, agentConfig.Mode, apiKEY, agentConfig.writeToFileArg)
 	slog.Info("Agent is watching your changes🤖...")
 
 	// & new - if you add empty select at the end of your entry point -> it blocks main from exiting and keep go routines running forever - go Watcher

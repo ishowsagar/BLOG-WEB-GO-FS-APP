@@ -525,3 +525,16 @@ func GetGitResponse(clientSelectedGitMode,gitOutToSend,reqURL,API_KEY,writeToFil
 		fmt.Println(resMsg)
 		return  AIResponseContent,nil
 }
+
+
+// func that belongs to type AgentConfig which -> runs dir calls
+func(acfg *AgentConfig) RunAgent() {
+	if acfg == nil {
+		return
+	}
+
+	// so we don't want nil struct to be called on
+
+	
+
+}
