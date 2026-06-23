@@ -715,9 +715,9 @@ func main() {
 				
 				// & if currentDirEntry is literally a dir
 
-				// s.Suffix = "Scanning nested dir..." //todo - might use formatted string for dynamic loggin
-				// s.Color("cyan")
-				// s.Start()
+				s.Suffix = "Scanning nested dir..." //todo - might use formatted string for dynamic loggin
+				s.Color("cyan")
+				s.Start()
 				if currentDirEntry.IsDir() == true {
 					// read and loop over dir again and get each file content accumulated
 					nestedDir, err := os.ReadDir(currentDirEntry.Name())
@@ -756,7 +756,7 @@ func main() {
 
 					} //..range
 				} //..nested-dir
-				// s.Stop()
+				s.Stop()
 
 				// goFilesCount++ //track count
 				// slog.Info("found go file","name",currentDirEntry.Name())
@@ -792,11 +792,11 @@ func main() {
 
 		// now at this point we have both type of data -> bytes + string
 
-		// s.Suffix = "Agent is reviewing all files..." //todo - might use formatted string for dynamic loggin
-		// s.Color("cyan")
-		// s.Start()
-		// time.Sleep(time.Second * 2)
-		// s.Stop()
+		s.Suffix = "Agent is reviewing all files..." //todo - might use formatted string for dynamic loggin
+		s.Color("cyan")
+		s.Start()
+		time.Sleep(time.Second * 2)
+		s.Stop()
 
 		//5. create req with http.NewReq() - need to send data of outboundPayloadGem only
 		dirParts := &PartsSliceKeyWrapperGem{
@@ -820,6 +820,12 @@ func main() {
 		totaOutBytesLength := len(goFilesDataAccumulator)
 
 		fmt.Println("payload size", totaOutBytesLength)
+
+		s.Suffix = "Almost there, thanks for waiting💪..."
+		s.Color("red")
+		s.Start()
+		time.Sleep(time.Second * 2)
+		s.Stop()
 		// readerBuf act as both reader and writer -> used as reader as bytes read into buffer and now it serves bytes data as source reader
 		bufRead := bytes.NewBuffer(out)
 
