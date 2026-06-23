@@ -121,9 +121,10 @@ func CaptureInputFromShell(confirmationOutMsg string) (string) {
 	// flow
 	// since it provides gateway for interaction, anything could be printed or recieved { vague but for now}
 	// cause we will print something, capture input and send out
-
+	cyanPrompt := "\033[36m"
+	resetPen   := "\033[0m"
 	// 1. printing this to terminal <- since it is going out to the terminal ( fmt under the hood do it with os.Stdout{vague}) 
-	fmt.Print(confirmationOutMsg) 
+	fmt.Print(cyanPrompt+confirmationOutMsg+ resetPen) 
 	
 	// 2. capturing input - as scanner reads from ioreader <- stdin becomes the source from where it reads bytes (INPUT) from
 	scanner.Scan() // scan untill input has not been recieved ( user must send input ( from keyboard) )

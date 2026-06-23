@@ -151,6 +151,15 @@ func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
 
+	const (
+	Reset  = "\033[0m"
+	Red    = "\033[31m"
+	Green  = "\033[32m"
+	Yellow = "\033[33m"
+	Cyan   = "\033[36m"
+	Gray   = "\033[37m"
+	)	
+
 	// spinner - add start and stop with pre suffix for usint it
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 
@@ -391,7 +400,7 @@ func main() {
 
 	//2. & client - have to make client who do that req
 	client := &http.Client{
-		Timeout: 27 * time.Second,
+		Timeout: 1 * time.Minute,
 	}
 	reqURL := "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
 	chunkReqURL := "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse"
