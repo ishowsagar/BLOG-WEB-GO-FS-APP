@@ -81,7 +81,7 @@ func BuildDirPrompt(mode, content string) string {
 	case "review":
 		prompt = "You are an expert code reviewer, review the provided code and give me the short review upto 100 words only but expert review" + dirContext + fileContextConfirmation
 	case "docs":
-		prompt = "You are an expert code docs generator, analyse the provided code and document it upto 100 words only but expert documentation" + dirContext + fileContextConfirmation
+		prompt = "You are an expert code docs generator, analyse the provided code and document it upto 1000 words only but human way documentation" + dirContext + fileContextConfirmation
 	case "qa":
 		prompt = "You are an expert coding mentor, review the provided code and ask me max 5 question in a way it makes me click topic better " + dirContext + fileContextConfirmation
 	default:
@@ -534,7 +534,106 @@ func(acfg *AgentConfig) RunAgent() {
 	}
 
 	// so we don't want nil struct to be called on
-
+	// todo- add logic to call for resp and all
 	
 
+}
+
+
+// func that writes slice [] of bytes data to the respective destination <- based on which io writer is called on 
+func BytesWriter(writer io.Writer,bytesData []byte) (bytesWritten int,er error) {
+
+	// io.writer is an interface -> it is an interface which stores common writer method ( cause commonly owned by all ), and we know interface is
+	// implemented by type which -> has these methods on it.
+	
+	// so interfaces are satisfied and implemented by any type that has those method which are being invoked -> so if any type has same method -> underlying interface struct calls that method
+
+
+	// cause any type that has methods belongs to it ( which interface expects ) -> satisfies writer interface
+	// based on which writer would have been passed
+	bytesWritten,err := writer.Write(bytesData)
+	if err != nil {
+		return 0,err
+	}
+
+	// if bytes would have been successfully written <- gives n 
+	return bytesWritten,nil
+}
+
+// writes strings data based off called writer type
+func StringsWriter(writer io.Writer,data string) (int,error) {
+
+	// io.writer is an interface -> it is an interface which stores common writer method ( cause commonly owned by all ), and we know interface is
+	// implemented by type which -> has these methods on it.
+	
+	// so interfaces are satisfied and implemented by any type that has those method which are being invoked -> so if any type has same method -> underlying interface struct calls that method
+
+
+	// cause any type that has methods belongs to it ( which interface expects ) -> satisfies writer interface
+	// based on which writer would have been passed
+	bytesWritten,err := writer.Write([]byte(data))
+	if err != nil {
+		return 0,err
+	}
+
+	// if bytes would have been successfully written <- gives n 
+	return bytesWritten,nil
+}
+
+// func that writes bytes which are<- read from ioreader source - not static bytes data
+func StreamlinedWriter(writer io.Writer,source io.Reader) (int,error) {
+
+	readBytes,err := io.ReadAll(source)
+	if err != nil {
+		return 0,err
+	}
+
+	// writer interface has method which belongs to it -> 'if any type satisfies and implements writer interface -> would call that write method idomatically'
+	bytesWritten,err := writer.Write(readBytes)
+	if err != nil {
+		return 0,err
+	}
+
+	return bytesWritten,nil
+
+}
+
+// writes bytes read from source in chunks
+func FlowBytes(writer io.Writer,reader io.Reader) (int64,error) {
+
+	//! But this flow is still very static -> we need to wrap reader source in a way that ->
+	//! it reads in chunks from reader, gives data in chunks/lines because io.copy has 32kb intial buffer <- which is real problem
+	
+
+	// bug - io.copy buffer size is 32kb -> breaking source bytes into chunks/lines untill data is not fully
+
+	// reads bytes from source and writes to the destination based on which type has satisfied and implemented writer
+	writtenBytes,err := io.Copy(writer,reader)
+
+	if err != nil {
+		return 0,err
+	}
+
+	return writtenBytes,nil
+}
+
+
+// writes data to the file - underneaths creates file and implies file writer 
+func FileBytesWriter(data string,filename string)( error) {
+
+	// bug - it creates file on every chunk and replace old chunk with new chunk and file
+	// fix - need to pass flags which makes it so => if that exists ->append  to it, won't recreat
+
+	file,err := os.OpenFile(filename,os.O_APPEND | os.O_CREATE | os.O_WRONLY,0644) // single pipe for optional
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+		
+	_,err = file.Write([]byte(data))
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

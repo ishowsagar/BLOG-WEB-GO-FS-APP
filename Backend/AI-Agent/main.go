@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -20,16 +21,16 @@ import (
 
 // @types declaration
 // type struct for storing agent needed data
-	type AgentConfig struct {
-		Mode string // agent prompt mode selection
-		Deeplearning bool // deeplearing bool for turining on memory or not
-		Target	string // TargetDirEntry - for selection dir mode, if given dir -> executes dir entries and prompt based off mode + dir entries
-		Git string // git selected mode for working with git automations - works with non dir and supports review,status,commit
-		FilenameArg string // file for context prompt in normal mode
-		writeToFileArg string //  output file name
-		selectedDirPathArg string // dir path for scan context
-		dirSubFileTypesArg string // dir sub entries files selection for scan
-	}
+type AgentConfig struct {
+	Mode               string // agent prompt mode selection
+	Deeplearning       bool   // deeplearing bool for turining on memory or not
+	Target             string // TargetDirEntry - for selection dir mode, if given dir -> executes dir entries and prompt based off mode + dir entries
+	Git                string // git selected mode for working with git automations - works with non dir and supports review,status,commit
+	FilenameArg        string // file for context prompt in normal mode
+	writeToFileArg     string //  output file name
+	selectedDirPathArg string // dir path for scan context
+	dirSubFileTypesArg string // dir sub entries files selection for scan
+}
 
 // io.Reader/Writer => these are interfaces which both -> needs a method which intakes ( []byte) and do the desired work based on the context.
 // ** io.Reader -> This interface is implemented & satisfied by the method which -> wraps []byte data and constructs a reader source from where data in bytes chunk could be read gracefully
@@ -95,10 +96,56 @@ type InboundPayloadGem struct {
 	Candidates []*InboundCandidatesWrapperGem `json:"candidates"`
 }
 
+// type with prefix data
+type InboundChunkPayloadGemWrapper struct {
+	Data *InboundPayloadGem `json:"data"`
+}
+
 func main() {
 
 	// inside main, we need to execute that fnc -> which watch out for events <- recieved in its watcher chan from the os
 	// need a way to integate,it invokes on that dir and do the work and also need a way to trigger agent from inside the watcher
+
+	// writer testing
+
+	// ohhhhh..os.stdout satisfies writer interface and it wrote tp console dest...-> this is how fmt working under the hood, piping provided bytes to the console
+	// n,err := BytesWriter(os.Stdout,[]byte("Hello terminal\n"))
+	// if err != nil {
+	// 	slog.Error("failed to write bytes","error",err)
+	// 	return
+	// }
+
+	// reading collected file chunk
+	// content,err := ReadFileContent(".","main.go")
+	// if err != nil {
+	// 	return
+	// }
+
+	// // wrapping data into bytes and creating a reader source - from where bytes can be read
+	// reader := strings.NewReader("hello im here can you see me") //\forward slash n for line breaks - but not needed when streaming via scanner stripped bytes
+
+	// // wraps the reader source in a way that -> it reads from source in chunks
+	// scanner := bufio.NewScanner(reader)
+	// // var chunkSizeAccumulator int // unidiomatic way, define empty var with var declarement with :=
+	// chunkSizeAccumulator := 0
+	// // * scan gets the bytes -> looping to get all chunks bytes from reader in loop -> loop make it possible for read and write chunks -> live write
+	// for scanner.Scan() {
+	// 	//! scan gives each of chunk bytes data -
+	// 	eachLine := scanner.Text() //returns string from read chunk from reader
+	// 	n,err := StringsWriter(os.Stdout,eachLine)
+	// 	if err != nil {
+	// 		// todo - later add own logger by writer which writes err to the console
+	// 		slog.Error("failed to write bytes stream","error",err)
+	// 		return
+	// 	}
+
+	// 	// on successfull write -> accumulate chunk written for total
+	// 	chunkSizeAccumulator += n
+	// 	time.Sleep(time.Millisecond * 250 )
+	// }
+	// slog.Info("successfully wrote streamed content to the respective destination","bytesWritten",chunkSizeAccumulator)
+	// // successfully working ✅ as intended it to work -> it is reading chunks wrapped in scanner and writing each stripped line to the writer dest✅
+	// os.Exit(0)
 
 	// logger
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
@@ -183,33 +230,29 @@ func main() {
 
 	// get these from proccess's stdin stream capturing user input bytes
 
-	
-
-	var hasDeeplearningModeSelected bool;
-
+	var hasDeeplearningModeSelected bool
 
 	// & user input access
 	s.Suffix = "Booting up agent✨..."
 	s.Color("cyan")
 	s.Start()
 	time.Sleep(time.Second * 2)
-	
+
 	s.Stop() // stop after 2 sec delay
 	fmt.Println("---- Agent booted up successfully 🚀 -----")
-	
+
 	// user provides input <-= captured by stdin from terminal -> reader streaming to process
 	modeSelection := "Select Agent Response Mode - [review,docs,qa] : "
 	selectedMode := CaptureInputFromShell(modeSelection)
 
-	DeeplearningSelection := "Do you want to learn with memory intelligence (premium✨) - [Y,N] : " //turn into bool based off ans
+	DeeplearningSelection := "Do you want to learn with memory intelligence (premium✨) - [y,n] : " //turn into bool based off ans
 	selectedDeeplearningMode := CaptureInputFromShell(DeeplearningSelection)
-	
+
 	// returns true if var's val matches provided value
-	hasDeeplearningModeSelected  = strings.EqualFold(selectedDeeplearningMode,"Y")	
+	hasDeeplearningModeSelected = strings.EqualFold(selectedDeeplearningMode, "y")
 
 	TargetSelection := "Select what agent could access- [file,dir] for scans : "
 	selectedTarget := CaptureInputFromShell(TargetSelection)
-
 
 	// todo - add if target is file -> ask for file to scan for + validations for all fields later
 	// todo 2 - dynamically ask for input based off prior inputs
@@ -219,25 +262,24 @@ func main() {
 		fileSelection := "Provide file name : "
 		selectedFile = CaptureInputFromShell(fileSelection)
 	}
-	
-	// bug => need guard for git - it fires git mode cause we selects none or "" 
+
+	// bug => need guard for git - it fires git mode cause we selects none or ""
 	// fix - asks for git operations mode only if prior user wants git mode -> also don't prompt if dir mode is selected
-	
-	
-	gitAutomationSelection := "Select Y if you want git automations - [Y/N] : "
+
+	gitAutomationSelection := "Do you want git automations - [y/n] : "
 	selectedGitAutomation := CaptureInputFromShell(gitAutomationSelection)
-	
+
 	// tracks selected modes
 	var selectedGitOperation string //tracks git modes
-	var hasGitEnabled bool // true if git enabled 
+	var hasGitEnabled bool          // true if git enabled
 
 	// if user wants git mode
 	if selectedGitAutomation == "Y" || selectedGitAutomation == "y" {
 		GitOperationSelection := "Select what agent git operation do automatically - [Status,Commit,Review,None] : "
 		selectedGitOperation = CaptureInputFromShell(GitOperationSelection)
-		hasGitEnabled = strings.EqualFold(selectedGitAutomation,"Y")
+		hasGitEnabled = strings.EqualFold(selectedGitAutomation, "y")
 	} else {
-		selectedGitOperation = "none" 
+		selectedGitOperation = "none"
 	}
 
 	outputFileSelection := "Enter filename where agent write response to (auto-created if not exists already) : "
@@ -245,24 +287,23 @@ func main() {
 
 	dirPathSelection := "Provide dir path to scan for (relative path only 🚨) : "
 	selectedDirPath := CaptureInputFromShell(dirPathSelection)
-	
+
 	subfileTypeSelection := "Select which files should be focusedly scanned (premium✨) : "
 	selectedSubFileType := CaptureInputFromShell(subfileTypeSelection)
-
 
 	s.Suffix = "gathering user selections✨..."
 	s.Color("cyan")
 	s.Start()
 	time.Sleep(time.Second * 2)
-	
+
 	s.Stop() // stop after 2 sec delay
 	agentConfig := &AgentConfig{
-		Mode: selectedMode,
-		Deeplearning: hasDeeplearningModeSelected,
-		Target: selectedTarget,
-		FilenameArg: selectedFile,
-		writeToFileArg: selectedOutputFile,
-		Git: selectedGitOperation,
+		Mode:               selectedMode,
+		Deeplearning:       hasDeeplearningModeSelected,
+		Target:             selectedTarget,
+		FilenameArg:        selectedFile,
+		writeToFileArg:     selectedOutputFile,
+		Git:                selectedGitOperation,
 		dirSubFileTypesArg: selectedSubFileType,
 		selectedDirPathArg: selectedDirPath,
 	}
@@ -275,24 +316,23 @@ func main() {
 		subFileType : %s,
 		outputFile :%s,
 		filenameArg :%s,
-	`,agentConfig.Mode,agentConfig.Deeplearning,agentConfig.Target,agentConfig.Git,agentConfig.selectedDirPathArg,agentConfig.dirSubFileTypesArg,agentConfig.writeToFileArg,agentConfig.FilenameArg)
-	
+	`, agentConfig.Mode, agentConfig.Deeplearning, agentConfig.Target, agentConfig.Git, agentConfig.selectedDirPathArg, agentConfig.dirSubFileTypesArg, agentConfig.writeToFileArg, agentConfig.FilenameArg)
 
 	confirmation := "Do you want to proceed with this ? (y/n) :"
 	// adding confirmation so user can rollback or commit input
 	userConfirmation := CaptureInputFromShell(confirmation)
-	proceed :=userConfirmation == "Y" || userConfirmation == "Yes" || userConfirmation == "YES" || userConfirmation == "YeS"
-	
+	proceed := userConfirmation == "Y" || userConfirmation == "Yes" || userConfirmation == "YES" || userConfirmation == "YeS" || userConfirmation == "y"
+
 	// if any of condition is matched -> proceed to do work -> invoke agent otherwise rollback to empty state and restart the operation
 	// todo - might need robust way to handle this better
-	if proceed{
+	if proceed {
 		s.Suffix = "agent thinking..."
 		s.Color("red")
 		s.Start()
 		time.Sleep(time.Second * 4)
 		s.Stop()
 		// rest logic upon retrieval of user input
-	}else {
+	} else {
 		s.Suffix = "agent rolling back changes..."
 		s.Color("cyan")
 		s.Start()
@@ -302,9 +342,8 @@ func main() {
 		fmt.Println("operation aborted gracefully🛑")
 		return
 	}
-	
-	// os.Exit(0)
 
+	// os.Exit(0)
 
 	// fmt.Println(declaredArgs)
 	// var argCount int
@@ -317,16 +356,13 @@ func main() {
 	// 		fmtdArg := fmt.Sprintf("found '%s' arg at '%d' position",currentArg,i)
 	// 		fmt.Println(fmtdArg)
 	// 	}
-		// first finds what args are not passed
-		// capture them progessively with prompted message -> capture inputs and store them
-		
+	// first finds what args are not passed
+	// capture them progessively with prompted message -> capture inputs and store them
 
-		// integrate them into the program
-		// ** we would capture args as stdin piped streamed to program,as talker to user
-		// todo - later make this robust when spinned up => prompts for every arg with detailed msg
-		
-	
-	
+	// integrate them into the program
+	// ** we would capture args as stdin piped streamed to program,as talker to user
+	// todo - later make this robust when spinned up => prompts for every arg with detailed msg
+
 	// fmt.Println("args count",argCount)
 	// os.Exit(0)
 	// bug - always access after validation
@@ -358,6 +394,7 @@ func main() {
 		Timeout: 27 * time.Second,
 	}
 	reqURL := "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+	chunkReqURL := "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse"
 
 	// testing changes if it shows this line being written to the main.go
 
@@ -425,8 +462,8 @@ func main() {
 		// ! Imp - need a way to pass whole slice elements as files instead of running git adder on each - flatten out slice of dirEntry files
 
 		// bug - was constructing slice, but had to append fileName slice to append them into one so can be vardiaced
-		// fix - append filesSlice as vardiac -> so it could append it to the slice and later when again vardiaced -> pass it as all el instead of one 
-		addfilesArgs := append([]string{"add","-f"}, trackStagefiles...) // appending whole arr
+		// fix - append filesSlice as vardiac -> so it could append it to the slice and later when again vardiaced -> pass it as all el instead of one
+		addfilesArgs := append([]string{"add", "-f"}, trackStagefiles...) // appending whole arr
 		// ! imp -> since args are vardiac -> decoded as flattened out already by ..., so if we pass it as whole it will do the job
 
 		_, err = RunGitOperator(addfilesArgs...)
@@ -586,7 +623,7 @@ func main() {
 						return
 					}
 					for _, entry := range nestedDir {
-						nestedDirEntriesCount ++
+						nestedDirEntriesCount++
 						fmt.Printf("nestedDir file is found!,filename - %s", entry.Name())
 					}
 				}
@@ -647,6 +684,7 @@ func main() {
 			// 6. but nested dir got again nestedDir -> stop it there
 
 			slog.Info("entering into dir...")
+			s.Stop()
 
 			for _, currentDirEntry := range parentDir { // first always is index,thenDataPiece
 				// gives us []*DirEntry which -> stores in that dir
@@ -655,8 +693,10 @@ func main() {
 				// Dir entries could be nested dir or normal files -> so checking if it is not dir -> do same
 				if currentDirEntry.IsDir() != true {
 					// * checking if this current iteration (as it would be file's whose file has this suffix) -> if yes then only proceed
+
+					// bug - 503 cause we were sending unneccassary data
 					// 4. Read each file content with specifics file type selected
-					if !strings.HasSuffix(currentDirEntry.Name(), agentConfig.dirSubFileTypesArg) {
+					if !strings.HasSuffix(currentDirEntry.Name(), agentConfig.dirSubFileTypesArg) || currentDirEntry.Name() == ".git" || currentDirEntry.Name() == "node_modules" {
 						continue //* we just need to skip current iteration, continue to the next iteration, don't execute code furthur
 					}
 					// yes if it has suffix,it won't skip and run this block of code as upper condition is ignored as it has suffix
@@ -672,12 +712,12 @@ func main() {
 					accumulator.WriteString(fmt.Sprintf("\n---- file ends here, name ---%s\n", currentDirEntry.Name()))
 				} //file
 
-				s.Stop()
+				
 				// & if currentDirEntry is literally a dir
 
-				s.Suffix = "Scanning nested dir..." //todo - might use formatted string for dynamic loggin
-				s.Color("cyan")
-				s.Start()
+				// s.Suffix = "Scanning nested dir..." //todo - might use formatted string for dynamic loggin
+				// s.Color("cyan")
+				// s.Start()
 				if currentDirEntry.IsDir() == true {
 					// read and loop over dir again and get each file content accumulated
 					nestedDir, err := os.ReadDir(currentDirEntry.Name())
@@ -716,7 +756,7 @@ func main() {
 
 					} //..range
 				} //..nested-dir
-				s.Stop()
+				// s.Stop()
 
 				// goFilesCount++ //track count
 				// slog.Info("found go file","name",currentDirEntry.Name())
@@ -752,9 +792,11 @@ func main() {
 
 		// now at this point we have both type of data -> bytes + string
 
-		s.Suffix = "Agent is reviewing all files..." //todo - might use formatted string for dynamic loggin
-		s.Color("cyan")
-		s.Start()
+		// s.Suffix = "Agent is reviewing all files..." //todo - might use formatted string for dynamic loggin
+		// s.Color("cyan")
+		// s.Start()
+		// time.Sleep(time.Second * 2)
+		// s.Stop()
 
 		//5. create req with http.NewReq() - need to send data of outboundPayloadGem only
 		dirParts := &PartsSliceKeyWrapperGem{
@@ -774,11 +816,15 @@ func main() {
 			return
 		}
 
+		// ! guard check for payload =:
+		totaOutBytesLength := len(goFilesDataAccumulator)
+
+		fmt.Println("payload size", totaOutBytesLength)
 		// readerBuf act as both reader and writer -> used as reader as bytes read into buffer and now it serves bytes data as source reader
 		bufRead := bytes.NewBuffer(out)
 
 		// this method wants a ioreader -> as learned just means -> source from it can read bytes data
-		dirReadReq, err := http.NewRequest("POST", reqURL, bufRead)
+		dirReadReq, err := http.NewRequest("POST", chunkReqURL, bufRead)
 		if err != nil {
 			slog.Error("failed to request client dir request", "error", err)
 			return
@@ -788,14 +834,18 @@ func main() {
 		dirReadReq.Header.Set("Content-Type", "application/json")
 		dirReadReq.Header.Set("x-goog-api-key", apiKEY)
 
+		// 🛡️ Explicitly notify proxies not to buffer this payload
+		// dirReadReq.Header.Set("Accept", "text/event-stream")
+		// dirReadReq.Header.Set("Connection", "keep-alive")
+
 		// 1. Initialize the spinner
 		// CharSets[14] is a cool dot-bouncing animation, but there are dozens of options
 		// s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
-		s.Suffix = " Agent is about to finish thinking..." // Adds text next to the spinner
-		s.Color("cyan")                                    // Optional: give it some color!
+		// s.Suffix = "Agent is about to finish thinking..." // Adds text next to the spinner
+		// s.Color("cyan")                                   // Optional: give it some color!
 
 		// 2. Start the spinner
-		s.Start()
+		// s.Start()
 		// 6. do the requesr
 		dirResp, err := client.Do(dirReadReq)
 		if err != nil {
@@ -804,66 +854,201 @@ func main() {
 		}
 
 		// 4. Stop the spinner immediately after the request finishes!
-		s.Stop()
+		// s.Stop()
 
 		// api validation if it has returning err as status code is not 200 means not okay - don't execute furthur - applied in all same way
 		if dirResp.StatusCode != 200 {
-			log.Fatalf("API returned a non-200 status code: %d", dirResp.StatusCode)
+			bodyBytes, _ := io.ReadAll(dirResp.Body)
+			log.Fatalf("API returned a non-200 status code: %d, response: %s", dirResp.StatusCode, string(bodyBytes))
 		}
 
-		dirBody := dirResp.Body
+		// now when chunked response arrives it arrives in chunks body with data prefix <- must unload into this
+		dirBody := dirResp.Body //* body carries res <- reader
 		defer dirBody.Close()
 
 		// 7. retrieve resp + validate + decode + get response -> write
 		// incoming res comes in bytes
 
-		s.Suffix = "gathering response..." //todo - might use formatted string for dynamic loggin
-		s.Color("cyan")
-		s.Start()
+		// s.Suffix = "gathering response..." //todo - might use formatted string for dynamic loggin
+		// s.Color("cyan")
+		// s.Start()
+
+		// bug - this is useless and breaker as now we are not reading untill its finished in all in once but in chunks
+		// fix - remove this entirely since body is also a reader source -: scanner needs a source to read bytes from reader in chunks and scans each chunks progessively
 		// read incoming body data into byte
-		dirBodyBytes, err := io.ReadAll(dirBody) // read all bytes data
-		if err != nil {
-			return
-		}
+		// dirBodyBytes, err := io.ReadAll(dirBody) // read all bytes data
+		// if err != nil {
+		// 	return
+		// }
 
 		// break into gem inbound res
-		var dirInbound *InboundPayloadGem
-		err = json.Unmarshal(dirBodyBytes, &dirInbound)
-		if err != nil {
-			return
-		}
+		// var dirInbound *InboundPayloadGem
+		// err = json.Unmarshal(dirBodyBytes, &dirInbound)
+		// if err != nil {
+		// 	return
+		// }
 
 		// extract ai response from inbound after validation
 		// parsed response validation check
-		if len(dirInbound.Candidates) == 0 {
-			log.Fatal("API returned a successful deep response, but the 'Candidates' array was empty.")
-		}
+		// if len(dirInbound.Candidates) == 0 {
+		// 	log.Fatal("API returned a successful deep response, but the 'Candidates' array was empty.")
+		// }
 
-		if dirInbound.Candidates[0].ContentWrapperGem == nil || len(dirInbound.Candidates[0].ContentWrapperGem.Parts) == 0 {
-			log.Fatal("API returned deep candidates, but the 'Parts' array was empty or nil.")
-		}
+		// if dirInbound.Candidates[0].ContentWrapperGem == nil || len(dirInbound.Candidates[0].ContentWrapperGem.Parts) == 0 {
+		// 	log.Fatal("API returned deep candidates, but the 'Parts' array was empty or nil.")
+		// }
 
-		s.Stop()
+		// s.Stop()
 
-		s.Suffix = "Almost done..." //todo - might use formatted string for dynamic loggin
-		s.Color("green")
-		s.Start()
+		// s.Suffix = "Almost done..." //todo - might use formatted string for dynamic loggin
+		// s.Color("green")
+		// s.Start()
 		// 7. get response content
-		AIDirResponseContent := dirInbound.Candidates[0].ContentWrapperGem.Parts[0].Text
-		if len(AIDirResponseContent) == 0 {
-			log.Fatal("empty deep response from AI, must have hit some unexpected error")
-		}
+		// AIDirResponseContent := dirInbound.Candidates[0].ContentWrapperGem.Parts[0].Text
+		// if len(AIDirResponseContent) == 0 {
+		// 	log.Fatal("empty deep response from AI, must have hit some unexpected error")
+		// }
 
+		// todo - remove later - add same source for stream write to file too, keeping to keep flow intact
+
+		// bug - this is no longer valid as this does not comes as collected final res but chunked body reader which has each chunk bytes coming untill not finished with gemini
+		// fix - remove this and intercept body read into scanner -> so scanner collects each chunk res directly and writes to the respective dest
 		// if res is validated and good -> contruct content with gemini response with role attached
-		dirAIResponse := dirInbound.Candidates[0].ContentWrapperGem.Parts[0].Text
+		// dirAIResponse := dirInbound.Candidates[0].ContentWrapperGem.Parts[0].Text
 
-		// 8.write response to the file
-		err = WriteToFile(agentConfig.writeToFileArg, dirAIResponse)
+		writtenBytesAccumulator := 0
+
+		// ** Wrapping content into scanner -> so writer only writes chunks read from reader src
+		// todos new - implement writer to write thst to anywhere - for now console + file only
+		//1. wrap content into scanner - cause scanner reads chunks from source in loop
+
+		// bug - it is still writing instant responses as res is already got and full -> need to render body into buf directly
+		// fix - read into scanner directly from res body --> get chunks from body stream directly
+		// buf := bytes.NewBuffer([]byte(dirAIResponse))
+		scanner := bufio.NewScanner(dirBody)
+
+		// opening file ( created on fly if not existed early on , appends content on the fly )
+		file, err := os.OpenFile(agentConfig.writeToFileArg, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
 		if err != nil {
-			slog.Error("failed to write client data", "error", err)
+			slog.Error("failed to open file", "error", err)
 			return
 		}
-		s.Stop()
+		defer file.Close()
+
+		//scanner cap bottleneck fixing
+		maxCap := 1024 * 1024
+		buf := make([]byte,0,64 * 1024)
+		scanner.Buffer(buf,maxCap)
+
+		//2. loop over scanner.scan which gives -> read chunk from reader source which
+		for scanner.Scan() { // returns true if successfully read chunk from reader source
+
+			// fix - open once before it starts, and when loop ends then only close file after err is checked
+
+			//3.-> gives access to each chunk string with string method
+			// eachline := scanner.Text()
+
+			// get chunked bytes from body
+			var chunkInboundGem *InboundPayloadGem
+			eachbyte := scanner.Bytes()
+
+			// bug - incoming data comes with 'data' prefix we have to remove it
+			// fix - by remvoing prefix we can now unload into inboundgem wrapper directly
+			line := bytes.TrimPrefix(eachbyte, []byte("data: ")) // sse comes with trailing space after colon
+
+			// bug - sse often comes with notifiers payload like gemini sends data:[done] <- need to validate that incoming is just valid payload for unmarshaling
+			// fix - validate it
+
+
+			if len(eachbyte) == 0 || bytes.Equal(eachbyte, []byte("[DONE]")) {
+				continue 
+			}
+			if string(line) == "" || string(line) == "[DONE]" {
+				continue //skip this iteration in the scanner which <- reads from body source directly in chunks
+				// scanner reads chunk from reader in chunks and scans them out to get each chunk in loop
+			}
+
+			// validate and decode chunk
+			err = json.Unmarshal([]byte(line), &chunkInboundGem)
+			if err != nil {
+				slog.Error("failed to decode incoming bytes data", "error", err)
+				return
+			}
+
+			if len(chunkInboundGem.Candidates) > 0{
+			// iterating candidates
+			for _,candidate := range chunkInboundGem.Candidates {
+				if candidate.ContentWrapperGem == nil {
+					continue 
+				}
+
+				// bug - removing hardcoded layer of parts, it might come in any other than at 0th posi
+				// fix - iterate over parts to get the not nil part's text
+				// if current candidate is not nil -> safely get them
+				for _,part := range candidate.ContentWrapperGem.Parts {
+					// but check first if current part has empty text or not
+					if part.Text == "" {
+						continue
+					}
+
+					// if text is not empty and successfully retrieved from iteratted current part 
+					chunkStrippedText := part.Text
+					
+					// write to the console and file later
+					// ! do not accumulate -> write progressively
+					n, err := StringsWriter(os.Stdout, chunkStrippedText)
+					if err != nil {
+						slog.Error("failed to write response", "error", err)
+						return
+					}
+					writtenBytesAccumulator += n
+					
+					// 8.write response to the file - of this chunked text
+					_, err = file.Write([]byte(chunkStrippedText))
+					if err != nil {
+						slog.Error("failed to write client data to the file", "error", err)
+						return
+					}
+					
+					} 
+					}
+			}//range-candidate
+		} // if
+				
+		// 		if  chunkInboundGem.Candidates[0].ContentWrapperGem != nil && len(chunkInboundGem.Candidates[0].ContentWrapperGem.Parts) > 0 {
+
+		// 		chunkStrippedText := chunkInboundGem.Candidates[0].ContentWrapperGem.Parts[0].Text
+					
+		// 		// write to the console and file later
+		// 		// ! do not accumulate -> write progressively
+		// 		n, err := StringsWriter(os.Stdout, chunkStrippedText)
+		// 		if err != nil {
+		// 			slog.Error("failed to write response", "error", err)
+		// 			return
+		// 		}
+		// 		writtenBytesAccumulator += n
+				
+		// 		// 8.write response to the file - of this chunked text
+		// 		_, err = file.Write([]byte(chunkStrippedText))
+		// 		if err != nil {
+		// 			slog.Error("failed to write client data to the file", "error", err)
+		// 			return
+		// 		}
+				
+		// 		} 
+		// 		s.Stop()
+		// 	}
+
+		// }
+
+		//! need to if loop returns early cause no panic if nothing is left to read more
+		// true -> when non-eof err but that means it returns false on eof err <- eof means end of file read but it means here that res body is empty now nothing to read more
+		if err = scanner.Err(); err != nil {
+			slog.Error("scanner hit unexpected error", "error", err)
+			return
+		} //returns non-eof err <- does not point eof response
+
+		// 4. write in same way to file
 
 		//9. send responsifying response
 		// switch on *agentConfig.Mode val for response - as it telling to use switch instead
@@ -965,6 +1150,11 @@ func main() {
 			log.Fatal("failed to encode history")
 		}
 		// if history is encoded successfully, send to the gemini for collective response
+
+		// reader -> gets [] byte-> goes into writer (bytes) <- based off use/context it writes bytes there
+		// writer is satisfied by that method which takes bytes data and write, based of context where it is called on
+
+		// writer -> based of context which writer is passed,they write provided bytes to their respective destinations like http's writer to http, stdout writer to console.
 
 		// 3. creating request for sending
 		deepReq, err := http.NewRequest("POST", reqURL, &deepBodyBuf)

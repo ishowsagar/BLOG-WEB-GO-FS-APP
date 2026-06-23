@@ -1,2 +1,2 @@
-run_agent :
+run :
 	go run ./ 

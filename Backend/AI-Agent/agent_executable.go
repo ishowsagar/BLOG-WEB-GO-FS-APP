@@ -8,7 +8,7 @@ import (
 )
 
 // func that takes in git command which -> return ioreader which -> stores output bytes
-func 	RunGitOperator(agrs ...string) (io.Reader,error) {
+func RunGitOperator(agrs ...string) (io.Reader,error) {
 
 	// 1. trigger any git executable command
 	cmd := exec.Command("git",agrs...) // some commands need more args so rest goes here if provided in case of commit like what it bugged the system
