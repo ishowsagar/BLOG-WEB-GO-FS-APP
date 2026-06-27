@@ -1,0 +1,3 @@
+This Go-based AI agent (`main.go`) automates code analysis, documentation, and Git operations. It reads source code (`ai_agent.go`) from individual files or entire directories (`agent_handler.go`) to generate reviews, docs, or Q&A via the Gemini API. The agent supports deep learning with conversation history and Git integrations (`agent_executable.go`) for tasks like commit message generation. User interaction is managed through a TUI (`tui.go`) and CLI prompts (`streams.go`). AI responses are streamed and outputted to files, with optional directory watching for continuous analysis. `ans.go` contains developer notes.
+
+Reviewed files: `agent_executable.go`, `agent_handler.go`, `ai_agent.go`, `ans.go`, `agent.txt`, `main.go`, `streams.go`, `tui.go`.

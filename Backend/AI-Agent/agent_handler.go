@@ -55,7 +55,7 @@ func BuildPrompt(mode, content string) string {
 }
 
 // builds prompt based on provided mode ["docs"...] and append content to it for sending request
-func BuildDirPrompt(mode, content string) string {
+func BuildDirPrompt(mode, content,userPrefsCmd string) string {
 
 	// * goal - return desired prompts based on mode selection
 
@@ -70,22 +70,25 @@ func BuildDirPrompt(mode, content string) string {
 	// check if it exists in allowed modes map -> if key exists -> mode is available to be prompted in
 	_, available := allowedModes[mode]
 	if !available {
-		log.Fatalf(" this mode - '%s' is not available", mode)
+		log.Fatalf(" this mode - '%s' is not available", mode) //direct fatal return
 	}
+
+	// only then check if userPrfCmd { user special cmd } is not nil then replace with it
 
 	dirContext := " and remember it contains all files data in one go, anaylyse files and related code, code is seperated by files boundaries marked with lines like starting with this file name and ends with this file name,for clearance"
 	fileContextConfirmation := "and label all the files you reviewed"
+	Overrider := "Must follow this special command, override prev if clashing with any ->"+userPrefsCmd
 	// if provided mod exists -> generate prompts based off that
 	var prompt string
 	switch mode {
 	case "review":
-		prompt = "You are an expert code reviewer, review the provided code and give me the short review upto 100 words only but expert review" + dirContext + fileContextConfirmation
+		prompt = "You are an expert code reviewer, review the provided code and give me the short review upto 100 words only but expert review" + dirContext + fileContextConfirmation + Overrider
 	case "docs":
-		prompt = "You are an expert code docs generator, analyse the provided code and document it upto 1000 words only but human way documentation" + dirContext + fileContextConfirmation
+		prompt = "You are an expert code docs generator, analyse the provided code and document it upto 470 words only but human way documentation" + dirContext + fileContextConfirmation + Overrider
 	case "qa":
-		prompt = "You are an expert coding mentor, review the provided code and ask me max 5 question in a way it makes me click topic better " + dirContext + fileContextConfirmation
+		prompt = "You are an expert coding mentor, review the provided code and ask me max 5 question in a way it makes me click topic better " + dirContext + fileContextConfirmation + Overrider
 	default:
-		prompt = "You are an expert code reviewer, review the provided code and give me the short review upto 100 words only but expert review" + dirContext + fileContextConfirmation
+		prompt = "You are an expert code reviewer, review the provided code and give me the short review upto 100 words only but expert review" + dirContext + fileContextConfirmation + Overrider
 	}
 
 
