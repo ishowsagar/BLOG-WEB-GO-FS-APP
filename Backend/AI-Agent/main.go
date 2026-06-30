@@ -45,6 +45,25 @@ type SuperuserAgentConfig struct {
 // ** io.Writer -> This interfaces too implemented & needs a method which - intakes []byte data and write to the desired location ( disk,memory (buffer in memory only),http)
 
 
+// * in this if we had to ask something out of codebase, it is taking all files and getting response out of it...this is very expensive as context window is too large and scoping down to specific ques becomes expensiue
+//  to solve this issue of context window -> RAG model is used to query prompts
+
+// & RAG
+// ** what it solves -> Instead of prompting whole codebase/files, only relevant chunks are sent and prompted, thus solving scoping down the problem and small context window
+// 1. Retrieval -> find only relevant chunks ( so acc to user's question,instead of whole c.b -> get only relevant chunks data related to the question )
+// 2. Augment -> Prompt question from that relevant chunks context
+// 3. Generation -> response generated from that chunk
+
+// it also comes handy as idea of 'relevant chunks' solves same type of query being resolved under same chunks (vague)
+
+
+// rag flow (vague - later improve to actual )
+
+// user's prompted question is converted into vector form
+// finds relevant chunk code already emeddeded vectors -> prompted with nearest embedded chunk
+// otubound is created and sent and response inbound is recieved with chunks relevant vector values
+// get response by getting actual from stored vector db 
+
 // ** gemini exclusive
 // outbound request payload type struct
 type OutboundPayloadGem struct {
@@ -58,6 +77,55 @@ type ContentsSliceKeyWrapperGem struct {
 	Role  string                     `json:"role"` // ! speaker {user-userReqs,model-Response}
 	Parts []*PartsSliceKeyWrapperGem `json:"parts"`
 }
+
+// type struct for client's data -> stores all the data for making any request -> for method recievers
+type ClientConfig struct {
+	httpClient *http.Client
+	// todo - add later dynamic url field - instead of new client -> reusue
+	secretKey string
+	spinner *spinner.Spinner
+
+	// todo - add resuable more later
+}
+
+
+// func that returns instance of type ClientConfig
+func NewClientConfig(httpClient *http.Client,secretKey string,spinner *spinner.Spinner)*ClientConfig{
+	return &ClientConfig{
+		httpClient: httpClient,
+		secretKey: secretKey,
+		spinner: spinner,
+	}
+}
+
+// ** RAG **//
+// text wrapper for vector out bound model
+type vectorOutTextWrapperGem struct {
+	Text string `json:"text"`
+}
+
+// parts wrapper for vector out bound model
+type vectorOutContentWrapperGem struct {
+	Parts []*vectorOutTextWrapperGem `json:"parts"` // we need pat wrapper el not concrete as it would have been text field then
+}
+
+// outboung type struct for vector search - model for embedded search - return type comes with vector of desired chunk values which store ans context
+type vectorOutBodyGem struct {
+	Model string `json:"model"`
+	Content *vectorOutContentWrapperGem `json:"content"`
+}
+
+
+type EmbeddingWrapperInboundGem struct {
+	// when there is a inside wrapper defined fields -> need wrapper not direct fields
+	Values []float64 `json:"values"` // float as vectors comes in floating numbers -> for wide range -> 64
+}
+
+// inbound response from gem for response in vector values form
+type vectorInboundGem struct {
+	Embedding *EmbeddingWrapperInboundGem `json:"embedding"`
+}
+// ** RAG TYPES **//
 
 type PartsSliceKeyWrapperGem struct {
 	Text string `json:"text"`
@@ -641,6 +709,9 @@ func main() {
 	slog.Info("[debug] - client intialized")
 	chunkReqURL := "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse"
 	
+	// api url path endpoint for -> vector queries prompts res only
+	vectorReqURL := "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent"
+	
 	// testing changes if it shows this line being written to the main.go
 	
 	// todo - add mode enable selectors in one place later
@@ -665,19 +736,129 @@ func main() {
 
 	// when these conditons met => git enabled cause we don't want other cases to be fired regardlessly
 	if agentConfig.Deeplearning {
+
+		// ** we are all set for vector queries
+		// &flow becomes -
+		// 1. load vector_codebase.json ( file where those victos would be stores <-todo-> written to )
+		// 2. get query vector <- do rag req with prompt of userQuestion -> get query Vector values in embedding.values inbound
+		// 3. Call FindNearestTopNChunks func to get nearest chunkvectors slice upto 'n' depend on what u are asking (for now) ->
+		// 4. since those are stored with relevant chunks from codebase_vectors's chunkVector struct having chunk for that similarity degree score vectors
+		// 4. req again with those chunks for res
+
+		
+		
+		//** clientConfig instance 
+		clientCfg := NewClientConfig(client,apiKEY,s)
+		var codebaseVectors []*ChunkVector
+
+		//** load and read from codebase vectors file
+		
+		// guard check -> if it exists -> okay otherwise -> create it
+		_,err := os.Stat(CodebaseVectorContextFileName)
+		
+		//! check if err is -> it not exists ( err check for when checking err, err it comes as not exists)
+
+		s.Suffix="Starting RAG..."
+		s.Start()
+		// if file does not exist -> create and write vectors to it and store retrieved vectors in var
+		if os.IsNotExist(err){
+			
+			// if it does not exists first -> need to create plus call indexer to write to it cause we cannot proceed without vectors ( that's the whole point)
+			
+			// create dummy file with exact naming - indexer picks the file to write the encoded vectorschunk to it 
+			_,err :=os.Create(CodebaseVectorContextFileName)
+			if err != nil {
+				return
+			}
+			
+			// reading content for generating vectors
+			mainContent,err := ReadFileContent(".","main.go")
+			if err != nil {
+				slog.Error("failed to read main.go file content","error",err)
+				return
+			}
+			
+			//bug - since it already writes to the file -> as we did after getting vectors encoded and write -> double write issue
+			// fix - does not need to write manually after indexer is invoked
+			// indexer need file contents of codebase files -> not files -> later we give full dir but now only main.go file content only
+			mainVectors,err := clientCfg.Indexer(vectorReqURL,[]string{mainContent})
+			if err != nil {
+				slog.Error("failed to get codebase vectors","error",err)
+				return
+			}
+						
+			// ultimately we need slice of chunk vectors data -> so we assign it
+			codebaseVectors = mainVectors
+
+		}else if err == nil {
+		// otherwise if exists already -> read from the file itself
+		vectorsContent,err := ReadFileContent(".",CodebaseVectorContextFileName)
+		if err != nil {
+			slog.Error("failed to read base vector file for vector prompting","error",err)
+			return
+		}
+		s.Stop()
+
+
+		s.Suffix="Finding matching data from the codebase for answer..."
+		// if file exists but nothing read from it
+			// keep in mind,that must be encoded before writing -> so be decoded into desired inbound payload
+			// **now this slice holds all those ChunkVector elements
+			err = json.Unmarshal([]byte(vectorsContent),&codebaseVectors)
+			if err != nil {
+				slog.Error("failed to decode vectors codebase data","error",err)
+				return
+			}
+
+	}
+
+
+		// 1. get query vector
+		queryVectory,err := clientCfg.RagReq(vectorReqURL,agentConfig.SpecialCmd) // suppose special cmd is now our question prompt we will change it later to dedicated one
+		if err!= nil {
+			slog.Error("failed to request query vector","error",err)
+			return
+		}
+
+		
+		// 2. get topN most nearest vectors slice by providing query and codenase vectors slice
+		HighestScoredVectorsSlice := FindNearestTopNchunks(codebaseVectors,queryVectory,2)
+		
+		// 3. get underlying relevant chunkVector
+		var relevantChunkTextAcummulator strings.Builder // strings accumulator
+		
+		for _,vector := range HighestScoredVectorsSlice {
+			// write each vector's chunk's text to the builder to accumulate 
+			relevantChunkTextAcummulator.WriteString(vector.Chunk.Text)
+			relevantChunkTextAcummulator.WriteString("\n---\n") //line breaker from first and last
+		}
+		s.Stop()
+		s.FinalMSG="found! matching data 🚨..."
+
+		// 4. query that chunk to the Gem
+		finalChunkText := relevantChunkTextAcummulator.String()
+		
+		
+		
+		// 5. append text to the WrapperGem with 'user' role
+		
+		//see where thee pieces fit exactly.
+		
 		// check if history already exists
 		// before sending req,manage history if enabled
 		// ** conversation history with --mode deeplearning **//
 		// slog.Info("entered dir mode...")
-		slog.Info("[debug] - memory mode✨")
-		fmt.Println("unlocking full potential of agent and powered by deep intelligence⚡")
-
+		// slog.Info("[debug] - memory mode✨")
+		// fmt.Println("unlocking full potential of agent and powered by deep intelligence⚡")
+		
 		//1. read file content - must gather file from user
-		cnt, err := ReadFileContent("./", agentConfig.ContextFile)
-		if err != nil {
-			log.Fatalf("failed to read file content, err- %v", err)
-		}
-
+		// cnt, err := ReadFileContent("./", agentConfig.ContextFile)
+		// if err != nil {
+			// 	log.Fatalf("failed to read file content, err- %v", err)
+			// }
+			
+		s.Suffix="analysing user's conversation history🔃...."
+		s.Start()
 		historyFile := "history.json"
 		historyExists, _ := CheckConvoHistoryFILE(historyFile)
 
@@ -704,9 +885,9 @@ func main() {
 			log.Fatal(err.Error())
 		}
 
-		// append new user message data to it
+		// append ContentSlicWrapper to the slice with role - "user" - for distinction
 		userparts := &PartsSliceKeyWrapperGem{
-			Text: BuildPrompt(agentConfig.Mode, cnt),
+			Text: BuildDeepRagPrompt(agentConfig.Mode,finalChunkText,agentConfig.SpecialCmd),
 		}
 		newUserHistory := &ContentsSliceKeyWrapperGem{
 			Role: "user",
@@ -730,6 +911,7 @@ func main() {
 		if err != nil {
 			log.Fatal("failed to encode history")
 		}
+		s.Stop()
 		// if history is encoded successfully, send to the gemini for collective response
 
 		// reader -> gets [] byte-> goes into writer (bytes) <- based off use/context it writes bytes there
@@ -737,6 +919,7 @@ func main() {
 
 		// writer -> based of context which writer is passed,they write provided bytes to their respective destinations like http's writer to http, stdout writer to console.
 
+		s.Suffix="Generating response based off RAG & Conversation history🚀..."
 		// 3. creating request for sending
 		deepReq, err := http.NewRequest("POST", chunkReqURL, &deepBodyBuf)
 		if err != nil {
@@ -749,11 +932,11 @@ func main() {
 		// 1. Initialize the spinner
 		// CharSets[14] is a cool dot-bouncing animation, but there are dozens of options
 		// s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
-		s.Suffix = " Agent is thinking..." // Adds text next to the spinner
-		s.Color("cyan")                    // Optional: give it some color!
+		// s.Suffix = " Agent is thinking..." // Adds text next to the spinner
+		// s.Color("cyan")                    // Optional: give it some color!
 
-		// 2. Start the spinner
-		s.Start()
+		// // 2. Start the spinner
+		// s.Start()
 
 		// send to gemini
 		deepRes, err := client.Do(deepReq)
@@ -762,11 +945,10 @@ func main() {
 		}
 
 		// 4. Stop the spinner immediately after the request finishes!
-		s.Stop()
-
+		
 		// 🛑 Gracefully intercept Rate Limits (429) without throwing a panic
         if deepRes.StatusCode == 429 {
-            fmt.Println("\n\033[31m🚨 Rate Limit Exceeded (HTTP 429).\033[0m")
+			fmt.Println("\n\033[31m🚨 Rate Limit Exceeded (HTTP 429).\033[0m")
             fmt.Println("Gemini's gateway is cooling down. Please wait 60 seconds before re-running.")
             return
         }
@@ -778,7 +960,7 @@ func main() {
 		// intercept response - get res - write data to the history with role "model" this time
 		deepBody := deepRes.Body
 		defer deepBody.Close() //deferred call to close reader
-
+		
 		
 		// concurrent read and write flow
 		// 1. get scanner sourced from res.body 
@@ -795,17 +977,18 @@ func main() {
 			return
 		}
 		defer file.Close()
-
+		
 		// overiding scanner allocations for not overwhelming scanner from bigger payloads
 		scanner.Buffer(bufCap,maxCap)
 		// advantage -: instead of reading in once from io.readall it reads as it is scanning each incoming byte from the source
 
 		var accumulation strings.Builder // accumulates res in memory to avoid fatal llm repetion
-
+		
 		// 2. scanner loop -> get eachbyte
 		//bug - should not put looping conditoins in var -> it stores most recent and keep looping on sam einstead of actual loop 
 		// fix - replace with concrete scan 
 		// bytesLoop := scanner.Scan() 
+		s.Stop()
 		for scanner.Scan() { // becomes true only if next bytes are coming
 			eachChunkByte :=scanner.Bytes()
 			
@@ -820,7 +1003,7 @@ func main() {
 				continue
 			}
 			
-
+			
 			var inbound *InboundPayloadGem
 			
 			// 3. unmarshal byte -> inbound <- it is still coming as same sse data
@@ -921,7 +1104,7 @@ func main() {
 		
 		// ** history stasher - need to read all once finishes loop ->get whole content and stash into history
 		s.Suffix = "updating conversation history✨..."
-		s.Color("blue")
+		s.Color("yellow")
 		s.UpdateSpeed(time.Nanosecond * 100) //testing speed
 		s.Start()
 

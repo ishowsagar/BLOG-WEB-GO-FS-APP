@@ -1,0 +1,3 @@
+`historyGem` is a `[]*ContentsSliceKeyWrapperGem` slice acting as the in-memory representation of the entire conversational history for the Gemini API. It stores a chronological sequence of interactions, encompassing both `user` prompts and `model` responses.
+
+This structure is crucial for the "deep learning" mode, enabling the AI agent to maintain context across multiple turns. Before sending a new request, the current user input is appended, and upon receiving an AI response, that too is appended. The entire `historyGem` is then serialized and sent to Gemini, allowing the model to generate context-aware replies, and subsequently persisted to `history.json`.
