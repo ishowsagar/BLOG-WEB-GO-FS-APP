@@ -35,8 +35,8 @@ type AgentConfig struct {
 
 // type struct that contains all the simulations user would like to perform when second model is selected
 type SuperuserAgentConfig struct {
-	Files []string // slice that stores all the files {raw, undone} - as history trace pre automation
-	FilesToBeDeleted []string // slice that stores all those files which had to be deleted
+	SelectedTool string
+	SelectedContextFile string
 }
 
 
@@ -127,12 +127,17 @@ type vectorInboundGem struct {
 }
 // ** RAG TYPES **//
 
+type InlineDataWrapperGem struct {
+	MimeType string `json:"mimeType"`//data type img/png
+	Data string `json:"data"`//actual data - safe base64 encoded string
+}
 type PartsSliceKeyWrapperGem struct {
-	Text string `json:"text"`
+	Text string `json:"text,omitempty"`
+	InlineData *InlineDataWrapperGem `json:"inlineData,omitempty"` // in parts slice el -> it loads fields text for text prompts and InlineData for img/png
 }
 
 type ContentWrapperGem struct {
-	Parts []*PartsSliceKeyWrapperGem `json:"parts"`
+	Parts []*PartsSliceKeyWrapperGem `json:"parts"` //parts contains the actual text/data to be out -> el of type PartsSlice..Gem would need image field too for image out
 }
 
 // wrapper for inbound messages
@@ -209,6 +214,40 @@ func main() {
 	// }
 	// slog.Info("successfully wrote streamed content to the respective destination","bytesWritten",chunkSizeAccumulator)
 	// // successfully working ✅ as intended it to work -> it is reading chunks wrapped in scanner and writing each stripped line to the writer dest✅
+	
+
+	
+	// *image 
+	// aot cover-ART
+	aot := "aot.png"
+
+	// readin image into raw binary first - bytes data in decimal form
+	// img,err := ReadIMGBinary(aot)
+	// ! but this binary representation of bytes cannot be fed into system which expects text printable data for proccessing -> need to convert into safe text
+	// if err != nil {
+	// 	slog.Error("failed to read image","error",err)
+	// 	return
+	// }
+
+	// testing - image binary
+	// printed 0-255 ranged numbers -> raw binary data representation`✅✅
+	// that's why if we load into json workers -> it would crash it this is not text data -> now converting this into base64 encoded safe text string data
+	// fmt.Printf("image binary size - %v",len(img))
+	//  177 149 117 197 58 223 143 80 144 246 53 180 14 45 229 254 33 22 31 104 87 244 244 89 194 -> binary img data - ready to convert into safe string for json compatibility or compatible form
+	// ** TESTED => images are read as binary bytes in decimal, they are still read into bytes but non-unicode text characters 
+	
+	// & conversion
+	// formattedIMG := ImageBinaryConversion(img)
+	// fmt.Printf("\nbase64 encoded image size - %v",len(formattedIMG))
+
+	// ! tradeoff of conversion into text format -> since base64 encoding byte into string -> increases src size by 33%
+	// binary size - 127563
+	// encoded size - 170084 -> it is exactly 33% larger payload -> remember this this might come handy when you seeing payheads bigger than before
+
+	// now we are ready to ship image data to the agent via parts for img specifically
+	// if look at gemini multimodal API structure, it piped via parts but since in this project, we are only accounting for text, we need to add image section too	
+
+	
 	// os.Exit(0)
 
 	// logger
@@ -246,12 +285,12 @@ func main() {
 	// os.Exit(0) 
 
 	// ** flag **//
-
+	
 	// !Q := why we using flags?
 	//& Ans <- flags are just decriptive cmd line arg but very useful that define scope of arg + better control on it
 	// based on provided flag - we could attach that context to the prompt to use can directly get desired response quickly
 	// for eg. --mode review (review it), doc - document it etc... with q/a, quiz etc...
-
+	
 	// ** flag - defining cmd line arg with better control and flexibilty and human readble
 	// declared flags are invoked with doubledashes -- "decalred Flag key"
 	// while defining a flag it-> takes in key under which it'd be defined, a default value, it's description when invoked help on it
@@ -281,83 +320,228 @@ func main() {
 	// ** solution - Use flag.Args()[positionAt] -> to set positioned cmd lien args same as what os.Args were doing but keep in mind -> positioned flag args must be defined after 'pasred' non-posi args
 	// used after program arg and before rest
 	// ** end //
-
+	
 	// fmt.Println("key being used:",apiKEY)
-
+	
 	// instead of harcoding it -> we would make this dynamic to let caller provide file name during code run
-
+	
 	// os.Args[posiAtCmdLine] -> let us define arg to be added dynamically, this let us set which arg would be defined and used based on position of definition
 	// for ex - os.Arg[0] -> during running this file - first provided arg becomes this
-
+	
 	// !IMP -> first arg being at 0th index must be 'program name' like here - `go run ./` here ./ (binary) becomes first arg, 2nd being rest arg to be used
 	// programName := flag.Args()[0] //* ./ -> binary itself becomes it or we say path to the binary
 	// fmt.Println(programName)
-
+	
 	// * flag automatically exlcudes binary and non positional from explicit args declaration, so that's why go run {.} {--mode docs} are first parsed flags
 	// * then positional arg are comes into play from start 0th position which -> becomes as they are used for
-
+	
 	// flow -> flag.parse -> parses all the defined non-positional flags, so they are used as arg on cmd without taking position
 	// then arg defined with -> flag.Args()[positionedAt] takes up the arg place they -> take exact place and provide val to the codebase
-
+	
 	// args validation to prevent crash
 	// declaredArgs := flag.Args() // only gives us provided args
-
+	
 	//! upgrade -  Switching to user prompted selections and replacing them from args
 	// ** Reason -> imagine asking user to provide all the things upfront when they all needed is to run program first and then provide needy things when prompted
 	// ** this makes it robust and better user experience and better domain expansion and showing purpose of each arg
-
+	
 	// * arg replacer - user input { process comes with stdin <- pulling bytes from there }
 	// now all these variables would be filled by user input
 
 	// get these from proccess's stdin stream capturing user input bytes
+	
+	// todo - make robust selection for img generations
+		
+		// ** pre-reading img files for displaying there for choices 
+		// show choices to select image from dir read - only show .png/jpeg/jpg - read dir before showing choces for seamless experience
+		imgDir,err :=os.ReadDir(".")
+		if err!= nil {
+			return
+		}
+		var imageFiles []string
+		for _,currentDirEntry := range imgDir {
+			
+			// if current entry is file -> proceed then only
+			if currentDirEntry.IsDir() == true {
+				continue // skip the nested dir 
+			}
+			
+			pngFile := strings.HasSuffix(currentDirEntry.Name(),".png") 
+			jpgFile := strings.HasSuffix(currentDirEntry.Name(),".jpg") 
+			jpegFile := strings.HasSuffix(currentDirEntry.Name(),".jpeg") 
+
+			// ! silly me forget i can just make it optional like || with or statement for any combined conditionals <- keep in mind
+			// only retrieve files with .png/jpeg/jpg format
+			if pngFile||jpgFile || jpegFile  {
+				// if these files exists -> append to accumulator to store them for choices
+				imageFiles=append(imageFiles, currentDirEntry.Name()) // append that entry as file to the slice to store it
+			}
+			
+
+		}
+
 
 	var hasDeeplearningModeSelected bool
-
+	
 	// & user input access
 	s.Suffix = " Booting up agent✨..."
 	s.Color("cyan")
 	s.Start()
 	// s.UpdateSpeed(time.Microsecond & 100)
 	time.Sleep(time.Second * 2)
-
+	
 	s.Stop() // stop after 2 sec delay
-	fmt.Println( Gray + "---- Agent booted up successfully 🚀 -----")
-
+	fmt.Println( Yellow + "\n---- Agent booted up successfully 🚀 -----"+Reset)
+	
 	// todo - add later tui
 	// done - added opening tui - capture initial agent choice first , then based off choice proceed
-
+	
 	// agents := map[string]bool{
-	// 	"Coding Agent" : true,
+		// 	"Coding Agent" : true,
+		
+		// } 
+		
+		emojiIdentifier := "✨ "
+		agentPrompt := emojiIdentifier+ "Which agent do you want?"
+		agentChoices := []string{"Coding Agent","Superuser Agent"}
+		
+		// now choices -> and strings builder does help track selected outcome and use
+		
+		// * need to invoke this everytime i need selection based off prompt and choice
+		agentSelection,err := IntializeTUI(agentPrompt,agentChoices)
+		if err != nil {
+			slog.Error("faile to intialize tui","error",err)
+			return
+		}
+		
+		
+		
+		
+		// todo - add later confirmation with tui too - "\n" - one break
+		// fmt.Printf(Cyan+"selected agent - \033 %s"+Reset+"\n",agentSelection) 
+		
+		// todo - if superuse agent is selected, form payload from there and choices from there -> no mix up and better control 
+		
+		
+		// bug - if color is not resetted -> it will take over rest of terminal
+		// fix - must add reset somewhere to takeover that
+		
+		// ** configs findme
+		// global var
+		agentConfig := &AgentConfig{}
+		su := &SuperuserAgentConfig{} // initalized an empty type dereferenced literal
+		var hasGitEnabled bool    //  true if git enabled
+		
+		if agentSelection == "Superuser Agent" {
 
-	// } 
+			// todo - form diff payload config based on selected agent - superuser config should be constructed seperately
+			
+			toolPrompt := emojiIdentifier+ "Which tool do you want to explore?"
+			toolChoices := []string{"image","video","music"} // later if needed -> implement those
+			
+			
+			toolSelection,err := IntializeTUI(toolPrompt,toolChoices)
+			if err != nil {
+				slog.Error("faile to intialize tui","error",err)
+				return
+			}
 
-	emojiIdentifier := "✨ "
-	agentPrompt := emojiIdentifier+ "Which agent do you want?"
-	agentChoices := []string{"Coding Agent","Superuser Agent"}
+			// if suppose img tool is selected - ask if it needs for img anaylis or img generation
+			// only ask image tool is selected
+			// var imageToolSelection string // stores tool selected for image related job
+			
+			if toolSelection != "image" {
+				fmt.Println(Red+"You need premuim subscription for this tool💲"+Reset)
+				return
+			}
 
-	// now choices -> and strings builder does help track selected outcome and use
+			
+			// image tool sub selection
+			imageToolPrompt := emojiIdentifier+ "Select what you want to do with image model"
+			imageToolChoices := []string{"image-analysis","image-generation","text extraction from image"} // later if needed -> implement those
+			
+			
+			selectedImageTool,err := IntializeTUI(imageToolPrompt,imageToolChoices)
+			if err != nil {
+				slog.Error("faile to intialize tui","error",err)
+				return
+			}
+			
+			// todo - later let user to upload directly
+			// context image selection 
+			imgSelectionPrompt := "⛳ "+ "Select the reference image"
+			imgSelectionChoices := imageFiles // later if needed -> implement those
+			
+			
+			selectedImage,err := IntializeTUI(imgSelectionPrompt,imgSelectionChoices)
+			if err != nil {
+				slog.Error("faile to intialize tui","error",err)
+				return
+			}
 
-	// * need to invoke this everytime i need selection based off prompt and choice
-	agentSelection,err := IntializeTUI(agentPrompt,agentChoices)
-	if err != nil {
-		slog.Error("faile to intialize tui","error",err)
+			// constructing superuseagent config struct instance
+			// ** assinging to the fields in the superuserConfig instance
+			su.SelectedTool = selectedImageTool
+			su.SelectedContextFile = selectedImage
+			// superuserConfig := &su{
+			// 	SelectedTool: selectedImageTool, // which image tool is selected
+			// 	SelectedContextFile: selectedImage, // stores which image is selected for later encoding 
+			// }
+
+			// confirmation prompt
+	s.Suffix = "gathering user selections✨..."
+	s.Color("green")
+	s.Start()
+	time.Sleep(time.Second * 1)
+
+	s.Stop() // stop after 2 sec delay
+
+	// use strings builder when needed to accumuate strings in the memory and later final string extraction
+
+	// findme divider
+	fmt.Println("\033[90m──────────────────────────────────────────────────\033[0m")
+	fmt.Printf(`User selections :
+	Tool:%s,
+	SelectedImageFile : %s,
+	`, 
+	su.SelectedTool,
+	su.SelectedContextFile,
+	)
+
+	confirmation := "\nDo you want to proceed with this ? (y/n) :"
+	// adding confirmation so user can rollback or commit input
+	userConfirmation := CaptureInputFromShell(confirmation,"\033[92m")
+	proceed := userConfirmation == "Y" || userConfirmation == "Yes" || userConfirmation == "YES" || userConfirmation == "YeS" || userConfirmation == "y"
+
+	// if any of condition is matched -> proceed to do work -> invoke agent otherwise rollback to empty state and restart the operation
+	// todo - might need robust way to handle this better
+	if proceed {
+		s.Suffix = "agent thinking..."
+		s.Color("blue")
+		s.Start()
+		time.Sleep(time.Second * 1)
+		s.Stop()
+		
+		// rest logic upon retrieval of user input
+	} else {
+		s.Suffix = "agent rolling back changes..."
+		s.Color("cyan")
+		s.Start()
+		time.Sleep(time.Second * 4)
+		s.Stop()
+		su = nil
+		fmt.Println("operation aborted gracefully🛑")
+		slog.Info("[debug] - shutdowned")
 		return
 	}
+	
+	fmt.Println(Yellow+"\nsuccessfully rendered superuseagent view"+Reset)
+	os.Exit(0) // super agent mode shutdown
+	//..super user Agent Selection 
+	}else {
 
+	
 
-	
-	
-	
-	// todo - add later confirmation with tui too - "\n" - one break
-	// fmt.Printf(Cyan+"selected agent - \033 %s"+Reset+"\n",agentSelection) 
-	
-	// bug - if color is not resetted -> it will take over rest of terminal
-	if agentSelection == "Superuser Agent" {
-		fmt.Print(Yellow+"Agent under maintance break⚠️, soon this will be available🚨..."+Reset)
-		os.Exit(0)
-	}
-
-	// ** otherwise proceed - fix to proceed it is still not proceeding
 	modePrompt := emojiIdentifier+ "Which agent do you want?"
 	modeChoices := []string{"review","docs","qa"}
 	
@@ -367,6 +551,10 @@ func main() {
 		slog.Error("faile to intialize tui","error",err)
 		return
 	}
+	
+	// ** otherwise proceed - fix to proceed it is still not proceeding
+
+
 
 	// fmt.Printf("selected mode -%s",modeSelection)
 	// user provides input <-= captured by stdin from terminal -> reader streaming to process
@@ -555,7 +743,6 @@ func main() {
 
 	// tracks selected modes
 	var selectedGitOperation string //tracks git modes
-	var hasGitEnabled bool          // true if git enabled
 
 	// if user wants git mode
 	if selectedGitAutomation == "Y" || selectedGitAutomation == "y" {
@@ -587,17 +774,32 @@ func main() {
 	s.Stop() // stop after 2 sec delay
 
 	// instance of type agentconfig which has all the user inputted std in data
-	agentConfig := &AgentConfig{
-		Mode:               modeSelection,
-		Deeplearning:       hasDeeplearningModeSelected,
-		Target:             selectedTarget,
-		ContextFile:        selectedFile,
-		OutputFile: selectedOutputFile,
-		Git:                selectedGitOperation,
-		selectedDirPathArg: selectedDirPath,
-		dirSubFileTypesArg: selectedSubFileType,
-		SpecialCmd: specialInstructions, //silly me usused is just this field is not used -> like all other var not consumed
-	}
+	
+	// ** Upgrade for robustness -> instead of forming instance inside it, assinging it on the fly by delaring it before
+	
+	agentConfig.Mode = modeSelection
+	agentConfig.Deeplearning= hasDeeplearningModeSelected
+	agentConfig.Target =selectedTarget
+	agentConfig.ContextFile=selectedFile
+	agentConfig.OutputFile= selectedOutputFile
+	agentConfig.Git=selectedGitOperation
+	agentConfig.selectedDirPathArg= selectedDirPath
+	agentConfig.dirSubFileTypesArg= selectedSubFileType
+	agentConfig.SpecialCmd= specialInstructions
+
+	// 
+
+	// agentConfig := &AgentConfig{
+	// 	Mode:               modeSelection,
+	// 	Deeplearning:       hasDeeplearningModeSelected,
+	// 	Target:             selectedTarget,
+	// 	ContextFile:        selectedFile,
+	// 	OutputFile: selectedOutputFile,
+	// 	Git:                selectedGitOperation,
+	// 	selectedDirPathArg: selectedDirPath,
+	// 	dirSubFileTypesArg: selectedSubFileType,
+	// 	SpecialCmd: specialInstructions, //silly me usused is just this field is not used -> like all other var not consumed
+	// }
 	
 	// findme divider
 	fmt.Println("\033[90m──────────────────────────────────────────────────\033[0m")
@@ -613,7 +815,6 @@ func main() {
 	outputFile :%s,
 	context-file :%s,
 	SpecialCommands : %s,
-
 	`, 
 	agentConfig.Mode, 
 	agentConfig.Deeplearning,
@@ -652,7 +853,7 @@ func main() {
 		slog.Info("[debug] - shutdowned")
 		return
 	}
-
+}
 	// os.Exit(0)
 
 	// fmt.Println(declaredArgs)
@@ -788,7 +989,7 @@ func main() {
 			}
 						
 			// ultimately we need slice of chunk vectors data -> so we assign it
-			codebaseVectors = mainVectors
+			codebaseVectors = mainVectors // slice of chunkVectors which contains -> each el as broken into fif lines chunk texr + generated vectors's embedding values from it
 
 		}else if err == nil {
 		// otherwise if exists already -> read from the file itself
@@ -823,6 +1024,8 @@ func main() {
 		
 		// 2. get topN most nearest vectors slice by providing query and codenase vectors slice
 		HighestScoredVectorsSlice := FindNearestTopNchunks(codebaseVectors,queryVectory,2)
+		// &since codebaseVectors are just each broken fif chunk's text + its ragRequested embedding vector value as a whole -> it finds which shows highest degree of similarity pull those
+		// & after pulling those -> since those are formed into scoredVector struct with stored chuhnk's text and its similarity score -> we pull only text from those 
 		
 		// 3. get underlying relevant chunkVector
 		var relevantChunkTextAcummulator strings.Builder // strings accumulator
@@ -926,6 +1129,7 @@ func main() {
 			log.Fatalf("failed to request AI,err - %v", err)
 		}
 
+		//** setting important headers on the request
 		deepReq.Header.Set("Content-Type", "application/json") // header key is **case-sensi
 		deepReq.Header.Set("x-goog-api-key", apiKEY)           // Pass your Gemini key here
 
@@ -1807,6 +2011,166 @@ func main() {
 
 		} //..switch
 		// ** end **//
+	}else if su.SelectedTool == "image" {
+
+		//** hardsetting condition for image -> might pick dynamic later
+		fmt.Println("image tool into action⚡")
+		fmt.Printf("proccessed image - %v",aot)
+		
+		s.Color("purple")
+		s.Suffix="proccessing image..."
+		s.Start()
+
+		imgBinary,err := ReadIMGBinary(aot)
+		if err != nil {
+			slog.Error("failed to read image binary bytes data","error",err)
+			return
+		}
+
+		ecodedImgStr := ImageBinaryConversion(imgBinary)
+		
+		// needed image validation
+
+		// ! remember -> form seperate part wrapper el for text and image seperately and since partsWrapperSlice accepts them, pass them
+		textpart := &PartsSliceKeyWrapperGem{
+				Text: "can you describe what this image is about", // text prompt for image context what to do with image
+			}
+
+		imgpart := &PartsSliceKeyWrapperGem{
+				// it would only have inline data for img - omityempty power -> clears out field if it is empty! might need to learn more about tradeoffs
+				InlineData: &InlineDataWrapperGem{
+					MimeType: "image/png",
+					Data: ecodedImgStr, //base64 encoded safe string
+				},
+			}
+
+
+		cnt := &ContentsSliceKeyWrapperGem{
+					Parts: []*PartsSliceKeyWrapperGem{
+						textpart,imgpart,		
+					},	
+				}
+		// construct image struct payload
+		out := &OutboundPayloadGem{
+			Contents: []*ContentsSliceKeyWrapperGem{
+				cnt,
+			},
+		}
+		s.Stop()
+
+		// encode out
+
+
+		s.Color("red")
+		s.Suffix="analysing image📸..."
+		s.Start()
+
+		outbound,err := json.Marshal(out)
+		if err != nil {
+			slog.Error("failed to marshal img out payload","error",err)
+			return 
+		}
+
+		ioreader := bytes.NewReader(outbound)
+
+		// create new request with http.NewRequest method -> for requesting to extenal service/api
+		req,err := http.NewRequest("POST",reqURL,ioreader)
+		if err != nil {
+			slog.Error("failed to form image mimeType request","error",err)
+			return
+		}
+
+		// setting headers on the request
+
+		req.Header.Set("x-goog-api-key",apiKEY)
+		req.Header.Set("Content-Type","application/json")
+		s.Delay=time.Second*1
+		s.Stop()
+
+
+		s.Color("red")
+		s.Suffix="generating response🤖..."
+		s.Start()
+		res,err := client.Do(req)
+		if err != nil {
+			slog.Error("failed to do request","error",err)
+			return
+		}
+
+
+		// res dismanteling
+		resBod := res.Body
+		defer resBod.Close() //closing stream source when done
+
+		resChunkedBytes,err := io.ReadAll(resBod)
+		if err != nil {
+			slog.Error("failed to read body bytes","error",err)
+			return
+		}
+
+		var inbound *InboundPayloadGem
+		err = json.Unmarshal(resChunkedBytes,&inbound) // incoming is still the same
+		if err != nil {
+			slog.Error("failed to unmarshal body bytes data","error",err)
+			return
+		}
+
+		// looping to get actual data inside the inbound wrappers, skipping nill wrappers n content
+		
+		// only do when there is actual candidates data in the struct
+		s.Stop()
+		if len(inbound.Candidates) > 0 {
+
+			for _,candidate := range inbound.Candidates{
+				if candidate.ContentWrapperGem == nil {
+					continue // skip this current iteration - don't need to break as this is usual to send empty acks
+				}
+				
+				for _,part := range candidate.ContentWrapperGem.Parts{
+					if part.Text == "" {
+						continue // skip them if current part has empty text string
+					}
+					// also since it has omitemoty -> no need to switch to seperate parts havin just parts with no inline data for inbound
+					resText := part.Text
+
+					// break into buf reads
+					buffer := make([]byte,18) //18bytes buffer
+
+					reader := strings.NewReader(resText) //source from where bytes could be read
+
+					// todo - later
+					// reads into bufs - always do in loop to account for all as it reads in chunks by breaking it into smaller chunked reads
+					for {
+						
+						bytesReadUpto, err := reader.Read(buffer)
+						
+						// guard check for : if bytes are read but no read
+						if bytesReadUpto > 0 {
+							
+							chunkedTextByte := buffer[:bytesReadUpto]
+							
+							// concurrent writes
+							os.Stdout.Write(chunkedTextByte)
+							time.Sleep(time.Millisecond*50) //little delay for smooth writes
+							}//....bytes read guard check
+							// eof error first
+						if err == io.EOF{
+							break
+						}
+						if err != nil {
+							return
+						}
+					}//....range concurrent reads and writes
+				} 
+			}
+			
+		}
+
+
+		s.FinalMSG=Yellow+"successfully decoded image✨✨"
+
+		// form req-res - decode -> serve res
+		return // don't let it execute furthur
 	}else {		
 		// ** normal file prompting starts here**//
 		slog.Info("entered normal prompting mode...")
