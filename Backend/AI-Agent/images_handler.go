@@ -38,3 +38,16 @@ func ImageBinaryConversion(binary []byte) (safeIMGTextFormatted string) { // ret
 	safeIMGTextFormatted = base64.StdEncoding.EncodeToString(binary)
 	return safeIMGTextFormatted
 }
+
+
+// this func takes in base64 encoded safe str and converts back into raw binary which then have to be populated into img file -> for displaying image actually
+func ImageEncoder(base64SafeImgStr string) (decodedBinaryBytes[]byte,err error) {
+	
+	decodedBinaryBytes,err =base64.StdEncoding.DecodeString(base64SafeImgStr)
+	if err != nil {
+		return nil,err
+	}
+
+	// if successfully encoded back to binary bytes data ranges from 0-255
+	return decodedBinaryBytes,nil
+}

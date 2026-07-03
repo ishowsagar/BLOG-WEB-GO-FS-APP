@@ -9,7 +9,6 @@ import (
 	"log"
 	"log/slog"
 	"net/http"
-	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -43,17 +42,6 @@ type SuperuserAgentConfig struct {
 	SelectedContextFile string
 }
 
-
-// type struct that stores data for image gen config body for poliAI
-type PoliGenConfig struct {
-	Prompt string `json:"prompt"`
-	Width int16 `json:"width"`
-	Height int16 `json:"height"`
-	Format string `json:"format"`
-
-}
-
-// bytes represent data []byte{90,54,78,43} => bytes represent data of the context content 
 
 // io.Reader/Writer => these are interfaces which both -> needs a method which intakes ( []byte) and do the desired work based on the context.
 // ** io.Reader -> This interface is implemented & satisfied by the method which -> wraps []byte data and constructs a reader source from where data in bytes chunk could be read gracefully
@@ -193,95 +181,6 @@ proReset       = "\033[0m"  // Clean State Reset
 
 func main() {
 
-
-
-	pdfBytes,err := os.ReadFile("modern_relationships.pdf")
-	if err != nil {
-		return
-	}
-
-	// log.Printf("pdf size - %vkb",len(pdfBytes)/1024) //as 1kb == 1024 bytes
-
-	// if abstraction is true and valid -> it would read pdf bytes as those bytes represent pdf content and specifications
-	// test 1 - testing pdf read without content but pdf size
-	// ** Result 1 => successfully read size of pdf bytes as them bytes be read & them bytes be also representing pdf specifications into bytes as under the hood they map to 0,1 which collectively reprsents bytes and interpreted into some meaning 
-	// **like img bytes -> represents img/png specifications & text bytes reprsents utf-8 decoder decoded string characters ... in same way every byte of anything represent some interpreted meaning
-	
-	// test 2 -> reading raw bytes 
-	// don't need to read all but buffered read
-
-	// buf := make([]byte,25) //25 bytes buffer for short read -> get idea of what content is actually <- same thing we did in aws in diff context
-	// buffer := bytes.NewBuffer(pdfBytes)
-	// n,err := buffer.Read(buf)
-	// if err != nil {
-	// 	return
-	// }
-	// brokenBuf := buf[:n]
-	// fmt.Printf("pdf size - %vb \n\n, content - %s",,brokenBuf)
-
-	// when i read those bytes into txt file ->   │ 48 48 48 48 48 48 48 54 49 32 48 48 48 48 48 32 110 32 10 48 48 48 48 48 48 48 49 48 50 32 48 48 48 48 48 32 110
-    //  │ 32 10 48 48 48 48 48 48 48 50 48 57 32 48 48 48 48 48 32 110 32 10 48 48 48 48 48 48 48 51 50 49 32 48 48 48 48 4
-    //  │ 8 32 110 32 10 48 48 48 48 48 48 48 53 49 52 32 48 48 48 48 48 32 110 32 10 48 48 48 48 48 48 48 53 56 50 32 48 4
-    //  │ 8 48 48 48 32 110 32 10 48 48 48 48 48 48 48 56 54 50 32 48 48 48 48 48 32 110 32 10 48 48 48 48 48 48 48 57 50 4
-    //  │ 9 32 48 48 48 48 48 32 110 32 10 116 114 97 105 108 101 114 10 60 60 10 47 73 68 32 10 91 60 52 49 52 100 51 50 9
-    //  │ 9 100 102 49 48 98 51 48 56 56 57 54 52 97 102 101 53 55 54 57 54 54 100 50 100 57 62 60 52 49 52 100 51 50 99 10
-    //  │ 0 102 49 48 98 51 48 56 56 57 54 52 97 102 101 53 55 54 57 54 54 100 50 100 57 62 93 10 37 32 82 101 112 111 114
-    //  │ 116 76 97 98 32 103 101 110 101 114 97 116 101 100 32 80 68 70 32 100 111 99 117 109 101 110 116 32 45 45 32 100
-    //  │ 105 103 101 115 116 32 40 111 112 101 110 115 111 117 114 99 101 41 10 10 47 73 110 102 111 32 54 32 48 32 82 10
-    //  │ 47 82 111 111 116 32 53 32 48 32 82 10 47 83 105 122 101 32 57 10 62 62 10 115 116 97 114 116 120 114 101 102 10
-    //  │ 50 48 50 55 10 37 37 69 79 70 10
-	// these bytes are encoded by PowerShell &  encoded it as UTF-16LE by default. That's why you see numbers — bat is reading the raw bytes of the UTF-16LE encoded file and displaying them,
-	// ** these bytes reprsent pdf specifications and content details -> encode into base64 safe text string for read by the Api.
-	fmt.Print(pdfBytes)
-
-	// ** Result 2 -> okay worked✅✅, bytes of pdf are read in similar way -> these represents pdf specifications and pdf content details
-	// pdf bytes read
-	// 1 0 obj
-	// <<
-	// /F1 2 0 R /F2 3 0 R
-	// /Filter [ /ASCII85Decode /FlateDecode ] /Length 1015	
-	// >>
-	// stream
-	// Gar&=_2dP6%)'tgnCD<9VW1@=bkB\`M]T<^[K6*MM^$V)2mT6EjRK$Qha\t+-OU#2,*D=W5*BgI#u=KLm6L=0NdgiW:pZm%8'Q@jVVNWrIJ<7(Tt*R/?YK%>Kj^
-	// E&S#>DdVP3hao(7maFEdd^F+_.FJ@hOU`RWjAZro%hT%85>dc2EXU-D#gaj]/69Te7S0/:pG,OTp4IA,I-o]'cq7/_i&?J*TYj[Q(pF1tsDT?gO.G-g&*eGK!LP
-	// n^IZY5`R<&7i[o]&AN\eAcjP7>g*R)L.\oSB3h1JKEU^/4%7:c-;$iU%F$;K#m04MN(Vcg5?OM;P@][)%*tL"cd%\6Qm3G,9qUEP_70G(>W&ll?T^R=$F@E5ir
-	// abm!&*]39&CMVadPp`R,ibJj6W`?KWn9f]*g>=RZ.$2&]e-#m8>B-o"9&l6L\-_hP&()c2JC-`<NPJk"`d\ec?H7c[PDunp"e[D5)H%?STF36<C<MC\5UDsIj^&H]+.B")h;(-"Fi%,aVB[MuUQ8/2/O[F4?YCnA54eZCo^30L6D&<I+"8b^WgREh:P+a/sGaC5@Ac!ScDZ:BO(e4\;@MBsi\<mj[B8c,4I.S0@G.$Fgg#[FlVum+rJ\]=Gp/h0bUu/02M7O7U3IpIF",_7LpL/.qXJ,S@:6i^lGu[VYNh!\BTWVU[HREtkf8phg0\4Ue7(%6eRFCtRdclhpMmF=rH>h-5o2%rMKEJ:33d_YBe@,lQVKiX!)K/d!Um6o(Tr]g0\)9?h.LV3)fO!=eA*M/N&CtuS!ro*b=5#e^T61WU&iRXZ+9]u'@AqkpBZbAbask%C?=Y]ab3?XDLklX`7^#l)7P2[/f7N-"$$A5m0P4n5\gAu'QH*oGW35i[9pU"]]'CL[[<EH$b`rUVc>,iCcZ;Sh7kUMf?<f(S`&SBTc<7%JSNcm(H0RjVU@,>Tpm3_%)R$bq)33>SZmM3nUM%k(Y<8/4PoUlgL#9?TEjTlcXIRQTa);_O<3U0/jnhX\rrYRN!$_~>endstream
-	// >>
-
-	//& When reading pdf directly into bytes, it does not just read content but everything related to pdf structuring,fonts,spaces amd all rest specifications
-	// & it stores content in stream -> that's the actual content of the pdf <- this could either be alone filtered via some packaged tools or sent all to AI for read
-	// and work on it
-
-
-	// ** Bytes full click mental model
-	// raw binary bytes reprsent meanings when interpretted correctly, if reading bytes that represent text string -> okay utf decoder works
-	// if suppose reading images bytes by strings reader -> err -> it does not know interpretation of images bytes -> as no unicode character in images bytes as string bytes represents those characters
-	// ** So the whole game is how these raw bytes encoded into some meaning by interpretters
-	
-// 	Raw bytes have no inherent type. When you call os.ReadFile, Go makes no assumptions — it just hands you the numbers. It's your code that decides what contract to apply.
-// When you tried to decode image bytes as UTF-8 — the UTF-8 decoder looked at byte 0xFF and said "this isn't a valid UTF-8 sequence" and failed. Not because the bytes were wrong. Because the contract was wrong. You applied the wrong interpretation layer.
-// The byte 0xFF in an image means "a pixel channel at full intensity." The byte 0xFF in a UTF-8 string is invalid — UTF-8 never uses that byte value. Same byte, two different contracts, two different outcomes.
-// This is why Go's type system separates []byte from string. A string in Go is not just bytes — it's bytes with an implicit promise that they're valid UTF-8. When you convert []byte to string, Go trusts you that the contract holds. If it doesn't — garbage output, or a decoder error.
-// So the full picture:
-// os.ReadFile("image.png")  →  []byte  (raw, no contract applied)
-// os.ReadFile("text.txt")   →  []byte  (raw, no contract applied)
-
-// string(imageBytes)   →  garbage  (wrong contract — image bytes ≠ UTF-8)
-// string(textBytes)    →  "Hello"  (right contract — text bytes = UTF-8)
-
-// base64.Encode(imageBytes)  →  "iVBORw0..."  (repackaged under a new contract)
-// json.Marshal(thing)        →  []byte       (Go struct → JSON contract)
-// json.Unmarshal(bytes, &x)  →  populated struct  (JSON contract → Go struct)
-// Every operation you've done this week was either:
-
-// Applying a contract to bytes to get meaning
-// Applying a contract to meaning to get bytes
-
-// That's the whole game. You're not just understanding io.Writer now — you're understanding the entire foundation that everything else is built on.
-
-	os.Exit(0)
-
-
 	// inside main, we need to execute that fnc -> which watch out for events <- recieved in its watcher chan from the os
 	// need a way to integate,it invokes on that dir and do the work and also need a way to trigger agent from inside the watcher
 
@@ -329,7 +228,7 @@ func main() {
 	
 	// *image 
 	// aot cover-ART
-	// aot := "aot.png"
+	aot := "aot.png"
 
 	// readin image into raw binary first - bytes data in decimal form
 	// img,err := ReadIMGBinary(aot)
@@ -380,7 +279,7 @@ func main() {
 	// GEMINI_API_KEY{1...n}
 	apiKEY := os.Getenv("GEMINI_API_KEY3")
 
-	// fmt.Printf("requesting on this key -%s",apiKEY)
+	fmt.Printf("requesting on this key -%s",apiKEY)
 
 	// repoURL := "https://github.com/ishowsagar/BLOG-WEB-GO-FS-APP" 
 	
@@ -1032,7 +931,7 @@ func main() {
 	//2. & client - have to make client who do that req
 	slog.Info("[debug] -proceeded from proceed")
 	client := &http.Client{
-		Timeout: 5 * time.Minute,
+		Timeout: 1 * time.Minute,
 	}
 	reqURL := "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
 	slog.Info("[debug] - client intialized")
@@ -2141,274 +2040,220 @@ func main() {
 
 		} //..switch
 		// ** end **//
-	}else if su.ContentGenerationSelection == "image" {
+	}else if su.ContentGenerationSelection == "image" && su.SelectedTool=="image-generation" {
+		// todo - add later robust conditionals for execution of this block
 
 		//** hardsetting condition for image -> might pick dynamic later
 		fmt.Println("image tool into action⚡")
-		// fmt.Printf("proccessed image - %v",aot)
+		fmt.Printf("proccessed image - %v",aot)
 		
 		s.Color("purple")
-		s.Suffix="gathering tools for image generation..."
+		s.Suffix="proccessing image..."
 		s.Start()
 
-		// confirmed -> su is getting initialized properly ✅✅
-		// test - what causing the err now -> it's not api limit err tho <- comfirmed this too with that validated test 
+		imgBinary,err := ReadIMGBinary(aot)
+		if err != nil {
+			slog.Error("failed to read image binary bytes data","error",err)
+			return
+		}
 
-
-		// ** GEM ** //
-		// checking if su is instansiated properly if yes -> take these and work
-		// imgBinary,err := ReadIMGBinary(su.SelectedContextFile)
-		// if err != nil {
-		// 	slog.Error("failed to read image binary bytes data","error",err)
-		// 	return
-		// }
-
-		// ecodedImgStr := ImageBinaryConversion(imgBinary)
+		ecodedImgStr := ImageBinaryConversion(imgBinary)
 		
 		// needed image validation
 
 		// ! remember -> form seperate part wrapper el for text and image seperately and since partsWrapperSlice accepts them, pass them
-		// textpart := &PartsSliceKeyWrapperGem{
-		// 		Text: su.UserPrompt, // text prompt for image context what to do with image
-		// 	}
+		textpart := &PartsSliceKeyWrapperGem{
+				// ** user's given prompt for image description
+				Text: su.UserPrompt, // text prompt for image context what to do with image
+			}
 
-		// imgpart := &PartsSliceKeyWrapperGem{
-		// 		// it would only have inline data for img - omityempty power -> clears out field if it is empty! might need to learn more about tradeoffs
-		// 		InlineData: &InlineDataWrapperGem{
-		// 			MimeType: "image/png",
-		// 			Data: ecodedImgStr, //base64 encoded safe string
-		// 		},
-		// 	}
+		imgpart := &PartsSliceKeyWrapperGem{
+				// it would only have inline data for img - omityempty power -> clears out field if it is empty! might need to learn more about tradeoffs
+				InlineData: &InlineDataWrapperGem{
+					MimeType: "image/png",
+					Data: ecodedImgStr, //base64 encoded safe string
+				},
+			}
 
 
-		// cnt := &ContentsSliceKeyWrapperGem{
-		// 			Parts: []*PartsSliceKeyWrapperGem{
-		// 				textpart,imgpart,		
-		// 			},	
-		// 		}
+		cnt := &ContentsSliceKeyWrapperGem{
+					Parts: []*PartsSliceKeyWrapperGem{
+						textpart,imgpart,		
+					},	
+				}
 		// construct image struct payload
-		// out := &OutboundPayloadGem{
-		// 	Contents: []*ContentsSliceKeyWrapperGem{
-		// 		cnt,
-		// 	},
-		// }
-		
-		// gem end//
-		// ** The thing is we can't request image binary/base64 safe string from gemini in free tier -> we could only send image for anylastion so we would shift to another AI for generating images
-		//** idea -> we would still send prompt -> get back binary bytes , which are still []byte where each byte represent png specification,image detailing so we can later encode into safe string for sendign to gemini if needed.
-		
-		// flow
-		// // 1. contruct poli prompt out payload
-		// poliOut := &PoliGenConfig{
-		// 	Prompt: su.UserPrompt,
-		// 	Width: 256, // later ask for premuim on high defenition images
-		// 	Height: 256,
-		// 	Format: "png",
-		// }
-		
-		// even this encoded into []of bytes -> these bytes represents contructed instance payload <-
-		// outBytes,err := json.Marshal(poliOut)
-		// if err != nil {
-		// 	slog.Error("failed to marshal outbound poli payload","error",err)
-		// 	return
-		// }
-
-		// ioreader := bytes.NewReader(outBytes)
-		
-		// 2. make out req to poli
-		secretKey := os.Getenv("POLI_API_KEY")
-		if secretKey == "" {
-			log.Fatal("please provide poli secret key for premium image gen💲")
+		out := &OutboundPayloadGem{
+			Contents: []*ContentsSliceKeyWrapperGem{
+				cnt,
+			},
+			GenerationConfig: &GenerationConfigConstraints{
+				ResponseModalities: []string{"TEXT","IMAGE"}, //! explicitly telling it to send back this res with image bytes and text
+			},
 		}
-		// poliGenURL := " https://gen.pollinations.ai/v1/images/generations"
-		
-		// ** doing a text2Image -> simple get req on this url
-		// bug - url could have only one ? to tell them be qp, rest just added with ampersand symbol
-		// fix - after endpoint label all qparams with & seperator and key-val with = like ?key=val&key=val 
-		poliGenURL := "https://gen.pollinations.ai/image/" + url.QueryEscape(su.UserPrompt)+"?model=flux&key="+secretKey
-		
-		// req,err := http.NewRequest("POST",poliGenURL,ioreader)
-		// if err != nil {
-		// 	slog.Error("failed to req image gen","error",err)
-		// 	return
-		// }
-
-		req,err := http.NewRequest("GET",poliGenURL,nil)
-		if err != nil {
-			slog.Error("failed to req image gen","error",err)
-			return
-		}
-
-
-		// headers attachment
-		// authBearerKeyHeaderVal := fmt.Sprintf("Bearer %s",secretKey)
-		// req.Header.Set("Content-Type","application/json")
-		// req.Header.Set("Authorization",authBearerKeyHeaderVal)
-
-		// 3. Do req
-		res,err := client.Do(req)
-		if err != nil {
-			slog.Error("failed to get res","error",err)
-			return
-		}
-
-		// res early validation 
-		if res.StatusCode != 200 {
-			// when res is not ok -> not successfull
-			log.Fatalf("Failed to generate image, StatusCode - %v",res.StatusCode)
-		}
-
-		// 3. read bytes from the resp.Body
-		// if res is ok and successfully did the request
-		resBod := res.Body
-		defer resBod.Close() //defered close when finished
-		
-		// worked..those bytes data when written to image -> it is displaying it properly ✅✅
-		// conclude ->
-		resBodBytes,err := io.ReadAll(resBod)
-		if err != nil {
-			return
-		}
-
-		// 4. that's raw image binary
-		// ** at this point, api would have sent raw binary image generated bytes ( bytes in dec represents image, unfder hood just 0,1...little vague)
-		// we could either turn into img as binary bytes contains whole information about png...writing bytes would form image locally for visualization
-
-		// os
-		
 		s.Stop()
 
 		// encode out
+		// findmePrompt turn it into 90's style hand drawn styled image and clean
+
+		s.Color("red")
+		s.Suffix="analysing image📸..."
+		s.Start()
+
+		outbound,err := json.Marshal(out)
+		if err != nil {
+			slog.Error("failed to marshal img out payload","error",err)
+			return 
+		}
+
+		ioreader := bytes.NewReader(outbound)
+
+		// create new request with http.NewRequest method -> for requesting to extenal service/api
+		req,err := http.NewRequest("POST",reqURL,ioreader)
+		if err != nil {
+			slog.Error("failed to form image mimeType request","error",err)
+			return
+		}
+
+		// setting headers on the request
+
+		req.Header.Set("x-goog-api-key",apiKEY)
+		req.Header.Set("Content-Type","application/json")
+		s.Stop()
 
 
 		s.Color("red")
-		s.Suffix="generating image✨..."
+		s.Suffix="generating response🤖..."
 		s.Start()
 
+		res,err := client.Do(req)
+		if err != nil {
+			slog.Error("failed to do request","error",err)
+			return
+		}
 
-		// once binary is there, populate into img file for displaying it
-		// todo - need a way to get name of image file dynamically -> manually or ai
+		// ! must check for 200 ok res -> cause it might never fires rest if this hit err
+		if res.StatusCode != 200 {
+			// bodyRead,_ := io.ReadAll(res.Body) // even when it does not respond -> it returns err
+			// slog's placeholder yellow err feel laterc
+			slog.Error(Red+"[DEBUG] - API HIT NON 200 STATUS CODE"+"Reset","Status-Code",res.StatusCode)
+			return
+		}
+
+
+		// res dismanteling
+		resBod := res.Body
+		defer resBod.Close() //closing stream source when done
+
+		resChunkedBytes,err := io.ReadAll(resBod)
+		if err != nil {
+			slog.Error("failed to read body bytes","error",err)
+			return
+		}
+
+		fmt.Println("bodySize",len(resChunkedBytes))
+
+		var inbound *InboundPayloadGem
+		err = json.Unmarshal(resChunkedBytes,&inbound) // incoming is still the same
+		if err != nil {
+			slog.Error("failed to unmarshal body bytes data","error",err)
+			return
+		}
+
+		// looping to get actual data inside the inbound wrappers, skipping nill wrappers n content
 		
-
-		// creating dummy img file
-		img,err := os.Create("edited.jpg")
-		if err != nil {
-			return
-		}
-		defer img.Close() // don't forget to close once finished operating on it
-
-		imageSize,err := img.Write(resBodBytes)
-		if err != nil {
-			slog.Error("failed to populate image binary data for displaying image","error",err)
-			return
-		}
-
-		// handle err
+		// only do when there is actual candidates data in the struct
 		s.Stop()
-		fmt.Printf(Yellow+"Generated Image size - %vkb"+Reset,(imageSize)/1024)
-		// outbound,err := json.Marshal(out)
-		// if err != nil {
-		// 	slog.Error("failed to marshal img out payload","error",err)
-		// 	return 
-		// }
+		if len(inbound.Candidates) > 0 {
+			fmt.Println("found candidates...")
 
-		// ioreader := bytes.NewReader(outbound)
-
-		// // create new request with http.NewRequest method -> for requesting to extenal service/api
-		// req,err := http.NewRequest("POST",reqURL,ioreader)
-		// if err != nil {
-		// 	slog.Error("failed to form image mimeType request","error",err)
-		// 	return
-		// }
-
-		// // setting headers on the request
-
-		// req.Header.Set("x-goog-api-key",apiKEY)
-		// req.Header.Set("Content-Type","application/json")
-		// s.Delay=time.Second*1
-		// s.Stop()
-
-
-		// s.Color("red")
-		// s.Suffix="generating response🤖..."
-		// s.Start()
-		// res,err := client.Do(req)
-		// if err != nil {
-		// 	slog.Error("failed to do request","error",err)
-		// 	return
-		// }
-
-
-		// // res dismanteling
-		// resBod := res.Body
-		// defer resBod.Close() //closing stream source when done
-
-		// resChunkedBytes,err := io.ReadAll(resBod)
-		// if err != nil {
-		// 	slog.Error("failed to read body bytes","error",err)
-		// 	return
-		// }
-
-		// var inbound *InboundPayloadGem
-		// err = json.Unmarshal(resChunkedBytes,&inbound) // incoming is still the same
-		// if err != nil {
-		// 	slog.Error("failed to unmarshal body bytes data","error",err)
-		// 	return
-		// }
-
-		// // looping to get actual data inside the inbound wrappers, skipping nill wrappers n content
-		
-		// // only do when there is actual candidates data in the struct
-		// s.Stop()
-		// if len(inbound.Candidates) > 0 {
-
-		// 	for _,candidate := range inbound.Candidates{
-		// 		if candidate.ContentWrapperGem == nil {
-		// 			continue // skip this current iteration - don't need to break as this is usual to send empty acks
-		// 		}
+			for _,candidate := range inbound.Candidates{
+				if candidate.ContentWrapperGem == nil {
+					continue // skip this current iteration - don't need to break as this is usual to send empty acks
+				}
 				
-		// 		for _,part := range candidate.ContentWrapperGem.Parts{
-		// 			if part.Text == "" {
-		// 				continue // skip them if current part has empty text string
-		// 			}
-		// 			// also since it has omitemoty -> no need to switch to seperate parts havin just parts with no inline data for inbound
-		// 			resText := part.Text
+				for _,part := range candidate.ContentWrapperGem.Parts{
+					
+					// bug - cause now also accounting for inline data, it might be possible inline data comes but no text -> skipping would skip that too
+					// fix - instead of skip, only account for text when its not null, and do similar for inlineData
+					// if part.Text == "" {
+					// 	continue // skip them if current part has empty text string
+					// }
+					// also since it has omitemoty -> no need to switch to seperate parts havin just parts with no inline data for inbound
+					// if part.Text == "" {
+					// 	continue
+					// }
+					// ** when part's text field is non empty string -> do this
+					if part.Text != "" {						
+						resText := part.Text
 
-		// 			// break into buf reads
-		// 			buffer := make([]byte,18) //18bytes buffer
+						// break into buf reads
+						buffer := make([]byte,18) //18bytes buffer
 
-		// 			reader := strings.NewReader(resText) //source from where bytes could be read
+						reader := strings.NewReader(resText) //source from where bytes could be read
 
-		// 			// todo - later
-		// 			// reads into bufs - always do in loop to account for all as it reads in chunks by breaking it into smaller chunked reads
-		// 			for {
+						// todo - later
 						
-		// 				bytesReadUpto, err := reader.Read(buffer)
+						// reads into bufs - always do in loop to account for all as it reads in chunks by breaking it into smaller chunked reads
+						for {
+							
+							bytesReadUpto, err := reader.Read(buffer)
+							
+							// guard check for : if bytes are read but no read
+							if bytesReadUpto > 0 {
+								
+								chunkedTextByte := buffer[:bytesReadUpto]
+								
+								// concurrent writes
+								os.Stdout.Write(chunkedTextByte)
+								time.Sleep(time.Millisecond*50) //little delay for smooth writes
+								}//....bytes read guard check
+								// eof error first
+							if err == io.EOF{
+								break
+							}
+							if err != nil {
+								return
+							}
+							}//....range concurrent reads and writes
+					}
+
+					// image part - after text, check if this is not nil -> response comes back with image bytes
+					if part.InlineData!= nil {
+						resImageSafeStr := part.InlineData.Data
+						imageBinary,err := ImageEncoder(resImageSafeStr)
+						if err != nil {
+							slog.Error("failed to decode string and encode back to image binary bytes data","error",err)
+							return
+						}
+
+						// once binary is there, populate into img file for displaying it
+						// todo - need a way to get name of image file dynamically -> manually or ai
 						
-		// 				// guard check for : if bytes are read but no read
-		// 				if bytesReadUpto > 0 {
-							
-		// 					chunkedTextByte := buffer[:bytesReadUpto]
-							
-		// 					// concurrent writes
-		// 					os.Stdout.Write(chunkedTextByte)
-		// 					time.Sleep(time.Millisecond*50) //little delay for smooth writes
-		// 					}//....bytes read guard check
-		// 					// eof error first
-		// 				if err == io.EOF{
-		// 					break
-		// 				}
-		// 				if err != nil {
-		// 					return
-		// 				}
-		// 			}//....range concurrent reads and writes
-		// 		} 
-		// 	}
+
+						// creating dummy img file
+						img,err := os.Create("edited.jpg")
+						if err != nil {
+							return
+						}
+						defer img.Close() // don't forget to close once finished operating on it
+
+						imageSize,err := img.Write(imageBinary)
+						if err != nil {
+							slog.Error("failed to populate image binary data for displaying image","error",err)
+							return
+						}
+
+						// handle err
+						fmt.Printf("Generated Image size - %v",imageSize)
+					}
+				} 
+
+			}
 			
-		// }
+		}
 
 
-		s.FinalMSG=Yellow+"successfully generated image✨"
+		s.FinalMSG=Yellow+"successfully decoded image✨✨"
 
 		// form req-res - decode -> serve res
 		return // don't let it execute furthur

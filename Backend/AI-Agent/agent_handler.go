@@ -248,8 +248,13 @@ func WatchDirChanges(dirToWatchOut,fileSuffix,Mode,APIKEY,OutputFileName string)
 				case event,triggered := <- dirWatcher.Events :
 					slog.Info("some event is recieved","Name",event.Name)
 					if !triggered {
-						slog.Info("void or nil event recieved;exiting out of loop safely","Name",event.Name)
+						slog.Error("void or nil event recieved;exiting out of loop safely","Name",event.Name)
 						return //early return from the fnc
+					}
+
+					if event.Name == OutputFileName {
+						slog.Error("returning early to prevent infinite call on agent itself")
+						return
 					}
 					// * event validation - only watch out for write(op) event and on .go files only
 					// if event is 'write' { when write is detected is recieved } and 
