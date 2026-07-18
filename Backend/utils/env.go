@@ -52,7 +52,7 @@ func LoadConfig() (*ENVConfig, error) {
 	redisDbStr := os.Getenv("REDIS_DB")
 	redisDbHost := os.Getenv("REDIS_HOST_ADDR")
 	rabbitmqURL := os.Getenv("RABBITMQ_URL")
-	geminiApiKey := os.Getenv("GEMINI_API_KEY")
+	geminiApiKey := os.Getenv("GEMINI_API_KEY1")
 
 	// * since we stored aws s3 important keys in env, container would look for them in its space <- must define there too
 	s3AccessKeyID := os.Getenv("AWS_ACCESS_KEY_ID")
