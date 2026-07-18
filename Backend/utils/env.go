@@ -60,6 +60,7 @@ func LoadConfig() (*ENVConfig, error) {
 	s3BucketName := os.Getenv("S3BucketName") // switching to what aws expects naming to be for default loads
 	s3RegionName := os.Getenv("AWS_REGION")
 
+	// string to int conversion
 	dbPort, err := strconv.Atoi(dbPortStr)
 	if err != nil {
 		slog.Error("failed to get port", "error", err)

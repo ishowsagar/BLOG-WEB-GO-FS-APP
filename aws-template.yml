@@ -1,0 +1,112 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: This stack builds up whole Cloud infrasture which would be serving multi services webApplication live
+
+# args for the resources calls
+Parameters:
+  # Creates paramaters which -> are baked into cloud formation iac -> reasources could this without hardcoding instead baked in variables
+  # ! Then this param var is refrenced to be -> fed where it needed with '!Ref' resource/paramVar - oh these all are vars
+
+  # 1. SecurityGroup param var
+  FSAppSecurityGroupID:
+    # params var - type & its desc,default for values it would hold - Type - specify which this param is being pointing to which param type
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: Security group which configures multi-services inbound traffic in the application
+    # default -  <- this is where val is injected
+    Default: sg-0c04a2a266026933c
+
+  # 2. sshKeypair param var
+  SSHKey:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: key for ssh into ubuntu machine
+    Default: dockerized_instagram_ssh_key
+
+# Aws does not let us use -> - hyphen included name - one AlphaNumeric naming
+# Aws resources like ec2...
+Resources:
+  #$ One indentation follows resources
+  #$ Every resource is just stating -> type of resource and its properties.
+  StackSG:
+    # Resource type - here we are building security group -> which we setup for traffic control in UI during launching
+    # type - follows standard way to specify type of aws resource - AWS::EC2::ResourceName-AWS::<Service>::<Thing>
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      # one futhur indentation follows all properties it would have
+      GroupDescription: allows SSH
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+  #& ec2 resource
+  GoEc2WebApplicationInstance:
+    # followed by its type + properties
+    Type: AWS::EC2::Instance
+    Properties:
+      # specifying ec2 instance properties - choosing machine,network settings,user data script
+      # ! As These all props are pulled from docs, docs throws all props, so only we need what are useful and manadatory for now
+      ImageId: ami-0b6d9d3d33ba97d99
+      InstanceType: t3.medium
+      KeyName: !Ref SSHKey
+      SecurityGroupIds:
+        - !Ref FSAppSecurityGroupID
+      # user data script for bootstrapping
+      UserData:
+        # ! must be sent in base64 safe string encoded - but don't need to encode but specify encoder and then followed by userdata script
+        Fn::Base64: |
+          #!/bin/bash
+
+          sudo apt remove $(dpkg --get-selections docker.io docker-compose docker-compose-v2 docker-doc podman-docker containerd runc | cut -f1)
+
+          # Add Docker's official GPG key:
+          sudo apt update
+          sudo apt install ca-certificates curl -y
+          sudo install -m 0755 -d /etc/apt/keyrings
+          sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+          sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+          # Add the repository to Apt sources:
+          sudo tee /etc/apt/sources.list.d/docker.sources <<EOF
+          Types: deb
+          URIs: https://download.docker.com/linux/ubuntu
+          Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+          Components: stable
+          Architectures: $(dpkg --print-architecture)
+          Signed-By: /etc/apt/keyrings/docker.asc
+          EOF
+
+          sudo apt update
+
+          #  docker engine installment -y flag for injected yes for human confirmation for installing package
+          #  sudo system action service => for firing up services from the machine - systemctl - program runner
+          sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
+          sudo systemctl status docker
+          sudo systemctl start docker
+          sudo systemctl enable docker
+
+          # creating ubuntu for ssh (without sudo permission)
+          sudo usermod -aG docker ubuntu
+          # cloning repo
+          git clone https://github.com/ishowsagar/BLOG-WEB-GO-FS-APP
+          cd BLOG-WEB-GO-FS-APP
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            VolumeSize: 28
+            VolumeType: gp3
+
+  #& ElasticIP resource
+  ElasticIPAllocation:
+    # todo - have to specify type and its properties
+    Type: AWS::EC2::EIP
+    Properties:
+      # as there are lot of props, we only needed which is mandatory for this resource specifically
+      Domain: vpc
+      # for attaching elastic ip to the ec2 - need to provide its id - since it would not be created yet - so !ref => refers to id whatever created for this ec2 resource
+      InstanceId: !Ref GoEc2WebApplicationInstance
+      #** After stack is deployed-> Output final Message
+Outputs:
+  ApplicationIp:
+    Description: Application stack has booted up and Application IP is available on
+    # ref to elastic ip it has attached to the ec2 instance - referring to this resource which generates and attaches EIP
+    Value: !Ref ElasticIPAllocation

@@ -34,7 +34,7 @@ func main() {
 	mainFiresAt := time.Now()
 
 	// slog logger for entire application
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil)) //providing fd1
 	slog.SetDefault(logger) //* default logger set for whole app
 // testing changes if it shows this line being written to the main.go
 
@@ -93,7 +93,8 @@ func main() {
 	sqlDB, err := baseDbModel.DB.DB() //* underlying sqlDb
 	if err != nil {
 		slog.Error("failed to load underlying sql db", "error", err)
-		os.Exit(1) // will stop cause our whole app needed this db
+		// ! os.Exit -> Immidiate exit without defer stack
+		return // will stop cause our whole app needed this db + defer stack calling after this 
 	}
 
 	// migrations

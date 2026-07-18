@@ -3,6 +3,7 @@ package services
 import (
 	"encoding/json"
 	"log/slog"
+	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -53,6 +54,7 @@ type HubBroker interface {
 
 // centre point for all operations - all clients connection/disconnection,msg are redirected here and then handled
 type Hub struct {
+	Mu	sync.RWMutex // handeling concurrent go routines locks and unlocks to prevent deadlock
 	Broadcast chan *ClientNotifyPayload // broadcasted msg struct that needs to be sent
 	Clients   map[*Client]bool          // all clients stored in here
 	// * keep active clients in same way clients but for key being clientID
@@ -88,6 +90,7 @@ type AudioIceCandidate struct {
 // initializes pointer instance of type Hub
 func IntializeNewHubInstance() *Hub {
 	return &Hub{
+		Mu: sync.RWMutex{},
 		Broadcast:                           make(chan *ClientNotifyPayload, 20),
 		Clients:                             make(map[*Client]bool),
 		ActiveClients:                       make(chan *Client),
@@ -133,9 +136,16 @@ func (h *Hub) RunService() {
 		case incomingclient := <-h.ActiveClients:
 			slog.Debug("HUB: ActiveClients case triggered")
 			// if active client chan is reading val -> store in all clients
+
+			//! When writing to map -> lock it here so no other go routine messes up the concurrent
+			h.Mu.Lock()
+
 			h.Clients[incomingclient] = true // making it true -> saved it for ws conn
 			// * also setting that client in the ALLClients type store -> which tracks incoming client but with userID
 			h.ClientStore[incomingclient.ID] = incomingclient //map key being client's UserID and val being client itself
+			h.Mu.Unlock()
+			// ** once both maps are written -> free this so other go routines can take over
+
 			metrics.ActiveConnections.Set(float64(len(h.ClientStore)))
 			slog.Info("request arrived at the central 'hub'🏢",
 				slog.Group("hub",
@@ -152,6 +162,10 @@ func (h *Hub) RunService() {
 
 			// todo - add client count
 		case readdisconnectedclient := <-h.DisconnectedClients:
+
+			// locking go
+			h.Mu.Lock()
+
 			// first validate if it exists or not with _,ok idiomatic way
 			_, ok := h.Clients[readdisconnectedclient]
 
@@ -192,6 +206,8 @@ func (h *Hub) RunService() {
 					),
 				)
 			}
+
+			h.Mu.Unlock()
 
 			//&deleting client from the room too
 			//need to provide room id to delete from them only
@@ -336,6 +352,11 @@ func (h *Hub) RunService() {
 			}
 		// if payload is redirected to chan <- which has client data
 		case msg := <-h.Broadcast: // if something is redirected to this chan
+
+		// ! cause if sudden new client comes -> registered into maop of active client [write] and at the same time - [here read all clients]
+			// ! to solve this race condition which happens first to prevent crash -> lock read if it is reading and not done -> don't let anyone written to the map
+
+			// * Solved with sync.RWMutex --> locks one operation so other is not fired untill this is not done firstly 
 			slog.Info("request arrived at the central 'hub'🏢",
 				slog.Group("hub",
 					slog.String("station", "h.Broadcast")),
@@ -351,6 +372,9 @@ func (h *Hub) RunService() {
 			// then we check who send and where to and got -> redirect there to its send chan
 
 			// if no id provided broadcast to all clients
+
+			// ** locking this untill reading map - no write untill this is not done
+			h.Mu.Lock()
 			if msg.RecieverID == 0 {
 				for eachClient := range h.Clients {
 					// send in a goroutine with timeout to avoid blocking the hub
@@ -388,6 +412,7 @@ func (h *Hub) RunService() {
 						}
 					}(eachClient, msg)
 				}
+
 			} else {
 				// else only send to the targetted user
 				// by looping over each ranged client to check which matches -> redirects to its send chan which accepts same type of data struct
@@ -428,6 +453,34 @@ func (h *Hub) RunService() {
 					}
 				}
 			}
+
+			//** only unlocking when it has read map - so no write untill this current is not read - once done - unlock - write to register new client in lock - so read untill it is not written
+			h.Mu.Unlock()
+
+			//** locking need? 
+			// When working with maps in go routines -> read and writes if done unprotected could cause issues 
+			// as one~another or same gp routine might be doing both operations at the same time - reading clients map and same also writing to map
+			// to prevent this race condition who comes and do thing first -> need to //* lock/block go routine untill this is not finished - so no read till write is locked,and similarly if read is locked - no write *// 
+			// even if there was another go routine which is reading/writing to the map ->//* if there is a mutex lock - all other go routines are locked untill this is not unlocked
+
+			// ****ohhh scope of the Lock defines that block scoped lock is only that is active, other go routines are pauses untill this scoped lock is not freed or unlocked.
+			// this is reason why RLock is used, not simple lock cause that would stop h.Clients map all other readers but Rlock lock this scope and let all these clients go routines being fired -> when don efree
+			// so new connection of client is paused untill this is not done -> then if there is new connection and go routine is free
+			// --> scope lock on Write -> between scope all writers map registers client -> no read of map untill this scope is not unlocked.
+			
+			//** So, when there is a lock  --> check scope of the lock and unlock - rest go routines are paused untill read is not done -> other go routines like registering new to the map is paused [write] -> once done -> free 
+			// ** --> there is a lock -> on Write [h.Clients] -> all others go routines/same too are paused -> read is paused untill this is not done as being written to the map.
+
+
+			// ** we knew when there is chan redirecting data, sending data - go routines comes into action
+			// this is true when client sent to the hub.ActiveClients to get write to be registered in the map -> so this go routine is paused when there is a lock
+			// ** we also know -> h.Send always expecting data to come in clientWriter -> sent through the chan -> go routine into action - by hub.Broadcast
+			// this is what paused when there is a lock on -> write to map....that's when this is paused so no read map untill write is not done.
+
+			// oh so lock is not actually pausing go routine, they are still active but go routine operations like when there data is chanlised -> that is paused so no client channelised -> no map involved
+			// that's why when there is a lock on -> read, client channelised to hub is paused -> this go operation -> client paused -> untill read is not done
+
+			// when there is a lock -> all other go routines channels operations are paused untill current lock is not freed or unlocked.
 
 		// & for routing gemini responses
 		case geminiResponse := <-h.GeminiAIResponseOnly:
@@ -1690,3 +1743,5 @@ writerLoop:
 	}
 
 }
+
+// go routines are fired -> cause Data sent via channels are managed and handled by the Gruntime/scheduler -> happens through the go routine
